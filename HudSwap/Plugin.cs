@@ -1,5 +1,4 @@
 ﻿using Dalamud.Plugin;
-using System;
 
 namespace HudSwap {
     public class HudSwapPlugin : IDalamudPlugin {

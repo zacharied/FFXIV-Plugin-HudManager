@@ -3,9 +3,7 @@ using Dalamud.Game.ClientState.Actors.Types;
 using Dalamud.Plugin;
 using ImGuiNET;
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace HudSwap {
     public class PluginUI {
@@ -25,6 +23,7 @@ namespace HudSwap {
         public void ConfigUI(object sender, EventArgs args) {
             this.SettingsVisible = true;
         }
+
         public void DrawSettings() {
             if (!this.SettingsVisible) {
                 return;
@@ -108,8 +107,6 @@ namespace HudSwap {
                 this.statuses.SetHudLayout(null);
             }
         }
-
-
     }
 
     public class Statuses {

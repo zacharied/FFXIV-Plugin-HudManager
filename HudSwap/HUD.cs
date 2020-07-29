@@ -4,14 +4,13 @@ using System.Runtime.InteropServices;
 
 namespace HudSwap {
     public class HUD {
-
         private delegate IntPtr GetFilePointerDelegate(byte index);
         private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);
 
         private GetFilePointerDelegate _getFilePointer;
         private SetHudLayoutDelegate _setHudLayout;
 
-        private DalamudPluginInterface pi;
+        private readonly DalamudPluginInterface pi;
 
         public HUD(DalamudPluginInterface pi) {
             this.pi = pi;
