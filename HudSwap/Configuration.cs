@@ -1,6 +1,7 @@
 ﻿using Dalamud.Configuration;
 using Dalamud.Plugin;
 using System;
+using System.Collections.Generic;
 
 namespace HudSwap {
     [Serializable]
@@ -10,16 +11,17 @@ namespace HudSwap {
         [NonSerialized]
         private DalamudPluginInterface pi;
 
-        public uint DefaultLayout { get; set; } = 0;
+        public bool SwapsEnabled { get; set; } = false;
 
-        public bool ChangeOnCombat { get; set; } = false;
-        public uint CombatLayout { get; set; } = 0;
+        public Guid defaultLayout = Guid.Empty;
 
-        public bool ChangeOnWeaponDrawn { get; set; } = false;
-        public uint WeaponDrawnLayout { get; set; } = 0;
+        public Guid combatLayout = Guid.Empty;
+        public Guid weaponDrawnLayout = Guid.Empty;
+        public Guid instanceLayout = Guid.Empty;
+        public Guid craftingLayout = Guid.Empty;
+        public Guid gatheringLayout = Guid.Empty;
 
-        public bool ChangeOnInstance { get; set; } = false;
-        public uint InstanceLayout { get; set; } = 0;
+        public Dictionary<Guid, Tuple<string, byte[]>> Layouts { get; } = new Dictionary<Guid, Tuple<string, byte[]>>();
 
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.pi = pluginInterface;
