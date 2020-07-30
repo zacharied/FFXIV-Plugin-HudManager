@@ -113,6 +113,7 @@ namespace HudSwap {
                             if (ImGui.Button("Delete") && this.selectedLayout != null) {
                                 this.plugin.config.Layouts.Remove(this.selectedLayout);
                                 this.selectedLayout = Guid.Empty;
+                                this.renameName = "";
                                 this.plugin.config.Save();
                             }
 
