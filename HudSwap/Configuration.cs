@@ -12,6 +12,7 @@ namespace HudSwap {
         private DalamudPluginInterface pi;
 
         public bool FirstRun { get; set; } = true;
+        public bool UnderstandsRisks { get; set; } = false;
 
         public bool SwapsEnabled { get; set; } = false;
 

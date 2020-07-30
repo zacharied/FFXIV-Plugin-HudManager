@@ -5,6 +5,7 @@ using ImGuiNET;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 // TODO: Job swaps?
@@ -52,6 +53,37 @@ namespace HudSwap {
 
             if (ImGui.Begin("HudSwap", ref this._settingsVisible, ImGuiWindowFlags.AlwaysAutoResize)) {
                 if (ImGui.BeginTabBar("##hudswap-tabs")) {
+                    if (!this.plugin.config.UnderstandsRisks) {
+                        if (ImGui.BeginTabItem("About")) {
+                            ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), "Read this first");
+                            ImGui.Separator();
+                            ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20f);
+                            ImGui.Text("HudSwap will use the configured staging slot as its own slot to make changes to. This means the staging slot will be overwritten whenever any swap happens.");
+                            ImGui.Spacing();
+                            ImGui.Text("Any HUD layout changes you make while HudSwap is enabled may potentially be lost, no matter what slot. If you want to make changes to your HUD layout, TURN OFF HudSwap first.");
+                            ImGui.Spacing();
+                            ImGui.Text("When editing or making a new layout, to be completely safe, turn off swaps, set up your layout, import the layout into HudSwap, then turn on swaps.");
+                            ImGui.Spacing();
+                            ImGui.Text("If you are a new user, HudSwap auto-imported your existing layouts on startup.");
+                            ImGui.Spacing();
+                            ImGui.Text("Finally, HudSwap is beta software. Back up your character data before using this plugin. You may lose some to all of your HUD layouts while testing this plugin.");
+                            ImGui.Separator();
+                            ImGui.Text("If you have read all of the above and are okay with continuing, check the box below to enable HudSwap. You only need to do this once.");
+                            ImGui.PopTextWrapPos();
+                            bool understandsRisks = this.plugin.config.UnderstandsRisks;
+                            if (ImGui.Checkbox("I understand", ref understandsRisks)) {
+                                this.plugin.config.UnderstandsRisks = understandsRisks;
+                                this.plugin.config.Save();
+                            }
+
+                            ImGui.EndTabItem();
+                        }
+
+                        ImGui.EndTabBar();
+                        ImGui.End();
+                        return;
+                    }
+
                     if (ImGui.BeginTabItem("Layouts")) {
                         ImGui.Text("Saved layouts");
                         if (this.plugin.config.Layouts.Keys.Count == 0) {
@@ -187,7 +219,7 @@ namespace HudSwap {
         public void Draw() {
             this.DrawSettings();
 
-            if (!this.plugin.config.SwapsEnabled) {
+            if (!(this.plugin.config.SwapsEnabled && this.plugin.config.UnderstandsRisks)) {
                 return;
             }
 
