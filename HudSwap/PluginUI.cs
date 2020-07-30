@@ -32,6 +32,17 @@ namespace HudSwap {
         private string importName = "";
         private Guid selectedLayout = Guid.Empty;
 
+        private static bool configErrorOpen = true;
+        public static void ConfigError() {
+            if (ImGui.Begin("HudSwap error", ref configErrorOpen)) {
+                ImGui.Text("Could not load HudSwap configuration.");
+                ImGui.Spacing();
+                ImGui.Text("If you are updating from a previous version, please\ndelete your configuration file and restart the game.");
+
+                ImGui.End();
+            }
+        }
+
         public void DrawSettings() {
             if (!this.SettingsVisible) {
                 return;

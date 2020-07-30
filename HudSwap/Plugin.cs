@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin;
+using System;
 
 namespace HudSwap {
     public class HudSwapPlugin : IDalamudPlugin {
@@ -11,8 +12,12 @@ namespace HudSwap {
 
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.pi = pluginInterface;
-
-            this.config = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
+            try {
+                this.config = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
+            } catch (Exception) {
+                this.pi.UiBuilder.OnBuildUi += PluginUI.ConfigError;
+                return;
+            }
             this.config.Initialize(this.pi);
 
             this.ui = new PluginUI(this, this.pi);
