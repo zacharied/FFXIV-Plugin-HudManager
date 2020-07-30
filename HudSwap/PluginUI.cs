@@ -111,6 +111,20 @@ namespace HudSwap {
                         }
                         ImGui.Text("Note: Disable swaps when editing your HUD.");
 
+                        ImGui.Spacing();
+                        string staging = ((int)this.plugin.config.StagingSlot + 1).ToString();
+                        if (ImGui.BeginCombo("Staging slot", staging)) {
+                            foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
+                                if (ImGui.Selectable(((int)slot + 1).ToString())) {
+                                    this.plugin.config.StagingSlot = slot;
+                                    this.plugin.config.Save();
+                                }
+                            }
+                            ImGui.EndCombo();
+                        }
+                        ImGui.SameLine();
+                        HelpMarker("The staging slot is the HUD layout slot that will be used as your HUD layout. All changes will be written to this slot when swaps are enabled.");
+
                         ImGui.Separator();
 
                         ImGui.Text("This is the default layout. If none of the below conditions are\nsatisfied, this layout will be enabled.");
@@ -147,6 +161,17 @@ namespace HudSwap {
                 }
 
                 ImGui.End();
+            }
+        }
+
+        private void HelpMarker(string text) {
+            ImGui.TextDisabled("(?)");
+            if (ImGui.IsItemHovered()) {
+                ImGui.BeginTooltip();
+                ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20f);
+                ImGui.TextUnformatted(text);
+                ImGui.PopTextWrapPos();
+                ImGui.EndTooltip();
             }
         }
 
@@ -319,8 +344,8 @@ namespace HudSwap {
             if (layoutBytes == null) {
                 return; // FIXME: do something better
             }
-            this.plugin.hud.WriteLayout(HudSlot.Four, layoutBytes);
-            this.plugin.hud.SelectSlot(HudSlot.Four, true);
+            this.plugin.hud.WriteLayout(this.plugin.config.StagingSlot, entry.Item2);
+            this.plugin.hud.SelectSlot(this.plugin.config.StagingSlot, true);
         }
     }
 }

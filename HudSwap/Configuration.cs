@@ -15,6 +15,8 @@ namespace HudSwap {
 
         public bool SwapsEnabled { get; set; } = false;
 
+        public HudSlot StagingSlot { get; set; } = HudSlot.Four;
+
         public Guid defaultLayout = Guid.Empty;
 
         public Guid combatLayout = Guid.Empty;
