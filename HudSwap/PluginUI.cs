@@ -344,8 +344,7 @@ namespace HudSwap {
             if (layout == Guid.Empty) {
                 return; // FIXME: do something better
             }
-            byte[] layoutBytes = this.plugin.config.Layouts[layout]?.Item2;
-            if (layoutBytes == null) {
+            if (!this.plugin.config.Layouts.TryGetValue(layout, out Tuple<string, byte[]> entry)) {
                 return; // FIXME: do something better
             }
             this.plugin.hud.WriteLayout(this.plugin.config.StagingSlot, entry.Item2);
