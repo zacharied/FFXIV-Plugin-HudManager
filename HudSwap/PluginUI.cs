@@ -31,6 +31,7 @@ namespace HudSwap {
         }
 
         private string importName = "";
+        private string renameName = "";
         private Guid selectedLayout = Guid.Empty;
 
         private static bool configErrorOpen = true;
@@ -93,6 +94,7 @@ namespace HudSwap {
                                 foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.config.Layouts) {
                                     if (ImGui.Selectable(entry.Value.Item1, this.selectedLayout == entry.Key)) {
                                         this.selectedLayout = entry.Key;
+                                        this.renameName = entry.Value.Item1;
                                     }
                                 }
                                 ImGui.ListBoxFooter();
@@ -111,6 +113,14 @@ namespace HudSwap {
                             if (ImGui.Button("Delete") && this.selectedLayout != null) {
                                 this.plugin.config.Layouts.Remove(this.selectedLayout);
                                 this.selectedLayout = Guid.Empty;
+                                this.plugin.config.Save();
+                            }
+
+                            ImGui.InputText("##rename-input", ref this.renameName, 100);
+                            ImGui.SameLine();
+                            if (ImGui.Button("Rename") && this.renameName != "" && this.selectedLayout != null) {
+                                Tuple<string, byte[]> entry = this.plugin.config.Layouts[this.selectedLayout]; ;
+                                this.plugin.config.Layouts[this.selectedLayout] = new Tuple<string, byte[]>(this.renameName, entry.Item2);
                                 this.plugin.config.Save();
                             }
                         }
