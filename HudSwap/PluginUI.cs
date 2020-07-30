@@ -105,13 +105,12 @@ namespace HudSwap {
                     }
 
                     if (ImGui.BeginTabItem("Swaps")) {
-                        ImGui.Text("Disable swaps when editing your HUD.");
-
                         bool enabled = this.plugin.config.SwapsEnabled;
-                        if (ImGui.Checkbox("Enabled", ref enabled)) {
+                        if (ImGui.Checkbox("Enable swaps", ref enabled)) {
                             this.plugin.config.SwapsEnabled = enabled;
                             this.plugin.config.Save();
                         }
+                        ImGui.Text("Note: Disable swaps when editing your HUD.");
 
                         ImGui.Separator();
 
