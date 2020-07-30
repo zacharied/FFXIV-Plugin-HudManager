@@ -32,15 +32,29 @@ namespace HudSwap {
 
         public uint SelectSlot(HudSlot slot, bool force = false) {
             IntPtr file = this.GetFilePointer(0);
+            // change the current slot so the game lets us pick one that's currently in use
             if (force) {
                 IntPtr currentSlotPtr = this.GetDataPointer() + 0x5958;
+                // read the current slot
                 uint currentSlot = (uint)Marshal.ReadInt32(currentSlotPtr);
-                if (currentSlot < 3) {
-                    currentSlot += 1;
-                } else {
-                    currentSlot = 0;
+                // change it to a different slot
+                if (currentSlot == (uint)slot) {
+                    if (currentSlot < 3) {
+                        currentSlot += 1;
+                    } else {
+                        currentSlot = 0;
+                    }
+                    // back up this different slot
+                    byte[] backup = this.ReadLayout((HudSlot)currentSlot);
+                    // change the current slot in memory
+                    Marshal.WriteInt32(currentSlotPtr, (int)currentSlot);
+                    // ask the game to change slot to our desired slot
+                    // for some reason, this overwrites the current slot, so this is why we back up
+                    uint res = this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
+                    // restore the backup
+                    this.WriteLayout((HudSlot)currentSlot, backup);
+                    return res;
                 }
-                Marshal.WriteInt32(currentSlotPtr, (int)currentSlot);
             }
             return this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
         }
