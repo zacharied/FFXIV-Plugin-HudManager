@@ -92,9 +92,8 @@ namespace HudSwap {
                         foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                             string buttonName = $"{(int)slot + 1}##import";
                             if (ImGui.Button(buttonName) && this.importName != "") {
-                                this.plugin.config.Layouts[Guid.NewGuid()] = new Tuple<string, byte[]>(this.importName, this.plugin.hud.ReadLayout(slot));
+                                this.ImportSlot(slot, this.importName);
                                 this.importName = "";
-                                this.plugin.config.Save();
                             }
                             if (slot != HudSlot.Four) {
                                 ImGui.SameLine();
@@ -197,6 +196,13 @@ namespace HudSwap {
                 ImGui.EndCombo();
             }
             ImGui.NextColumn();
+        }
+
+        public void ImportSlot(HudSlot slot, string name, bool save = true) {
+            this.plugin.config.Layouts[Guid.NewGuid()] = new Tuple<string, byte[]>(name, this.plugin.hud.ReadLayout(slot));
+            if (save) {
+                this.plugin.config.Save();
+            }
         }
     }
 

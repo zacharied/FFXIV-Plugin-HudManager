@@ -11,6 +11,8 @@ namespace HudSwap {
         [NonSerialized]
         private DalamudPluginInterface pi;
 
+        public bool FirstRun { get; set; } = true;
+
         public bool SwapsEnabled { get; set; } = false;
 
         public Guid defaultLayout = Guid.Empty;

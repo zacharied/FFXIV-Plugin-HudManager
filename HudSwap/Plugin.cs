@@ -23,6 +23,16 @@ namespace HudSwap {
             this.ui = new PluginUI(this, this.pi);
             this.hud = new HUD(this.pi);
 
+            if (this.config.FirstRun) {
+                this.config.FirstRun = false;
+                if (this.config.Layouts.Count == 0) {
+                    foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
+                        this.ui.ImportSlot(slot, $"Auto-import {(int)slot + 1}", false);
+                    }
+                }
+                this.config.Save();
+            }
+
             this.pi.UiBuilder.OnBuildUi += this.ui.Draw;
             this.pi.UiBuilder.OnOpenConfigUi += this.ui.ConfigUI;
 
