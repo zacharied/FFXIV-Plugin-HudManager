@@ -208,14 +208,18 @@ namespace HudSwap {
                 if (ImGui.Selectable("Not set")) {
                     layout = Guid.Empty;
                     this.plugin.config.Save();
-                    this.statuses.SetHudLayout(player, true);
+                    if (this.plugin.config.SwapsEnabled) {
+                        this.statuses.SetHudLayout(player, true);
+                    }
                 }
                 ImGui.Separator();
                 foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.config.Layouts) {
                     if (ImGui.Selectable(entry.Value.Item1)) {
                         layout = entry.Key;
                         this.plugin.config.Save();
-                        this.statuses.SetHudLayout(player, true);
+                        if (this.plugin.config.SwapsEnabled) {
+                            this.statuses.SetHudLayout(player, true);
+                        }
                     }
                 }
                 ImGui.EndCombo();
