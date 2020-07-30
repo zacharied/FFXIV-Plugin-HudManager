@@ -20,6 +20,7 @@ namespace HudSwap {
         public Guid instanceLayout = Guid.Empty;
         public Guid craftingLayout = Guid.Empty;
         public Guid gatheringLayout = Guid.Empty;
+        public Guid fishingLayout = Guid.Empty;
 
         public Dictionary<Guid, Tuple<string, byte[]>> Layouts { get; } = new Dictionary<Guid, Tuple<string, byte[]>>();
 

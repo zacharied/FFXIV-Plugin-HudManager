@@ -4,7 +4,11 @@ using Dalamud.Plugin;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+
+// TODO: Job swaps?
+// TODO: Zone swaps?
 
 namespace HudSwap {
     public class PluginUI {
@@ -123,6 +127,7 @@ namespace HudSwap {
                         this.LayoutBox("In instance", ref this.plugin.config.instanceLayout, player);
                         this.LayoutBox("Crafting", ref this.plugin.config.craftingLayout, player);
                         this.LayoutBox("Gathering", ref this.plugin.config.gatheringLayout, player);
+                        this.LayoutBox("Fishing", ref this.plugin.config.fishingLayout, player);
 
                         ImGui.Columns(1);
 
@@ -186,48 +191,57 @@ namespace HudSwap {
     }
 
     public class Statuses {
-        private HudSwapPlugin plugin;
-        private DalamudPluginInterface pi;
+        private readonly HudSwapPlugin plugin;
+        private readonly DalamudPluginInterface pi;
 
-        public bool InCombat { get; private set; } = false;
-        public bool WeaponDrawn { get; private set; } = false;
-        public bool InInstance { get; private set; } = false;
-        public bool Crafting { get; private set; } = false;
-        public bool Gathering { get; private set; } = false;
+        private readonly bool[] condition = new bool[ORDER.Length];
+
+        // Order: lowest to highest priority
+        // For conditions that require custom logic, use ConditionFlag.None
+        private static readonly ConditionFlag[] ORDER = {
+            ConditionFlag.Fishing,
+            ConditionFlag.Gathering,
+            ConditionFlag.Crafting,
+            ConditionFlag.BoundByDuty,
+            ConditionFlag.None, // weapon drawn
+            ConditionFlag.InCombat,
+        };
+
+        private delegate bool CustomCondition(HudSwapPlugin plugin, DalamudPluginInterface pi, PlayerCharacter player);
+
+        // Add handlers in the order that ConditionFlag.None flags appear in ORDER.
+        private static readonly CustomCondition[] CUSTOM = {
+            // weapon drawn
+            (plugin, pi, player) => (GetStatus(pi, player) & 4) > 0,
+        };
+
+        protected static byte GetStatus(DalamudPluginInterface pi, Actor actor) {
+            IntPtr statusPtr = pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1901);
+            return Marshal.ReadByte(statusPtr);
+        }
 
         public Statuses(HudSwapPlugin plugin, DalamudPluginInterface pi) {
             this.plugin = plugin;
             this.pi = pi;
+            if (ORDER.Length != this.GetLayouts().Length) {
+                throw new ApplicationException("Statuses.ORDER is not the same length as the array returned by Statuses.GetLayouts()");
+            }
+            if (ORDER.Where(flag => flag == ConditionFlag.None).Count() != CUSTOM.Length) {
+                throw new ApplicationException("Statuses.CUSTOM does not have an amount of handlers equalling the amount of ConditionFlag.None in Statuses.ORDER");
+            }
         }
 
-        public bool SetInCombat(bool inCombat) {
-            bool old = this.InCombat;
-            this.InCombat = inCombat;
-            return old != this.InCombat;
-        }
-
-        public bool SetWeaponDrawn(bool weaponDrawn) {
-            bool old = this.WeaponDrawn;
-            this.WeaponDrawn = weaponDrawn;
-            return old != this.WeaponDrawn;
-        }
-
-        public bool SetInInstance(bool inInstance) {
-            bool old = this.InInstance;
-            this.InInstance = inInstance;
-            return old != this.InInstance;
-        }
-
-        public bool SetCrafting(bool crafting) {
-            bool old = this.Crafting;
-            this.Crafting = crafting;
-            return old != this.Crafting;
-        }
-
-        public bool SetGathering(bool gathering) {
-            bool old = this.Gathering;
-            this.Gathering = gathering;
-            return old != this.Gathering;
+        private Guid[] GetLayouts() {
+            // These layouts must be in the same order as the flags in ORDER are defined
+            Guid[] layouts = {
+                this.plugin.config.fishingLayout,
+                this.plugin.config.gatheringLayout,
+                this.plugin.config.craftingLayout,
+                this.plugin.config.instanceLayout,
+                this.plugin.config.weaponDrawnLayout,
+                this.plugin.config.combatLayout,
+            };
+            return layouts;
         }
 
         public bool Update(PlayerCharacter player) {
@@ -235,15 +249,22 @@ namespace HudSwap {
                 return false;
             }
 
-            bool anyChanged = false;
-
+            int customs = 0;
+            bool[] old = (bool[])this.condition.Clone();
             Condition condition = this.pi.ClientState.Condition;
 
-            anyChanged |= this.SetGathering(condition[ConditionFlag.Gathering]) && this.plugin.config.gatheringLayout != Guid.Empty;
-            anyChanged |= this.SetCrafting(condition[ConditionFlag.Crafting]) && this.plugin.config.craftingLayout != Guid.Empty;
-            anyChanged |= this.SetInInstance(condition[ConditionFlag.BoundByDuty]) && this.plugin.config.instanceLayout != Guid.Empty;
-            anyChanged |= this.SetWeaponDrawn(this.IsWeaponDrawn(player)) && this.plugin.config.weaponDrawnLayout != Guid.Empty;
-            anyChanged |= this.SetInCombat(condition[ConditionFlag.InCombat]) && this.plugin.config.combatLayout != Guid.Empty;
+            bool anyChanged = false;
+
+            for (int i = 0; i < ORDER.Length; i++) {
+                ConditionFlag flag = ORDER[i];
+                if (flag == ConditionFlag.None) {
+                    this.condition[i] = CUSTOM[customs].Invoke(this.plugin, this.pi, player);
+                    customs += 1;
+                } else {
+                    this.condition[i] = condition[flag];
+                }
+                anyChanged |= old[i] != this.condition[i];
+            }
 
             return anyChanged;
         }
@@ -256,21 +277,14 @@ namespace HudSwap {
             this.Update(player);
 
             Guid layout = this.plugin.config.defaultLayout;
+            Guid[] layouts = this.GetLayouts();
 
-            if (this.Gathering && this.plugin.config.gatheringLayout != Guid.Empty) {
-                layout = this.plugin.config.gatheringLayout;
-            }
-            if (this.Crafting && this.plugin.config.craftingLayout != Guid.Empty) {
-                layout = this.plugin.config.craftingLayout;
-            }
-            if (this.InInstance && this.plugin.config.instanceLayout != Guid.Empty) {
-                layout = this.plugin.config.instanceLayout;
-            }
-            if (this.WeaponDrawn && this.plugin.config.weaponDrawnLayout != Guid.Empty) {
-                layout = this.plugin.config.weaponDrawnLayout;
-            }
-            if (this.InCombat && this.plugin.config.combatLayout != Guid.Empty) {
-                layout = this.plugin.config.combatLayout;
+            for (int i = 0; i < ORDER.Length; i++) {
+                Guid flagLayout = layouts[i];
+
+                if (this.condition[i] && flagLayout != Guid.Empty) {
+                    layout = flagLayout;
+                }
             }
 
             return layout;
@@ -291,15 +305,6 @@ namespace HudSwap {
             }
             this.plugin.hud.WriteLayout(HudSlot.Four, layoutBytes);
             this.plugin.hud.SelectSlot(HudSlot.Four, true);
-        }
-
-        private byte GetStatus(Actor actor) {
-            IntPtr statusPtr = this.pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1901);
-            return Marshal.ReadByte(statusPtr);
-        }
-
-        private bool IsWeaponDrawn(Actor actor) {
-            return (GetStatus(actor) & 4) > 0;
         }
     }
 }
