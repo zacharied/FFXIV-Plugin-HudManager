@@ -3,14 +3,13 @@ using Dalamud.Game.ClientState.Actors.Types;
 using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 
 // TODO: Zone swaps?
 
 namespace HudSwap {
     public class Statuses {
-        public static Status[] ORDER = {
+        public static readonly Status[] ORDER = {
             Status.Roleplaying,
             Status.Fishing,
             Status.Gathering,
@@ -67,7 +66,7 @@ namespace HudSwap {
             }
 
             // get the job layout if there is one and check if jobs are high priority
-            if (this.plugin.config.JobLayouts.TryGetValue(this.job.Abbreviation, out Guid jobLayout) && this.plugin.config.HighPriorityJobs) {
+            if (this.plugin.Config.JobLayouts.TryGetValue(this.job.Abbreviation, out Guid jobLayout) && this.plugin.Config.HighPriorityJobs) {
                 return jobLayout;
             }
 
@@ -79,7 +78,7 @@ namespace HudSwap {
                     continue;
                 }
                 Status status = ORDER[i];
-                if (this.plugin.config.StatusLayouts.TryGetValue(status, out Guid statusLayout)) {
+                if (this.plugin.Config.StatusLayouts.TryGetValue(status, out Guid statusLayout)) {
                     layout = statusLayout;
                 }
             }
@@ -87,17 +86,17 @@ namespace HudSwap {
             // if a job layout is set for the current job
             if (jobLayout != Guid.Empty) {
                 // if jobs are combat only and the player is either in combat or has their weapon drawn, use the job layout
-                if (this.plugin.config.JobsCombatOnly && (this.condition[5] || this.condition[6])) {
+                if (this.plugin.Config.JobsCombatOnly && (this.condition[5] || this.condition[6])) {
                     layout = jobLayout;
                 }
 
                 // if the layout was going to be default, use job layout unless jobs are not combat only
-                if (!this.plugin.config.JobsCombatOnly && layout == Guid.Empty) {
+                if (!this.plugin.Config.JobsCombatOnly && layout == Guid.Empty) {
                     layout = jobLayout;
                 }
             }
 
-            return layout == Guid.Empty ? this.plugin.config.defaultLayout : layout;
+            return layout == Guid.Empty ? this.plugin.Config.DefaultLayout : layout;
         }
 
         public void SetHudLayout(PlayerCharacter player, bool update = false) {
@@ -109,11 +108,11 @@ namespace HudSwap {
             if (layout == Guid.Empty) {
                 return; // FIXME: do something better
             }
-            if (!this.plugin.config.Layouts.TryGetValue(layout, out Tuple<string, byte[]> entry)) {
+            if (!this.plugin.Config.Layouts.TryGetValue(layout, out Tuple<string, byte[]> entry)) {
                 return; // FIXME: do something better
             }
-            this.plugin.hud.WriteLayout(this.plugin.config.StagingSlot, entry.Item2);
-            this.plugin.hud.SelectSlot(this.plugin.config.StagingSlot, true);
+            this.plugin.Hud.WriteLayout(this.plugin.Config.StagingSlot, entry.Item2);
+            this.plugin.Hud.SelectSlot(this.plugin.Config.StagingSlot, true);
         }
     }
 
@@ -150,6 +149,13 @@ namespace HudSwap {
         }
 
         public static bool Active(this Status status, PlayerCharacter player, DalamudPluginInterface pi) {
+            if (player == null) {
+                throw new ArgumentNullException(nameof(player), "PlayerCharacter cannot be null");
+            }
+            if (pi == null) {
+                throw new ArgumentNullException(nameof(pi), "DalamudPluginInterface cannot be null");
+            }
+
             ConditionFlag flag = (ConditionFlag)status;
             if (flag != ConditionFlag.None) {
                 return pi.ClientState.Condition[flag];

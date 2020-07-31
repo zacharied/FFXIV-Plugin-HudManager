@@ -12,13 +12,13 @@ namespace HudSwap {
         private delegate IntPtr GetFilePointerDelegate(byte index);
         private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);
 
-        private GetFilePointerDelegate _getFilePointer;
-        private SetHudLayoutDelegate _setHudLayout;
+        private readonly GetFilePointerDelegate _getFilePointer;
+        private readonly SetHudLayoutDelegate _setHudLayout;
 
         private readonly DalamudPluginInterface pi;
 
         public HUD(DalamudPluginInterface pi) {
-            this.pi = pi;
+            this.pi = pi ?? throw new ArgumentNullException(nameof(pi), "DalamudPluginInterface cannot be null");
             IntPtr getFilePointerPtr = this.pi.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 48 85 C0 74 14 83 7B 44 00");
             IntPtr setHudLayoutPtr = this.pi.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 33 C0 EB 15");
             if (getFilePointerPtr != IntPtr.Zero) {
@@ -80,6 +80,9 @@ namespace HudSwap {
         }
 
         public void WriteLayout(HudSlot slot, byte[] layout) {
+            if (layout == null) {
+                throw new ArgumentNullException(nameof(layout), "layout cannot be null");
+            }
             if (layout.Length != LAYOUT_SIZE) {
                 throw new ArgumentException($"layout must be {LAYOUT_SIZE} bytes", nameof(layout));
             }
@@ -102,6 +105,7 @@ namespace HudSwap {
         [NonSerialized]
         private byte[] uncompressed = null;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "nah")]
         public byte[] Layout() {
             if (this.uncompressed != null) {
                 return this.uncompressed;

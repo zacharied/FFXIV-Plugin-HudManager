@@ -55,7 +55,7 @@ namespace HudSwap {
 
             if (ImGui.Begin("HudSwap", ref this._settingsVisible, ImGuiWindowFlags.AlwaysAutoResize)) {
                 if (ImGui.BeginTabBar("##hudswap-tabs")) {
-                    if (!this.plugin.config.UnderstandsRisks) {
+                    if (!this.plugin.Config.UnderstandsRisks) {
                         if (ImGui.BeginTabItem("About")) {
                             ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), "Read this first");
                             ImGui.Separator();
@@ -72,10 +72,10 @@ namespace HudSwap {
                             ImGui.Separator();
                             ImGui.Text("If you have read all of the above and are okay with continuing, check the box below to enable HudSwap. You only need to do this once.");
                             ImGui.PopTextWrapPos();
-                            bool understandsRisks = this.plugin.config.UnderstandsRisks;
+                            bool understandsRisks = this.plugin.Config.UnderstandsRisks;
                             if (ImGui.Checkbox("I understand", ref understandsRisks)) {
-                                this.plugin.config.UnderstandsRisks = understandsRisks;
-                                this.plugin.config.Save();
+                                this.plugin.Config.UnderstandsRisks = understandsRisks;
+                                this.plugin.Config.Save();
                             }
 
                             ImGui.EndTabItem();
@@ -88,11 +88,11 @@ namespace HudSwap {
 
                     if (ImGui.BeginTabItem("Layouts")) {
                         ImGui.Text("Saved layouts");
-                        if (this.plugin.config.Layouts.Keys.Count == 0) {
+                        if (this.plugin.Config.Layouts.Keys.Count == 0) {
                             ImGui.Text("None saved!");
                         } else {
                             if (ImGui.ListBoxHeader("##saved-layouts")) {
-                                foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.config.Layouts) {
+                                foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.Config.Layouts) {
                                     if (ImGui.Selectable(entry.Value.Item1, this.selectedLayout == entry.Key)) {
                                         this.selectedLayout = entry.Key;
                                         this.renameName = entry.Value.Item1;
@@ -105,22 +105,22 @@ namespace HudSwap {
                             foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                                 string buttonName = $"{(int)slot + 1}##copy";
                                 if (ImGui.Button(buttonName) && this.selectedLayout != null) {
-                                    byte[] layout = this.plugin.config.Layouts[this.selectedLayout].Item2;
-                                    this.plugin.hud.WriteLayout(slot, layout);
+                                    byte[] layout = this.plugin.Config.Layouts[this.selectedLayout].Item2;
+                                    this.plugin.Hud.WriteLayout(slot, layout);
                                 }
                                 ImGui.SameLine();
                             }
 
                             if (ImGui.Button("Delete") && this.selectedLayout != null) {
-                                this.plugin.config.Layouts.Remove(this.selectedLayout);
+                                this.plugin.Config.Layouts.Remove(this.selectedLayout);
                                 this.selectedLayout = Guid.Empty;
                                 this.renameName = "";
-                                this.plugin.config.Save();
+                                this.plugin.Config.Save();
                             }
                             ImGui.SameLine();
 
                             if (ImGui.Button("Copy to clipboard") && this.selectedLayout != null) {
-                                if (this.plugin.config.Layouts.TryGetValue(this.selectedLayout, out Tuple<string, byte[]> layout)) {
+                                if (this.plugin.Config.Layouts.TryGetValue(this.selectedLayout, out Tuple<string, byte[]> layout)) {
                                     SharedLayout shared = new SharedLayout(layout.Item2);
                                     string json = JsonConvert.SerializeObject(shared);
                                     ImGui.SetClipboardText(json);
@@ -129,10 +129,10 @@ namespace HudSwap {
 
                             ImGui.InputText("##rename-input", ref this.renameName, 100);
                             ImGui.SameLine();
-                            if (ImGui.Button("Rename") && this.renameName != "" && this.selectedLayout != null) {
-                                Tuple<string, byte[]> entry = this.plugin.config.Layouts[this.selectedLayout]; ;
-                                this.plugin.config.Layouts[this.selectedLayout] = new Tuple<string, byte[]>(this.renameName, entry.Item2);
-                                this.plugin.config.Save();
+                            if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayout != null) {
+                                Tuple<string, byte[]> entry = this.plugin.Config.Layouts[this.selectedLayout]; ;
+                                this.plugin.Config.Layouts[this.selectedLayout] = new Tuple<string, byte[]>(this.renameName, entry.Item2);
+                                this.plugin.Config.Save();
                             }
                         }
 
@@ -144,18 +144,20 @@ namespace HudSwap {
 
                         foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                             string buttonName = $"{(int)slot + 1}##import";
-                            if (ImGui.Button(buttonName) && this.importName != "") {
+                            if (ImGui.Button(buttonName) && this.importName.Length != 0) {
                                 this.ImportSlot(slot, this.importName);
                                 this.importName = "";
                             }
                             ImGui.SameLine();
                         }
 
-                        if (ImGui.Button("Clipboard") && this.importName != "") {
+                        if (ImGui.Button("Clipboard") && this.importName.Length != 0) {
                             SharedLayout shared = null;
                             try {
                                 shared = (SharedLayout)JsonConvert.DeserializeObject(ImGui.GetClipboardText(), typeof(SharedLayout));
+#pragma warning disable CA1031 // Do not catch general exception types
                             } catch (Exception) {
+#pragma warning restore CA1031 // Do not catch general exception types
                             }
                             if (shared != null) {
                                 byte[] layout = shared.Layout();
@@ -170,20 +172,20 @@ namespace HudSwap {
                     }
 
                     if (ImGui.BeginTabItem("Swaps")) {
-                        bool enabled = this.plugin.config.SwapsEnabled;
+                        bool enabled = this.plugin.Config.SwapsEnabled;
                         if (ImGui.Checkbox("Enable swaps", ref enabled)) {
-                            this.plugin.config.SwapsEnabled = enabled;
-                            this.plugin.config.Save();
+                            this.plugin.Config.SwapsEnabled = enabled;
+                            this.plugin.Config.Save();
                         }
                         ImGui.Text("Note: Disable swaps when editing your HUD.");
 
                         ImGui.Spacing();
-                        string staging = ((int)this.plugin.config.StagingSlot + 1).ToString();
+                        string staging = ((int)this.plugin.Config.StagingSlot + 1).ToString();
                         if (ImGui.BeginCombo("Staging slot", staging)) {
                             foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                                 if (ImGui.Selectable(((int)slot + 1).ToString())) {
-                                    this.plugin.config.StagingSlot = slot;
-                                    this.plugin.config.Save();
+                                    this.plugin.Config.StagingSlot = slot;
+                                    this.plugin.Config.Save();
                                 }
                             }
                             ImGui.EndCombo();
@@ -195,11 +197,11 @@ namespace HudSwap {
 
                         ImGui.Text("This is the default layout. If none of the below conditions are\nsatisfied, this layout will be enabled.");
 
-                        if (ImGui.BeginCombo("##default-layout", this.LayoutNameOrDefault(this.plugin.config.defaultLayout))) {
-                            foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.config.Layouts) {
+                        if (ImGui.BeginCombo("##default-layout", this.LayoutNameOrDefault(this.plugin.Config.DefaultLayout))) {
+                            foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.Config.Layouts) {
                                 if (ImGui.Selectable(entry.Value.Item1)) {
-                                    this.plugin.config.defaultLayout = entry.Key;
-                                    this.plugin.config.Save();
+                                    this.plugin.Config.DefaultLayout = entry.Key;
+                                    this.plugin.Config.Save();
                                 }
                             }
                             ImGui.EndCombo();
@@ -218,12 +220,12 @@ namespace HudSwap {
                                 foreach (Status status in Statuses.ORDER.Reverse()) {
                                     maxSize = Math.Max(maxSize, ImGui.CalcTextSize(status.Name()).X);
 
-                                    this.plugin.config.StatusLayouts.TryGetValue(status, out Guid layout);
+                                    this.plugin.Config.StatusLayouts.TryGetValue(status, out Guid layout);
 
                                     if (this.LayoutBox(status.Name(), layout, out Guid newLayout)) {
-                                        this.plugin.config.StatusLayouts[status] = newLayout;
-                                        this.plugin.config.Save();
-                                        if (this.plugin.config.SwapsEnabled) {
+                                        this.plugin.Config.StatusLayouts[status] = newLayout;
+                                        this.plugin.Config.Save();
+                                        if (this.plugin.Config.SwapsEnabled) {
                                             this.statuses.SetHudLayout(player, true);
                                         }
                                     }
@@ -253,12 +255,12 @@ namespace HudSwap {
                                 foreach (ClassJob job in acceptableJobs) {
                                     maxSize = Math.Max(maxSize, ImGui.CalcTextSize(job.NameEnglish).X);
 
-                                    this.plugin.config.JobLayouts.TryGetValue(job.Abbreviation, out Guid layout);
+                                    this.plugin.Config.JobLayouts.TryGetValue(job.Abbreviation, out Guid layout);
 
                                     if (this.LayoutBox(job.NameEnglish, layout, out Guid newLayout)) {
-                                        this.plugin.config.JobLayouts[job.Abbreviation] = newLayout;
-                                        this.plugin.config.Save();
-                                        if (this.plugin.config.SwapsEnabled) {
+                                        this.plugin.Config.JobLayouts[job.Abbreviation] = newLayout;
+                                        this.plugin.Config.Save();
+                                        if (this.plugin.Config.SwapsEnabled) {
                                             this.statuses.SetHudLayout(player, true);
                                         }
                                     }
@@ -270,27 +272,27 @@ namespace HudSwap {
                                 ImGui.EndChild();
                             }
 
-                            bool combatOnlyJobs = this.plugin.config.JobsCombatOnly;
+                            bool combatOnlyJobs = this.plugin.Config.JobsCombatOnly;
                             if (ImGui.Checkbox("Jobs only in combat/weapon drawn", ref combatOnlyJobs)) {
-                                this.plugin.config.JobsCombatOnly = combatOnlyJobs;
-                                this.plugin.config.Save();
-                                if (this.plugin.config.SwapsEnabled) {
+                                this.plugin.Config.JobsCombatOnly = combatOnlyJobs;
+                                this.plugin.Config.Save();
+                                if (this.plugin.Config.SwapsEnabled) {
                                     this.statuses.SetHudLayout(player, true);
                                 }
                             }
                             ImGui.SameLine();
-                            this.HelpMarker("Selecting this will make the HUD layout change for a job only when in combat or when your weapon is drawn.");
+                            HelpMarker("Selecting this will make the HUD layout change for a job only when in combat or when your weapon is drawn.");
 
-                            bool highPriorityJobs = this.plugin.config.HighPriorityJobs;
+                            bool highPriorityJobs = this.plugin.Config.HighPriorityJobs;
                             if (ImGui.Checkbox("Jobs take priority over status", ref highPriorityJobs)) {
-                                this.plugin.config.HighPriorityJobs = highPriorityJobs;
-                                this.plugin.config.Save();
-                                if (this.plugin.config.SwapsEnabled) {
+                                this.plugin.Config.HighPriorityJobs = highPriorityJobs;
+                                this.plugin.Config.Save();
+                                if (this.plugin.Config.SwapsEnabled) {
                                     this.statuses.SetHudLayout(player, true);
                                 }
                             }
                             ImGui.SameLine();
-                            this.HelpMarker("Selecting this will make job layouts always apply when on that job. If this is unselected, job layouts will only apply if the default layout was going to be used (or only in combat if the above checkbox is selected).");
+                            HelpMarker("Selecting this will make job layouts always apply when on that job. If this is unselected, job layouts will only apply if the default layout was going to be used (or only in combat if the above checkbox is selected).");
                         }
 
                         ImGui.EndTabItem();
@@ -303,7 +305,7 @@ namespace HudSwap {
             }
         }
 
-        private void HelpMarker(string text) {
+        private static void HelpMarker(string text) {
             ImGui.TextDisabled("(?)");
             if (ImGui.IsItemHovered()) {
                 ImGui.BeginTooltip();
@@ -315,7 +317,7 @@ namespace HudSwap {
         }
 
         private string LayoutNameOrDefault(Guid key) {
-            if (this.plugin.config.Layouts.TryGetValue(key, out Tuple<string, byte[]> tuple)) {
+            if (this.plugin.Config.Layouts.TryGetValue(key, out Tuple<string, byte[]> tuple)) {
                 return tuple.Item1;
             } else {
                 return "";
@@ -325,7 +327,7 @@ namespace HudSwap {
         public void Draw() {
             this.DrawSettings();
 
-            if (!(this.plugin.config.SwapsEnabled && this.plugin.config.UnderstandsRisks)) {
+            if (!(this.plugin.Config.SwapsEnabled && this.plugin.Config.UnderstandsRisks)) {
                 return;
             }
 
@@ -349,7 +351,7 @@ namespace HudSwap {
                     updated = true;
                 }
                 ImGui.Separator();
-                foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.config.Layouts) {
+                foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.Config.Layouts) {
                     if (ImGui.Selectable(entry.Value.Item1)) {
                         updated = true;
                         newLayout = entry.Key;
@@ -363,13 +365,13 @@ namespace HudSwap {
         }
 
         public void ImportSlot(HudSlot slot, string name, bool save = true) {
-            this.Import(this.plugin.hud.ReadLayout(slot), name, save);
+            this.Import(this.plugin.Hud.ReadLayout(slot), name, save);
         }
 
         public void Import(byte[] layout, string name, bool save = true) {
-            this.plugin.config.Layouts[Guid.NewGuid()] = new Tuple<string, byte[]>(name, layout);
+            this.plugin.Config.Layouts[Guid.NewGuid()] = new Tuple<string, byte[]>(name, layout);
             if (save) {
-                this.plugin.config.Save();
+                this.plugin.Config.Save();
             }
         }
     }

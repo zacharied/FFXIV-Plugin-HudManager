@@ -7,30 +7,31 @@ namespace HudSwap {
 
         private DalamudPluginInterface pi;
         private PluginUI ui;
-        public HUD hud;
-        public Configuration config;
+        public HUD Hud { get; private set; }
+        public PluginConfig Config { get; private set; }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "nah")]
         public void Initialize(DalamudPluginInterface pluginInterface) {
-            this.pi = pluginInterface;
+            this.pi = pluginInterface ?? throw new ArgumentNullException(nameof(pluginInterface), "DalamudPluginInterface cannot be null");
             try {
-                this.config = this.pi.GetPluginConfig() as Configuration ?? new Configuration();
+                this.Config = this.pi.GetPluginConfig() as PluginConfig ?? new PluginConfig();
             } catch (Exception) {
                 this.pi.UiBuilder.OnBuildUi += PluginUI.ConfigError;
                 return;
             }
-            this.config.Initialize(this.pi);
+            this.Config.Initialize(this.pi);
 
             this.ui = new PluginUI(this, this.pi);
-            this.hud = new HUD(this.pi);
+            this.Hud = new HUD(this.pi);
 
-            if (this.config.FirstRun) {
-                this.config.FirstRun = false;
-                if (this.config.Layouts.Count == 0) {
+            if (this.Config.FirstRun) {
+                this.Config.FirstRun = false;
+                if (this.Config.Layouts.Count == 0) {
                     foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                         this.ui.ImportSlot(slot, $"Auto-import {(int)slot + 1}", false);
                     }
                 }
-                this.config.Save();
+                this.Config.Save();
             }
 
             this.pi.UiBuilder.OnBuildUi += this.ui.Draw;
@@ -41,10 +42,15 @@ namespace HudSwap {
             });
         }
 
-        public void Dispose() {
+        protected virtual void Dispose(bool all) {
             this.pi.UiBuilder.OnBuildUi -= this.ui.Draw;
             this.pi.UiBuilder.OnOpenConfigUi -= this.ui.ConfigUI;
             this.pi.CommandManager.RemoveHandler("/phudswap");
+        }
+
+        public void Dispose() {
+            this.Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         private void OnCommand(string command, string args) {

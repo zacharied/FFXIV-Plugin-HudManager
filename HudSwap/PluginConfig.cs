@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace HudSwap {
     [Serializable]
-    public class Configuration : IPluginConfiguration {
+    public class PluginConfig : IPluginConfiguration {
         public int Version { get; set; } = 1;
 
         [NonSerialized]
@@ -18,8 +18,9 @@ namespace HudSwap {
 
         public HudSlot StagingSlot { get; set; } = HudSlot.Four;
 
-        public Guid defaultLayout = Guid.Empty;
+        public Guid DefaultLayout { get; set; } = Guid.Empty;
 
+#pragma warning disable CA1051 // Do not declare visible instance fields
         [Obsolete("Individual layout fields are deprecated; use StatusLayouts instead")]
         public Guid combatLayout = Guid.Empty;
         [Obsolete("Individual layout fields are deprecated; use StatusLayouts instead")]
@@ -34,10 +35,11 @@ namespace HudSwap {
         public Guid fishingLayout = Guid.Empty;
         [Obsolete("Individual layout fields are deprecated; use StatusLayouts instead")]
         public Guid roleplayingLayout = Guid.Empty;
+#pragma warning restore CA1051 // Do not declare visible instance fields
 
-        public Dictionary<Status, Guid> StatusLayouts { get; set; } = new Dictionary<Status, Guid>();
+        public Dictionary<Status, Guid> StatusLayouts { get; } = new Dictionary<Status, Guid>();
 
-        public Dictionary<string, Guid> JobLayouts { get; set; } = new Dictionary<string, Guid>();
+        public Dictionary<string, Guid> JobLayouts { get; } = new Dictionary<string, Guid>();
         public bool HighPriorityJobs { get; set; } = false;
         public bool JobsCombatOnly { get; set; } = false;
 
