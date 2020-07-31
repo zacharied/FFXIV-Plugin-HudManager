@@ -1,5 +1,4 @@
-﻿using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Actors.Types;
+﻿using Dalamud.Game.ClientState.Actors.Types;
 using Dalamud.Plugin;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -7,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 // TODO: Zone swaps?
 
@@ -192,17 +190,23 @@ namespace HudSwap {
                             if (ImGui.BeginChild("##layout-selections", new Vector2(0, 125))) {
                                 ImGui.Columns(2);
 
-                                List<float> textSizes = new List<float>();
+                                float maxSize = 0f;
 
-                                this.LayoutBox("In combat", ref this.plugin.config.combatLayout, player, textSizes);
-                                this.LayoutBox("Weapon drawn", ref this.plugin.config.weaponDrawnLayout, player, textSizes);
-                                this.LayoutBox("In instance", ref this.plugin.config.instanceLayout, player, textSizes);
-                                this.LayoutBox("Crafting", ref this.plugin.config.craftingLayout, player, textSizes);
-                                this.LayoutBox("Gathering", ref this.plugin.config.gatheringLayout, player, textSizes);
-                                this.LayoutBox("Fishing", ref this.plugin.config.fishingLayout, player, textSizes);
-                                this.LayoutBox("Roleplaying", ref this.plugin.config.roleplayingLayout, player, textSizes);
+                                foreach (Status status in Statuses.ORDER.Reverse()) {
+                                    maxSize = Math.Max(maxSize, ImGui.CalcTextSize(status.Name()).X);
 
-                                ImGui.SetColumnWidth(0, textSizes.Max() + ImGui.GetStyle().ItemSpacing.X * 2);
+                                    this.plugin.config.StatusLayouts.TryGetValue(status, out Guid layout);
+
+                                    if (this.LayoutBox(status.Name(), layout, out Guid newLayout)) {
+                                        this.plugin.config.StatusLayouts[status] = newLayout;
+                                        this.plugin.config.Save();
+                                        if (this.plugin.config.SwapsEnabled) {
+                                            this.statuses.SetHudLayout(player, true);
+                                        }
+                                    }
+                                }
+
+                                ImGui.SetColumnWidth(0, maxSize + ImGui.GetStyle().ItemSpacing.X * 2);
 
                                 ImGui.Columns(1);
                                 ImGui.EndChild();
@@ -217,21 +221,19 @@ namespace HudSwap {
                             if (ImGui.BeginChild("##job-layout-selections", new Vector2(0, 125))) {
                                 ImGui.Columns(2);
 
-                                List<float> textSizes = new List<float>();
+                                float maxSize = 0f;
 
                                 var acceptableJobs = this.pi.Data.GetExcelSheet<ClassJob>()
                                     .Where(job => job.NameEnglish != "Adventurer")
                                     .Where(job => this.jobFilter.Length == 0 || (job.NameEnglish.ToLower().Contains(this.jobFilter) || job.Abbreviation.ToLower().Contains(this.jobFilter)));
 
                                 foreach (ClassJob job in acceptableJobs) {
+                                    maxSize = Math.Max(maxSize, ImGui.CalcTextSize(job.NameEnglish).X);
+
                                     this.plugin.config.JobLayouts.TryGetValue(job.Abbreviation, out Guid layout);
 
-                                    Guid oldLayout = layout;
-
-                                    this.LayoutBox(job.NameEnglish, ref layout, player, textSizes);
-
-                                    if (oldLayout != layout) {
-                                        this.plugin.config.JobLayouts[job.Abbreviation] = layout;
+                                    if (this.LayoutBox(job.NameEnglish, layout, out Guid newLayout)) {
+                                        this.plugin.config.JobLayouts[job.Abbreviation] = newLayout;
                                         this.plugin.config.Save();
                                         if (this.plugin.config.SwapsEnabled) {
                                             this.statuses.SetHudLayout(player, true);
@@ -239,7 +241,7 @@ namespace HudSwap {
                                     }
                                 }
 
-                                ImGui.SetColumnWidth(0, textSizes.DefaultIfEmpty(0).Max() + ImGui.GetStyle().ItemSpacing.X * 2);
+                                ImGui.SetColumnWidth(0, maxSize + ImGui.GetStyle().ItemSpacing.X * 2);
 
                                 ImGui.Columns(1);
                                 ImGui.EndChild();
@@ -314,31 +316,27 @@ namespace HudSwap {
             }
         }
 
-        private void LayoutBox(string name, ref Guid layout, PlayerCharacter player, List<float> textSizes) {
-            textSizes.Add(ImGui.CalcTextSize(name).X);
+        private bool LayoutBox(string name, Guid currentLayout, out Guid newLayout) {
+            newLayout = Guid.Empty;
+            bool updated = false;
             ImGui.Text(name);
             ImGui.NextColumn();
-            if (ImGui.BeginCombo($"##{name}-layout", this.LayoutNameOrDefault(layout))) {
+            if (ImGui.BeginCombo($"##{name}-layout", this.LayoutNameOrDefault(currentLayout))) {
                 if (ImGui.Selectable("Not set")) {
-                    layout = Guid.Empty;
-                    this.plugin.config.Save();
-                    if (this.plugin.config.SwapsEnabled) {
-                        this.statuses.SetHudLayout(player, true);
-                    }
+                    updated = true;
                 }
                 ImGui.Separator();
                 foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.config.Layouts) {
                     if (ImGui.Selectable(entry.Value.Item1)) {
-                        layout = entry.Key;
-                        this.plugin.config.Save();
-                        if (this.plugin.config.SwapsEnabled) {
-                            this.statuses.SetHudLayout(player, true);
-                        }
+                        updated = true;
+                        newLayout = entry.Key;
                     }
                 }
                 ImGui.EndCombo();
             }
             ImGui.NextColumn();
+
+            return updated;
         }
 
         public void ImportSlot(HudSlot slot, string name, bool save = true) {
@@ -346,150 +344,6 @@ namespace HudSwap {
             if (save) {
                 this.plugin.config.Save();
             }
-        }
-    }
-
-    public class Statuses {
-        private readonly HudSwapPlugin plugin;
-        private readonly DalamudPluginInterface pi;
-
-        private readonly bool[] condition = new bool[ORDER.Length];
-        private ClassJob job;
-
-        // Order: lowest to highest priority
-        // For conditions that require custom logic, use ConditionFlag.None
-        private static readonly ConditionFlag[] ORDER = {
-            ConditionFlag.RolePlaying,
-            ConditionFlag.Fishing,
-            ConditionFlag.Gathering,
-            ConditionFlag.Crafting,
-            ConditionFlag.BoundByDuty,
-            ConditionFlag.None, // weapon drawn
-            ConditionFlag.InCombat,
-        };
-
-        private delegate bool CustomCondition(HudSwapPlugin plugin, DalamudPluginInterface pi, PlayerCharacter player);
-
-        // Add handlers in the order that ConditionFlag.None flags appear in ORDER.
-        private static readonly CustomCondition[] CUSTOM = {
-            // weapon drawn
-            (plugin, pi, player) => (GetStatus(pi, player) & 4) > 0,
-        };
-
-        protected static byte GetStatus(DalamudPluginInterface pi, Actor actor) {
-            IntPtr statusPtr = pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1901);
-            return Marshal.ReadByte(statusPtr);
-        }
-
-        public Statuses(HudSwapPlugin plugin, DalamudPluginInterface pi) {
-            this.plugin = plugin;
-            this.pi = pi;
-            if (ORDER.Length != this.GetLayouts().Length) {
-                throw new ApplicationException("Statuses.ORDER is not the same length as the array returned by Statuses.GetLayouts()");
-            }
-            if (ORDER.Where(flag => flag == ConditionFlag.None).Count() != CUSTOM.Length) {
-                throw new ApplicationException("Statuses.CUSTOM does not have an amount of handlers equalling the amount of ConditionFlag.None in Statuses.ORDER");
-            }
-        }
-
-        private Guid[] GetLayouts() {
-            // These layouts must be in the same order as the flags in ORDER are defined
-            Guid[] layouts = {
-                this.plugin.config.roleplayingLayout,
-                this.plugin.config.fishingLayout,
-                this.plugin.config.gatheringLayout,
-                this.plugin.config.craftingLayout,
-                this.plugin.config.instanceLayout,
-                this.plugin.config.weaponDrawnLayout,
-                this.plugin.config.combatLayout,
-            };
-            return layouts;
-        }
-
-        public bool Update(PlayerCharacter player) {
-            if (player == null) {
-                return false;
-            }
-
-            int customs = 0;
-            bool[] old = (bool[])this.condition.Clone();
-            Condition condition = this.pi.ClientState.Condition;
-
-            bool anyChanged = false;
-
-            ClassJob currentJob = this.pi.Data.GetExcelSheet<ClassJob>().GetRow(player.ClassJob.Id);
-            if (this.job != null && this.job != currentJob) {
-                anyChanged = true;
-            }
-            this.job = currentJob;
-
-            for (int i = 0; i < ORDER.Length; i++) {
-                ConditionFlag flag = ORDER[i];
-                if (flag == ConditionFlag.None) {
-                    this.condition[i] = CUSTOM[customs].Invoke(this.plugin, this.pi, player);
-                    customs += 1;
-                } else {
-                    this.condition[i] = condition[flag];
-                }
-                anyChanged |= old[i] != this.condition[i];
-            }
-
-            return anyChanged;
-        }
-
-        public Guid CalculateCurrentHud() {
-            PlayerCharacter player = this.pi.ClientState.LocalPlayer;
-            if (player == null) {
-                return Guid.Empty;
-            }
-
-            // get the job layout if there is one and check if jobs are high priority
-            if (this.plugin.config.JobLayouts.TryGetValue(this.job.Abbreviation, out Guid jobLayout) && this.plugin.config.HighPriorityJobs) {
-                return jobLayout;
-            }
-
-            Guid layout = Guid.Empty;
-            Guid[] layouts = this.GetLayouts();
-
-            // check all status conditions and set layout as appropriate
-            for (int i = 0; i < ORDER.Length; i++) {
-                Guid flagLayout = layouts[i];
-
-                if (this.condition[i] && flagLayout != Guid.Empty) {
-                    layout = flagLayout;
-                }
-            }
-
-            // if a job layout is set for the current job
-            if (jobLayout != Guid.Empty) {
-                // if jobs are combat only and the player is either in combat or has their weapon drawn, use the job layout
-                if (this.plugin.config.JobsCombatOnly && (this.condition[5] || this.condition[6])) {
-                    layout = jobLayout;
-                }
-
-                // if the layout was going to be default, use job layout unless jobs are not combat only
-                if (!this.plugin.config.JobsCombatOnly && layout == Guid.Empty) {
-                    layout = jobLayout;
-                }
-            }
-
-            return layout == Guid.Empty ? this.plugin.config.defaultLayout : layout;
-        }
-
-        public void SetHudLayout(PlayerCharacter player, bool update = false) {
-            if (update && player != null) {
-                this.Update(player);
-            }
-
-            Guid layout = this.CalculateCurrentHud();
-            if (layout == Guid.Empty) {
-                return; // FIXME: do something better
-            }
-            if (!this.plugin.config.Layouts.TryGetValue(layout, out Tuple<string, byte[]> entry)) {
-                return; // FIXME: do something better
-            }
-            this.plugin.hud.WriteLayout(this.plugin.config.StagingSlot, entry.Item2);
-            this.plugin.hud.SelectSlot(this.plugin.config.StagingSlot, true);
         }
     }
 }
