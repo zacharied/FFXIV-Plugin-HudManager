@@ -1,5 +1,8 @@
 ﻿using Dalamud.Plugin;
+using Newtonsoft.Json;
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Runtime.InteropServices;
 
 namespace HudSwap {
@@ -90,5 +93,50 @@ namespace HudSwap {
         Two = 1,
         Three = 2,
         Four = 3,
+    }
+
+    [Serializable]
+    public class SharedLayout {
+        [JsonProperty]
+        private readonly byte[] compressed;
+        [NonSerialized]
+        private byte[] uncompressed = null;
+
+        public byte[] Layout() {
+            if (this.uncompressed != null) {
+                return this.uncompressed;
+            }
+
+            try {
+                using (MemoryStream compressed = new MemoryStream(this.compressed)) {
+                    using (GZipStream gzip = new GZipStream(compressed, CompressionMode.Decompress)) {
+                        using (MemoryStream uncompressed = new MemoryStream()) {
+                            gzip.CopyTo(uncompressed);
+                            this.uncompressed = uncompressed.ToArray();
+                        }
+                    }
+                }
+            } catch (Exception) {
+                return null;
+            }
+
+            return this.uncompressed;
+        }
+
+        [JsonConstructor]
+        private SharedLayout() {
+            // For JSON
+        }
+
+        public SharedLayout(byte[] layout) {
+            using (MemoryStream compressed = new MemoryStream()) {
+                using (GZipStream gzip = new GZipStream(compressed, CompressionLevel.Optimal)) {
+                    using (MemoryStream uncompressed = new MemoryStream(layout)) {
+                        uncompressed.CopyTo(gzip);
+                    }
+                }
+                this.compressed = compressed.ToArray();
+            }
+        }
     }
 }

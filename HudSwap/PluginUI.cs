@@ -2,6 +2,7 @@
 using Dalamud.Plugin;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -116,6 +117,15 @@ namespace HudSwap {
                                 this.renameName = "";
                                 this.plugin.config.Save();
                             }
+                            ImGui.SameLine();
+
+                            if (ImGui.Button("Copy to clipboard") && this.selectedLayout != null) {
+                                if (this.plugin.config.Layouts.TryGetValue(this.selectedLayout, out Tuple<string, byte[]> layout)) {
+                                    SharedLayout shared = new SharedLayout(layout.Item2);
+                                    string json = JsonConvert.SerializeObject(shared);
+                                    ImGui.SetClipboardText(json);
+                                }
+                            }
 
                             ImGui.InputText("##rename-input", ref this.renameName, 100);
                             ImGui.SameLine();
@@ -138,8 +148,21 @@ namespace HudSwap {
                                 this.ImportSlot(slot, this.importName);
                                 this.importName = "";
                             }
-                            if (slot != HudSlot.Four) {
-                                ImGui.SameLine();
+                            ImGui.SameLine();
+                        }
+
+                        if (ImGui.Button("Clipboard") && this.importName != "") {
+                            SharedLayout shared = null;
+                            try {
+                                shared = (SharedLayout)JsonConvert.DeserializeObject(ImGui.GetClipboardText(), typeof(SharedLayout));
+                            } catch (Exception) {
+                            }
+                            if (shared != null) {
+                                byte[] layout = shared.Layout();
+                                if (layout != null) {
+                                    this.Import(layout, this.importName);
+                                    this.importName = "";
+                                }
                             }
                         }
 
@@ -340,7 +363,11 @@ namespace HudSwap {
         }
 
         public void ImportSlot(HudSlot slot, string name, bool save = true) {
-            this.plugin.config.Layouts[Guid.NewGuid()] = new Tuple<string, byte[]>(name, this.plugin.hud.ReadLayout(slot));
+            this.Import(this.plugin.hud.ReadLayout(slot), name, save);
+        }
+
+        public void Import(byte[] layout, string name, bool save = true) {
+            this.plugin.config.Layouts[Guid.NewGuid()] = new Tuple<string, byte[]>(name, layout);
             if (save) {
                 this.plugin.config.Save();
             }
