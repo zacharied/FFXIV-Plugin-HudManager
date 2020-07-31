@@ -26,6 +26,11 @@ namespace HudSwap {
         public Guid craftingLayout = Guid.Empty;
         public Guid gatheringLayout = Guid.Empty;
         public Guid fishingLayout = Guid.Empty;
+        public Guid roleplayingLayout = Guid.Empty;
+
+        public Dictionary<string, Guid> JobLayouts { get; set; } = new Dictionary<string, Guid>();
+        public bool HighPriorityJobs { get; set; } = false;
+        public bool JobsCombatOnly { get; set; } = false;
 
         public Dictionary<Guid, Tuple<string, byte[]>> Layouts { get; } = new Dictionary<Guid, Tuple<string, byte[]>>();
 

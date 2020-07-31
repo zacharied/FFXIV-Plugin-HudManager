@@ -40,6 +40,14 @@
     <Reference Include="ImGuiScene">
       <HintPath>$(AppData)\XIVLauncher\addon\Hooks\ImGuiScene.dll</HintPath>
     </Reference>
+    <Reference Include="Lumina, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\Lumina.dll</HintPath>
+    </Reference>
+    <Reference Include="Lumina.Generated, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(AppData)\XIVLauncher\addon\Hooks\Lumina.Generated.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
