@@ -78,7 +78,7 @@ namespace HudSwap {
                     continue;
                 }
                 Status status = ORDER[i];
-                if (this.plugin.Config.StatusLayouts.TryGetValue(status, out Guid statusLayout)) {
+                if (this.plugin.Config.StatusLayouts.TryGetValue(status, out Guid statusLayout) && statusLayout != Guid.Empty) {
                     layout = statusLayout;
                 }
             }
