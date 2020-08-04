@@ -1,5 +1,8 @@
-﻿using Dalamud.Plugin;
+﻿using Dalamud.Game.Command;
+using Dalamud.Plugin;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace HudSwap {
     public class HudSwapPlugin : IDalamudPlugin {
@@ -8,6 +11,7 @@ namespace HudSwap {
         private DalamudPluginInterface pi;
         private PluginUI ui;
         public HUD Hud { get; private set; }
+        public GameFunctions GameFunctions { get; private set; }
         public PluginConfig Config { get; private set; }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "nah")]
@@ -23,12 +27,13 @@ namespace HudSwap {
 
             this.ui = new PluginUI(this, this.pi);
             this.Hud = new HUD(this.pi);
+            this.GameFunctions = new GameFunctions(this.pi);
 
             if (this.Config.FirstRun) {
                 this.Config.FirstRun = false;
-                if (this.Config.Layouts.Count == 0) {
+                if (this.Config.Layouts2.Count == 0) {
                     foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                        this.ui.ImportSlot(slot, $"Auto-import {(int)slot + 1}", false);
+                        this.ui.ImportSlot($"Auto-import {(int)slot + 1}", slot, false);
                     }
                 }
                 this.Config.Save();
@@ -37,8 +42,11 @@ namespace HudSwap {
             this.pi.UiBuilder.OnBuildUi += this.ui.Draw;
             this.pi.UiBuilder.OnOpenConfigUi += this.ui.ConfigUI;
 
-            this.pi.CommandManager.AddHandler("/phudswap", new Dalamud.Game.Command.CommandInfo(OnCommand) {
+            this.pi.CommandManager.AddHandler("/phudswap", new CommandInfo(OnSettingsCommand) {
                 HelpMessage = "Open the HudSwap settings"
+            });
+            this.pi.CommandManager.AddHandler("/phud", new CommandInfo(OnSwapCommand) {
+                HelpMessage = "/phud <name> - Swap to HUD layout called <name>"
             });
         }
 
@@ -46,6 +54,7 @@ namespace HudSwap {
             this.pi.UiBuilder.OnBuildUi -= this.ui.Draw;
             this.pi.UiBuilder.OnOpenConfigUi -= this.ui.ConfigUI;
             this.pi.CommandManager.RemoveHandler("/phudswap");
+            this.pi.CommandManager.RemoveHandler("/phud");
         }
 
         public void Dispose() {
@@ -53,8 +62,20 @@ namespace HudSwap {
             GC.SuppressFinalize(this);
         }
 
-        private void OnCommand(string command, string args) {
+        private void OnSettingsCommand(string command, string args) {
             this.ui.SettingsVisible = true;
+        }
+
+        private void OnSwapCommand(string command, string args) {
+            KeyValuePair<Guid, Layout> entry = this.Config.Layouts2.FirstOrDefault(e => e.Value.Name == args);
+            if (entry.Equals(default(KeyValuePair<Guid, Layout>))) {
+                return;
+            }
+
+            Layout layout = entry.Value;
+
+            this.Hud.WriteLayout(this.Config.StagingSlot, layout.Hud);
+            this.Hud.SelectSlot(this.Config.StagingSlot, true);
         }
     }
 }

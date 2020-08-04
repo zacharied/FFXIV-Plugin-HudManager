@@ -70,6 +70,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GameFunctions.cs" />
+    <Compile Include="Layout.cs" />
     <Compile Include="PluginConfig.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="HUD.cs" />

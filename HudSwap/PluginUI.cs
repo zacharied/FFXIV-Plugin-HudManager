@@ -12,6 +12,15 @@ using System.Numerics;
 
 namespace HudSwap {
     public class PluginUI {
+        private static readonly string[] SAVED_WINDOWS = {
+            "AreaMap",
+            "ChatLog",
+            "ChatLogPanel_0",
+            "ChatLogPanel_1",
+            "ChatLogPanel_2",
+            "ChatLogPanel_3",
+        };
+
         private readonly HudSwapPlugin plugin;
         private readonly DalamudPluginInterface pi;
         private readonly Statuses statuses;
@@ -88,14 +97,14 @@ namespace HudSwap {
 
                     if (ImGui.BeginTabItem("Layouts")) {
                         ImGui.Text("Saved layouts");
-                        if (this.plugin.Config.Layouts.Keys.Count == 0) {
+                        if (this.plugin.Config.Layouts2.Count == 0) {
                             ImGui.Text("None saved!");
                         } else {
                             if (ImGui.ListBoxHeader("##saved-layouts")) {
-                                foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.Config.Layouts) {
-                                    if (ImGui.Selectable(entry.Value.Item1, this.selectedLayout == entry.Key)) {
+                                foreach (KeyValuePair<Guid, Layout> entry in this.plugin.Config.Layouts2) {
+                                    if (ImGui.Selectable(entry.Value.Name, this.selectedLayout == entry.Key)) {
                                         this.selectedLayout = entry.Key;
-                                        this.renameName = entry.Value.Item1;
+                                        this.renameName = entry.Value.Name;
                                     }
                                 }
                                 ImGui.ListBoxFooter();
@@ -105,14 +114,14 @@ namespace HudSwap {
                             foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                                 string buttonName = $"{(int)slot + 1}##copy";
                                 if (ImGui.Button(buttonName) && this.selectedLayout != null) {
-                                    byte[] layout = this.plugin.Config.Layouts[this.selectedLayout].Item2;
-                                    this.plugin.Hud.WriteLayout(slot, layout);
+                                    Layout layout = this.plugin.Config.Layouts2[this.selectedLayout];
+                                    this.plugin.Hud.WriteLayout(slot, layout.Hud.ToArray());
                                 }
                                 ImGui.SameLine();
                             }
 
                             if (ImGui.Button("Delete") && this.selectedLayout != null) {
-                                this.plugin.Config.Layouts.Remove(this.selectedLayout);
+                                this.plugin.Config.Layouts2.Remove(this.selectedLayout);
                                 this.selectedLayout = Guid.Empty;
                                 this.renameName = "";
                                 this.plugin.Config.Save();
@@ -120,8 +129,8 @@ namespace HudSwap {
                             ImGui.SameLine();
 
                             if (ImGui.Button("Copy to clipboard") && this.selectedLayout != null) {
-                                if (this.plugin.Config.Layouts.TryGetValue(this.selectedLayout, out Tuple<string, byte[]> layout)) {
-                                    SharedLayout shared = new SharedLayout(layout.Item2);
+                                if (this.plugin.Config.Layouts2.TryGetValue(this.selectedLayout, out Layout layout)) {
+                                    SharedLayout shared = new SharedLayout(layout);
                                     string json = JsonConvert.SerializeObject(shared);
                                     ImGui.SetClipboardText(json);
                                 }
@@ -130,8 +139,9 @@ namespace HudSwap {
                             ImGui.InputText("##rename-input", ref this.renameName, 100);
                             ImGui.SameLine();
                             if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayout != null) {
-                                Tuple<string, byte[]> entry = this.plugin.Config.Layouts[this.selectedLayout]; ;
-                                this.plugin.Config.Layouts[this.selectedLayout] = new Tuple<string, byte[]>(this.renameName, entry.Item2);
+                                Layout layout = this.plugin.Config.Layouts2[this.selectedLayout];
+                                Layout newLayout = new Layout(this.renameName, layout.Hud, layout.Positions);
+                                this.plugin.Config.Layouts2[this.selectedLayout] = newLayout;
                                 this.plugin.Config.Save();
                             }
                         }
@@ -142,10 +152,18 @@ namespace HudSwap {
 
                         ImGui.InputText("Imported layout name", ref this.importName, 100);
 
+                        bool importPositions = this.plugin.Config.ImportPositions;
+                        if (ImGui.Checkbox("Import window positions", ref importPositions)) {
+                            this.plugin.Config.ImportPositions = importPositions;
+                            this.plugin.Config.Save();
+                        }
+                        ImGui.SameLine();
+                        HelpMarker("If this is checked, the position of the chat box and the map will be saved with the imported layout.");
+
                         foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                             string buttonName = $"{(int)slot + 1}##import";
                             if (ImGui.Button(buttonName) && this.importName.Length != 0) {
-                                this.ImportSlot(slot, this.importName);
+                                this.ImportSlot(this.importName, slot);
                                 this.importName = "";
                             }
                             ImGui.SameLine();
@@ -162,7 +180,7 @@ namespace HudSwap {
                             if (shared != null) {
                                 byte[] layout = shared.Layout();
                                 if (layout != null) {
-                                    this.Import(layout, this.importName);
+                                    this.Import(this.importName, layout, shared.Positions);
                                     this.importName = "";
                                 }
                             }
@@ -198,8 +216,8 @@ namespace HudSwap {
                         ImGui.Text("This is the default layout. If none of the below conditions are\nsatisfied, this layout will be enabled.");
 
                         if (ImGui.BeginCombo("##default-layout", this.LayoutNameOrDefault(this.plugin.Config.DefaultLayout))) {
-                            foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.Config.Layouts) {
-                                if (ImGui.Selectable(entry.Value.Item1)) {
+                            foreach (KeyValuePair<Guid, Layout> entry in this.plugin.Config.Layouts2) {
+                                if (ImGui.Selectable(entry.Value.Name)) {
                                     this.plugin.Config.DefaultLayout = entry.Key;
                                     this.plugin.Config.Save();
                                 }
@@ -317,8 +335,8 @@ namespace HudSwap {
         }
 
         private string LayoutNameOrDefault(Guid key) {
-            if (this.plugin.Config.Layouts.TryGetValue(key, out Tuple<string, byte[]> tuple)) {
-                return tuple.Item1;
+            if (this.plugin.Config.Layouts2.TryGetValue(key, out Layout layout)) {
+                return layout.Name;
             } else {
                 return "";
             }
@@ -351,8 +369,8 @@ namespace HudSwap {
                     updated = true;
                 }
                 ImGui.Separator();
-                foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.plugin.Config.Layouts) {
-                    if (ImGui.Selectable(entry.Value.Item1)) {
+                foreach (KeyValuePair<Guid, Layout> entry in this.plugin.Config.Layouts2) {
+                    if (ImGui.Selectable(entry.Value.Name)) {
                         updated = true;
                         newLayout = entry.Key;
                     }
@@ -364,12 +382,31 @@ namespace HudSwap {
             return updated;
         }
 
-        public void ImportSlot(HudSlot slot, string name, bool save = true) {
-            this.Import(this.plugin.Hud.ReadLayout(slot), name, save);
+        private Dictionary<string, Vector2<short>> GetPositions() {
+            Dictionary<string, Vector2<short>> positions = new Dictionary<string, Vector2<short>>();
+
+            foreach (string name in SAVED_WINDOWS) {
+                Vector2<short> pos = this.plugin.GameFunctions.GetWindowPosition(name);
+                if (pos != null) {
+                    positions[name] = pos;
+                }
+            }
+
+            return positions;
         }
 
-        public void Import(byte[] layout, string name, bool save = true) {
-            this.plugin.Config.Layouts[Guid.NewGuid()] = new Tuple<string, byte[]>(name, layout);
+        public void ImportSlot(string name, HudSlot slot, bool save = true) {
+            Dictionary<string, Vector2<short>> positions;
+            if (this.plugin.Config.ImportPositions) {
+                positions = this.GetPositions();
+            } else {
+                positions = new Dictionary<string, Vector2<short>>();
+            }
+            this.Import(name, this.plugin.Hud.ReadLayout(slot), positions, save);
+        }
+
+        public void Import(string name, byte[] layout, Dictionary<string, Vector2<short>> positions, bool save = true) {
+            this.plugin.Config.Layouts2[Guid.NewGuid()] = new Layout(name, layout, positions);
             if (save) {
                 this.plugin.Config.Save();
             }

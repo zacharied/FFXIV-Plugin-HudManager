@@ -1,8 +1,10 @@
 ﻿using Dalamud.Plugin;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace HudSwap {
@@ -98,12 +100,24 @@ namespace HudSwap {
         Four = 3,
     }
 
+    public class Vector2<T> {
+        public T X { get; private set; }
+        public T Y { get; private set; }
+
+        public Vector2(T x, T y) {
+            this.X = x;
+            this.Y = y;
+        }
+    }
+
     [Serializable]
     public class SharedLayout {
         [JsonProperty]
         private readonly byte[] compressed;
         [NonSerialized]
         private byte[] uncompressed = null;
+
+        public Dictionary<string, Vector2<short>> Positions { get; private set; }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "nah")]
         public byte[] Layout() {
@@ -132,15 +146,21 @@ namespace HudSwap {
             // For JSON
         }
 
-        public SharedLayout(byte[] layout) {
+        public SharedLayout(Layout layout) {
+            if (layout == null) {
+                throw new ArgumentNullException(nameof(layout), "Layout cannot be null");
+            }
+
             using (MemoryStream compressed = new MemoryStream()) {
                 using (GZipStream gzip = new GZipStream(compressed, CompressionLevel.Optimal)) {
-                    using (MemoryStream uncompressed = new MemoryStream(layout)) {
+                    using (MemoryStream uncompressed = new MemoryStream(layout.Hud)) {
                         uncompressed.CopyTo(gzip);
                     }
                 }
                 this.compressed = compressed.ToArray();
             }
+
+            this.Positions = layout.Positions;
         }
     }
 }

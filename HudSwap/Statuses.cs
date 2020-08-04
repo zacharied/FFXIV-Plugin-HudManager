@@ -3,6 +3,7 @@ using Dalamud.Game.ClientState.Actors.Types;
 using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 // TODO: Zone swaps?
@@ -104,15 +105,19 @@ namespace HudSwap {
                 this.Update(player);
             }
 
-            Guid layout = this.CalculateCurrentHud();
-            if (layout == Guid.Empty) {
+            Guid layoutId = this.CalculateCurrentHud();
+            if (layoutId == Guid.Empty) {
                 return; // FIXME: do something better
             }
-            if (!this.plugin.Config.Layouts.TryGetValue(layout, out Tuple<string, byte[]> entry)) {
+            if (!this.plugin.Config.Layouts2.TryGetValue(layoutId, out Layout layout)) {
                 return; // FIXME: do something better
             }
-            this.plugin.Hud.WriteLayout(this.plugin.Config.StagingSlot, entry.Item2);
+            this.plugin.Hud.WriteLayout(this.plugin.Config.StagingSlot, layout.Hud);
             this.plugin.Hud.SelectSlot(this.plugin.Config.StagingSlot, true);
+
+            foreach (KeyValuePair<string, Vector2<short>> entry in layout.Positions) {
+                this.plugin.GameFunctions.MoveWindow(entry.Key, entry.Value.X, entry.Value.Y);
+            }
         }
     }
 

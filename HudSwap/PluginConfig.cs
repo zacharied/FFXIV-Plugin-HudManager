@@ -1,7 +1,9 @@
 ﻿using Dalamud.Configuration;
 using Dalamud.Plugin;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace HudSwap {
     [Serializable]
@@ -14,6 +16,7 @@ namespace HudSwap {
         public bool FirstRun { get; set; } = true;
         public bool UnderstandsRisks { get; set; } = false;
 
+        public bool ImportPositions { get; set; } = false;
         public bool SwapsEnabled { get; set; } = false;
 
         public HudSlot StagingSlot { get; set; } = HudSlot.Four;
@@ -43,7 +46,9 @@ namespace HudSwap {
         public bool HighPriorityJobs { get; set; } = false;
         public bool JobsCombatOnly { get; set; } = false;
 
+        [Obsolete("Use Layouts2 instead")]
         public Dictionary<Guid, Tuple<string, byte[]>> Layouts { get; } = new Dictionary<Guid, Tuple<string, byte[]>>();
+        public Dictionary<Guid, Layout> Layouts2 { get; } = new Dictionary<Guid, Layout>();
 
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.pi = pluginInterface;
@@ -90,6 +95,14 @@ namespace HudSwap {
             if (this.roleplayingLayout != Guid.Empty) {
                 this.StatusLayouts[Status.Roleplaying] = this.roleplayingLayout;
                 this.roleplayingLayout = Guid.Empty;
+            }
+
+            if (this.Layouts.Count != 0) {
+                foreach (KeyValuePair<Guid, Tuple<string, byte[]>> entry in this.Layouts) {
+                    Layout layout = new Layout(entry.Value.Item1, entry.Value.Item2, new Dictionary<string, Vector2<short>>());
+                    this.Layouts2.Add(entry.Key, layout);
+                }
+                this.Layouts.Clear();
             }
 #pragma warning restore 618
         }

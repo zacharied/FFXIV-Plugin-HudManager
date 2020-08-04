@@ -8,3 +8,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Will be done eventually", Scope = "module")]
 [assembly: SuppressMessage("Globalization", "CA1305", Scope = "module")]
 [assembly: SuppressMessage("Globalization", "CA1304", Scope = "module")]
+[assembly: SuppressMessage("Globalization", "CA1724", Scope = "module")]
