@@ -100,7 +100,7 @@ namespace HudSwap {
                         } else {
                             if (ImGui.ListBoxHeader("##saved-layouts")) {
                                 foreach (KeyValuePair<Guid, Layout> entry in this.plugin.Config.Layouts2) {
-                                    if (ImGui.Selectable(entry.Value.Name, this.selectedLayout == entry.Key)) {
+                                    if (ImGui.Selectable($"{entry.Value.Name}##{entry.Key}", this.selectedLayout == entry.Key)) {
                                         this.selectedLayout = entry.Key;
                                         this.renameName = entry.Value.Name;
                                     }
