@@ -79,6 +79,7 @@
     <Compile Include="PluginUI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Statuses.cs" />
+    <Compile Include="Swapper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="HudSwap.json" />

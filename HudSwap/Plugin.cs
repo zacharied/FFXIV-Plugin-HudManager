@@ -10,7 +10,10 @@ namespace HudSwap {
 
         private DalamudPluginInterface pi;
         private PluginUI ui;
+        private Swapper swapper;
+
         public HUD Hud { get; private set; }
+        public Statuses Statuses { get; private set; }
         public GameFunctions GameFunctions { get; private set; }
         public PluginConfig Config { get; private set; }
 
@@ -27,7 +30,10 @@ namespace HudSwap {
 
             this.ui = new PluginUI(this, this.pi);
             this.Hud = new HUD(this.pi);
+            this.Statuses = new Statuses(this, this.pi);
             this.GameFunctions = new GameFunctions(this.pi);
+
+            this.swapper = new Swapper(this, this.pi);
 
             if (this.Config.FirstRun) {
                 this.Config.FirstRun = false;
@@ -41,6 +47,7 @@ namespace HudSwap {
 
             this.pi.UiBuilder.OnBuildUi += this.ui.Draw;
             this.pi.UiBuilder.OnOpenConfigUi += this.ui.ConfigUI;
+            this.pi.Framework.OnUpdateEvent += this.swapper.OnFrameworkUpdate;
 
             this.pi.CommandManager.AddHandler("/phudswap", new CommandInfo(OnSettingsCommand) {
                 HelpMessage = "Open the HudSwap settings"
@@ -53,6 +60,7 @@ namespace HudSwap {
         protected virtual void Dispose(bool all) {
             this.pi.UiBuilder.OnBuildUi -= this.ui.Draw;
             this.pi.UiBuilder.OnOpenConfigUi -= this.ui.ConfigUI;
+            this.pi.Framework.OnUpdateEvent -= this.swapper.OnFrameworkUpdate;
             this.pi.CommandManager.RemoveHandler("/phudswap");
             this.pi.CommandManager.RemoveHandler("/phud");
         }

@@ -23,7 +23,6 @@ namespace HudSwap {
 
         private readonly HudSwapPlugin plugin;
         private readonly DalamudPluginInterface pi;
-        private readonly Statuses statuses;
 
         private bool _settingsVisible = false;
         public bool SettingsVisible { get => this._settingsVisible; set => this._settingsVisible = value; }
@@ -31,7 +30,6 @@ namespace HudSwap {
         public PluginUI(HudSwapPlugin plugin, DalamudPluginInterface pi) {
             this.plugin = plugin;
             this.pi = pi;
-            this.statuses = new Statuses(this.plugin, this.pi);
         }
 
         public void ConfigUI(object sender, EventArgs args) {
@@ -244,7 +242,7 @@ namespace HudSwap {
                                         this.plugin.Config.StatusLayouts[status] = newLayout;
                                         this.plugin.Config.Save();
                                         if (this.plugin.Config.SwapsEnabled) {
-                                            this.statuses.SetHudLayout(player, true);
+                                            this.plugin.Statuses.SetHudLayout(player, true);
                                         }
                                     }
                                 }
@@ -279,7 +277,7 @@ namespace HudSwap {
                                         this.plugin.Config.JobLayouts[job.Abbreviation] = newLayout;
                                         this.plugin.Config.Save();
                                         if (this.plugin.Config.SwapsEnabled) {
-                                            this.statuses.SetHudLayout(player, true);
+                                            this.plugin.Statuses.SetHudLayout(player, true);
                                         }
                                     }
                                 }
@@ -295,7 +293,7 @@ namespace HudSwap {
                                 this.plugin.Config.JobsCombatOnly = combatOnlyJobs;
                                 this.plugin.Config.Save();
                                 if (this.plugin.Config.SwapsEnabled) {
-                                    this.statuses.SetHudLayout(player, true);
+                                    this.plugin.Statuses.SetHudLayout(player, true);
                                 }
                             }
                             ImGui.SameLine();
@@ -306,7 +304,7 @@ namespace HudSwap {
                                 this.plugin.Config.HighPriorityJobs = highPriorityJobs;
                                 this.plugin.Config.Save();
                                 if (this.plugin.Config.SwapsEnabled) {
-                                    this.statuses.SetHudLayout(player, true);
+                                    this.plugin.Statuses.SetHudLayout(player, true);
                                 }
                             }
                             ImGui.SameLine();
@@ -344,19 +342,6 @@ namespace HudSwap {
 
         public void Draw() {
             this.DrawSettings();
-
-            if (!(this.plugin.Config.SwapsEnabled && this.plugin.Config.UnderstandsRisks)) {
-                return;
-            }
-
-            PlayerCharacter player = this.pi.ClientState.LocalPlayer;
-            if (player == null) {
-                return;
-            }
-
-            if (this.statuses.Update(player)) {
-                this.statuses.SetHudLayout(null);
-            }
         }
 
         private bool LayoutBox(string name, Guid currentLayout, out Guid newLayout) {
