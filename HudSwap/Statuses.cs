@@ -27,7 +27,7 @@ namespace HudSwap {
         private ClassJob job;
 
         internal static byte GetStatus(DalamudPluginInterface pi, Actor actor) {
-            IntPtr statusPtr = pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1901);
+            IntPtr statusPtr = pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1906);
             return Marshal.ReadByte(statusPtr);
         }
 
