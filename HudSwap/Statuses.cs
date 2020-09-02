@@ -5,25 +5,16 @@ using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Newtonsoft.Json;
 
 // TODO: Zone swaps?
 
 namespace HudSwap {
     public class Statuses {
-        public static readonly Status[] ORDER = {
-            Status.Roleplaying,
-            Status.Fishing,
-            Status.Gathering,
-            Status.Crafting,
-            Status.InInstance,
-            Status.WeaponDrawn,
-            Status.InCombat,
-        };
-
         private readonly HudSwapPlugin plugin;
         private readonly DalamudPluginInterface pi;
 
-        private readonly bool[] condition = new bool[ORDER.Length];
+        private readonly Dictionary<Status, bool> condition = new Dictionary<Status, bool>();
         private ClassJob job;
 
         internal static byte GetStatus(DalamudPluginInterface pi, Actor actor) {
@@ -41,8 +32,6 @@ namespace HudSwap {
                 return false;
             }
 
-            bool[] old = (bool[])this.condition.Clone();
-
             bool anyChanged = false;
 
             ClassJob currentJob = this.pi.Data.GetExcelSheet<ClassJob>().GetRow(player.ClassJob.Id);
@@ -51,10 +40,10 @@ namespace HudSwap {
             }
             this.job = currentJob;
 
-            for (int i = 0; i < ORDER.Length; i++) {
-                Status status = ORDER[i];
-                this.condition[i] = status.Active(player, this.pi);
-                anyChanged |= old[i] != this.condition[i];
+            foreach (Status status in Enum.GetValues(typeof(Status))) {
+                var old = this.condition.ContainsKey(status) && this.condition[status];
+                this.condition[status] = status.Active(player, this.pi);
+                anyChanged |= old != this.condition[status];
             }
 
             return anyChanged;
@@ -66,38 +55,13 @@ namespace HudSwap {
                 return Guid.Empty;
             }
 
-            // get the job layout if there is one and check if jobs are high priority
-            if (this.plugin.Config.JobLayouts.TryGetValue(this.job.Abbreviation, out Guid jobLayout) && this.plugin.Config.HighPriorityJobs) {
-                return jobLayout;
+            foreach (var match in this.plugin.Config.HudConditionMatches) {
+                if ((!match.Status.HasValue || this.condition[match.Status.Value]) &&
+                    (match.ClassJob == null || this.job.Abbreviation == match.ClassJob))
+                    return match.LayoutId;
             }
 
-            Guid layout = Guid.Empty;
-
-            // check all status conditions and set layout as appropriate
-            for (int i = 0; i < ORDER.Length; i++) {
-                if (!this.condition[i]) {
-                    continue;
-                }
-                Status status = ORDER[i];
-                if (this.plugin.Config.StatusLayouts.TryGetValue(status, out Guid statusLayout) && statusLayout != Guid.Empty) {
-                    layout = statusLayout;
-                }
-            }
-
-            // if a job layout is set for the current job
-            if (jobLayout != Guid.Empty) {
-                // if jobs are combat only and the player is either in combat or has their weapon drawn, use the job layout
-                if (this.plugin.Config.JobsCombatOnly && (this.condition[5] || this.condition[6])) {
-                    layout = jobLayout;
-                }
-
-                // if the layout was going to be default, use job layout unless jobs are not combat only
-                if (!this.plugin.Config.JobsCombatOnly && layout == Guid.Empty) {
-                    layout = jobLayout;
-                }
-            }
-
-            return layout == Guid.Empty ? this.plugin.Config.DefaultLayout : layout;
+            return this.plugin.Config.DefaultLayout;
         }
 
         public void SetHudLayout(PlayerCharacter player, bool update = false) {
@@ -119,6 +83,18 @@ namespace HudSwap {
                 this.plugin.GameFunctions.MoveWindow(entry.Key, entry.Value.X, entry.Value.Y);
             }
         }
+    }
+
+    public struct HudConditionMatch {
+        /// <summary>
+        /// Values stored here should be the abbreviation of the class/job name (all caps).
+        /// We do this because using <see cref="ClassJob"/> results in circular dependency errors when serializing.
+        /// </summary>
+        public string ClassJob { get; set; }
+
+        public Status? Status { get; set; }
+
+        public Guid LayoutId { get; set; }
     }
 
     public enum Status {

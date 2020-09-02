@@ -50,6 +50,8 @@ namespace HudSwap {
         public Dictionary<Guid, Tuple<string, byte[]>> Layouts { get; } = new Dictionary<Guid, Tuple<string, byte[]>>();
         public Dictionary<Guid, Layout> Layouts2 { get; } = new Dictionary<Guid, Layout>();
 
+        public List<HudConditionMatch> HudConditionMatches = new List<HudConditionMatch>();
+
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.pi = pluginInterface;
             this.Migrate();

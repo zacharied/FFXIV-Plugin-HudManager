@@ -42,6 +42,9 @@ namespace HudSwap {
 
         private string jobFilter = "";
 
+        private int editingConditionIndex = -1;
+        private HudConditionMatch editingCondition;
+
         private static bool configErrorOpen = true;
         public static void ConfigError() {
             if (ImGui.Begin("HudSwap error", ref configErrorOpen)) {
@@ -120,6 +123,7 @@ namespace HudSwap {
 
                             if (ImGui.Button("Delete") && this.selectedLayout != null) {
                                 this.plugin.Config.Layouts2.Remove(this.selectedLayout);
+                                this.plugin.Config.HudConditionMatches.RemoveAll(m => m.LayoutId == this.selectedLayout);
                                 this.selectedLayout = Guid.Empty;
                                 this.renameName = "";
                                 this.plugin.Config.Save();
@@ -211,104 +215,129 @@ namespace HudSwap {
 
                         ImGui.Separator();
 
-                        ImGui.Text("This is the default layout. If none of the below conditions are\nsatisfied, this layout will be enabled.");
+                        ImGui.Text("Add conditions below for when to swap.\nThe topmost condition in the list has priority.");
 
-                        if (ImGui.BeginCombo("##default-layout", this.LayoutNameOrDefault(this.plugin.Config.DefaultLayout))) {
-                            foreach (KeyValuePair<Guid, Layout> entry in this.plugin.Config.Layouts2) {
-                                if (ImGui.Selectable(entry.Value.Name)) {
-                                    this.plugin.Config.DefaultLayout = entry.Key;
-                                    this.plugin.Config.Save();
+                        ImGui.Columns(4);
+
+                        var conditions = new List<HudConditionMatch>(plugin.Config.HudConditionMatches);
+                        if (this.editingConditionIndex == conditions.Count)
+                            conditions.Add(new HudConditionMatch());
+
+                        ImGui.Text("Job");
+                        ImGui.NextColumn();
+
+                        ImGui.Text("State");
+                        ImGui.NextColumn();
+
+                        ImGui.Text("Layout");
+                        ImGui.NextColumn();
+
+                        ImGui.Text("Options");
+                        ImGui.NextColumn();
+
+                        ImGui.Separator();
+
+                        bool addCondition = false;
+                        int actionedItemIndex = -1;
+                        int action = 0; // 0 for delete, otherwise move.
+                        foreach (var item in conditions.Select((cond, i) => new { cond, i })) {
+                            if (this.editingConditionIndex == item.i) {
+                                if (ImGui.BeginCombo("##condition-edit-job", this.editingCondition.ClassJob ?? "Any")) {
+                                    if (ImGui.Selectable("Any##condition-edit-job"))
+                                        this.editingCondition.ClassJob = null;
+                                    foreach (ClassJob job in this.pi.Data.GetExcelSheet<ClassJob>().ToList())
+                                        if (ImGui.Selectable($"{job.Abbreviation}##condition-edit-job"))
+                                            this.editingCondition.ClassJob = job.Abbreviation;
+                                    ImGui.EndCombo();
+                                }
+                                ImGui.NextColumn();
+
+                                if (ImGui.BeginCombo("##condition-edit-status", this.editingCondition.Status?.Name() ?? "Any")) {
+                                    if (ImGui.Selectable("Any##condition-edit-status"))
+                                        this.editingCondition.Status = null;
+                                    foreach (Status status in Enum.GetValues(typeof(Status)))
+                                        if (ImGui.Selectable($"{status.Name()}##condition-edit-status"))
+                                            this.editingCondition.Status = status;
+                                    ImGui.EndCombo();
+                                }
+                                ImGui.NextColumn();
+
+                                if (ImGui.BeginCombo("##condition-edit-layout", this.editingCondition.LayoutId == Guid.Empty ? string.Empty : this.plugin.Config.Layouts2[this.editingCondition.LayoutId].Name)) {
+                                    if (ImGui.Selectable("##condition-edit-layout-empty"))
+                                        this.editingCondition.LayoutId = Guid.Empty;
+                                    foreach (var layout in this.plugin.Config.Layouts2)
+                                        if (ImGui.Selectable($"{layout.Value.Name}##condition-edit-layout"))
+                                            this.editingCondition.LayoutId = layout.Key;
+                                    ImGui.EndCombo();
+                                }
+                                ImGui.NextColumn();
+
+                                if (this.editingCondition.LayoutId != Guid.Empty)
+                                    if (ImGui.Button("Confirm##condition-edit"))
+                                        addCondition = true;
+                            } else {
+                                ImGui.Text(item.cond.ClassJob ?? string.Empty);
+                                ImGui.NextColumn();
+
+                                ImGui.Text(item.cond.Status?.Name() ?? string.Empty);
+                                ImGui.NextColumn();
+
+                                ImGui.Text(this.plugin.Config.Layouts2[item.cond.LayoutId].Name);
+                                ImGui.NextColumn();
+
+                                if (ImGui.Button($"E##{item.i}")) {
+                                    this.editingConditionIndex = item.i;
+                                    this.editingCondition = item.cond;
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.Button($"D##{item.i}"))
+                                    actionedItemIndex = item.i;
+                                ImGui.SameLine();
+                                if (ImGui.Button($"↑##{item.i}")) {
+                                    actionedItemIndex = item.i;
+                                    action = -1;
+                                }
+
+                                ImGui.SameLine();
+                                if (ImGui.Button($"↓##{item.i}")) {
+                                    actionedItemIndex = item.i;
+                                    action = 1;
                                 }
                             }
-                            ImGui.EndCombo();
+
+                            ImGui.NextColumn();
                         }
 
-                        ImGui.Spacing();
-                        ImGui.Text("These settings are ordered from highest priority to lowest priority.\nHigher priorities overwrite lower priorities when enabled.");
-                        ImGui.Spacing();
+                        ImGui.Columns();
 
-                        if (ImGui.CollapsingHeader("Status layouts", ImGuiTreeNodeFlags.DefaultOpen)) {
-                            if (ImGui.BeginChild("##layout-selections", new Vector2(0, 125))) {
-                                ImGui.Columns(2);
-
-                                float maxSize = 0f;
-
-                                foreach (Status status in Statuses.ORDER.Reverse()) {
-                                    maxSize = Math.Max(maxSize, ImGui.CalcTextSize(status.Name()).X);
-
-                                    this.plugin.Config.StatusLayouts.TryGetValue(status, out Guid layout);
-
-                                    if (this.LayoutBox(status.Name(), layout, out Guid newLayout)) {
-                                        this.plugin.Config.StatusLayouts[status] = newLayout;
-                                        this.plugin.Config.Save();
-                                        if (this.plugin.Config.SwapsEnabled) {
-                                            this.plugin.Statuses.SetHudLayout(player, true);
-                                        }
-                                    }
-                                }
-
-                                ImGui.SetColumnWidth(0, maxSize + ImGui.GetStyle().ItemSpacing.X * 2);
-
-                                ImGui.Columns(1);
-                                ImGui.EndChild();
-                            }
+                        if (ImGui.Button("Add##condition")) {
+                            this.editingConditionIndex = this.plugin.Config.HudConditionMatches.Count;
+                            this.editingCondition = new HudConditionMatch();
                         }
 
-                        if (ImGui.CollapsingHeader("Job layouts")) {
-                            if (ImGui.InputText("Filter", ref this.jobFilter, 50, ImGuiInputTextFlags.AutoSelectAll)) {
-                                this.jobFilter = this.jobFilter.ToLower();
+                        if (addCondition) {
+                            if (this.editingConditionIndex == this.plugin.Config.HudConditionMatches.Count)
+                                this.plugin.Config.HudConditionMatches.Add(this.editingCondition);
+                            else {
+                                this.plugin.Config.HudConditionMatches.RemoveAt(this.editingConditionIndex);
+                                this.plugin.Config.HudConditionMatches.Insert(this.editingConditionIndex, this.editingCondition);
                             }
+                            this.plugin.Config.Save();
+                            this.editingConditionIndex = -1;
+                        }
 
-                            if (ImGui.BeginChild("##job-layout-selections", new Vector2(0, 125))) {
-                                ImGui.Columns(2);
-
-                                float maxSize = 0f;
-
-                                var acceptableJobs = this.pi.Data.GetExcelSheet<ClassJob>()
-                                    .Where(job => job.NameEnglish != "Adventurer")
-                                    .Where(job => this.jobFilter.Length == 0 || (job.NameEnglish.ToLower().Contains(this.jobFilter) || job.Abbreviation.ToLower().Contains(this.jobFilter)));
-
-                                foreach (ClassJob job in acceptableJobs) {
-                                    maxSize = Math.Max(maxSize, ImGui.CalcTextSize(job.NameEnglish).X);
-
-                                    this.plugin.Config.JobLayouts.TryGetValue(job.Abbreviation, out Guid layout);
-
-                                    if (this.LayoutBox(job.NameEnglish, layout, out Guid newLayout)) {
-                                        this.plugin.Config.JobLayouts[job.Abbreviation] = newLayout;
-                                        this.plugin.Config.Save();
-                                        if (this.plugin.Config.SwapsEnabled) {
-                                            this.plugin.Statuses.SetHudLayout(player, true);
-                                        }
-                                    }
-                                }
-
-                                ImGui.SetColumnWidth(0, maxSize + ImGui.GetStyle().ItemSpacing.X * 2);
-
-                                ImGui.Columns(1);
-                                ImGui.EndChild();
-                            }
-
-                            bool combatOnlyJobs = this.plugin.Config.JobsCombatOnly;
-                            if (ImGui.Checkbox("Jobs only in combat/weapon drawn", ref combatOnlyJobs)) {
-                                this.plugin.Config.JobsCombatOnly = combatOnlyJobs;
-                                this.plugin.Config.Save();
-                                if (this.plugin.Config.SwapsEnabled) {
-                                    this.plugin.Statuses.SetHudLayout(player, true);
+                        if (actionedItemIndex >= 0) {
+                            if (action == 0)
+                                this.plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
+                            else {
+                                if (actionedItemIndex + action >= 0 && actionedItemIndex + action < this.plugin.Config.HudConditionMatches.Count) {
+                                    // Move the condition.
+                                    var c = this.plugin.Config.HudConditionMatches[actionedItemIndex];
+                                    this.plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
+                                    this.plugin.Config.HudConditionMatches.Insert(actionedItemIndex + action, c);
                                 }
                             }
-                            ImGui.SameLine();
-                            HelpMarker("Selecting this will make the HUD layout change for a job only when in combat or when your weapon is drawn.");
-
-                            bool highPriorityJobs = this.plugin.Config.HighPriorityJobs;
-                            if (ImGui.Checkbox("Jobs take priority over status", ref highPriorityJobs)) {
-                                this.plugin.Config.HighPriorityJobs = highPriorityJobs;
-                                this.plugin.Config.Save();
-                                if (this.plugin.Config.SwapsEnabled) {
-                                    this.plugin.Statuses.SetHudLayout(player, true);
-                                }
-                            }
-                            ImGui.SameLine();
-                            HelpMarker("Selecting this will make job layouts always apply when on that job. If this is unselected, job layouts will only apply if the default layout was going to be used (or only in combat if the above checkbox is selected).");
                         }
 
                         ImGui.EndTabItem();
