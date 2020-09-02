@@ -40,8 +40,6 @@ namespace HudSwap {
         private string renameName = "";
         private Guid selectedLayout = Guid.Empty;
 
-        private string jobFilter = "";
-
         private int editingConditionIndex = -1;
         private HudConditionMatch editingCondition;
 

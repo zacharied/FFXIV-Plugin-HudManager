@@ -40,17 +40,20 @@ namespace HudSwap {
         public Guid roleplayingLayout = Guid.Empty;
 #pragma warning restore CA1051 // Do not declare visible instance fields
 
+        [Obsolete("Superceded by HudConditionMatches")]
         public Dictionary<Status, Guid> StatusLayouts { get; } = new Dictionary<Status, Guid>();
-
+        [Obsolete("Superceded by HudConditionMatches")]
         public Dictionary<string, Guid> JobLayouts { get; } = new Dictionary<string, Guid>();
+        [Obsolete("Superceded by HudConditionMatches")]
         public bool HighPriorityJobs { get; set; } = false;
+        [Obsolete("Superceded by HudConditionMatches")]
         public bool JobsCombatOnly { get; set; } = false;
 
         [Obsolete("Use Layouts2 instead")]
         public Dictionary<Guid, Tuple<string, byte[]>> Layouts { get; } = new Dictionary<Guid, Tuple<string, byte[]>>();
         public Dictionary<Guid, Layout> Layouts2 { get; } = new Dictionary<Guid, Layout>();
 
-        public List<HudConditionMatch> HudConditionMatches = new List<HudConditionMatch>();
+        public List<HudConditionMatch> HudConditionMatches { get; } = new List<HudConditionMatch>();
 
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.pi = pluginInterface;
@@ -105,6 +108,29 @@ namespace HudSwap {
                     this.Layouts2.Add(entry.Key, layout);
                 }
                 this.Layouts.Clear();
+            }
+
+            if (this.JobLayouts.Count != 0) {
+                foreach (var jobLayout in JobLayouts)
+                    this.HudConditionMatches.Add(new HudConditionMatch() {
+                        ClassJob = jobLayout.Key,
+                        Status = JobsCombatOnly ? Status.InCombat : default,
+                        LayoutId = jobLayout.Value
+                    });
+
+                JobLayouts.Clear();
+            }
+
+            if (this.StatusLayouts.Count != 0) {
+                foreach (var statusLayout in StatusLayouts) {
+                    var match = new HudConditionMatch() {Status = statusLayout.Key, LayoutId = statusLayout.Value};
+                    if (HighPriorityJobs)
+                        this.HudConditionMatches.Add(match);
+                    else
+                        this.HudConditionMatches.Insert(0, match);
+                }
+
+                StatusLayouts.Clear();
             }
 #pragma warning restore 618
         }
