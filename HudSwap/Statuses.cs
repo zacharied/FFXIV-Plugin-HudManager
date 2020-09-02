@@ -85,7 +85,7 @@ namespace HudSwap {
         }
     }
 
-    public struct HudConditionMatch {
+    public class HudConditionMatch {
         /// <summary>
         /// Values stored here should be the abbreviation of the class/job name (all caps).
         /// We do this because using <see cref="ClassJob"/> results in circular dependency errors when serializing.
