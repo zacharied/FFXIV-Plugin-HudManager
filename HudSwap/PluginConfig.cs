@@ -111,18 +111,18 @@ namespace HudSwap {
             }
 
             if (this.JobLayouts.Count != 0) {
-                foreach (var jobLayout in JobLayouts)
+                foreach (var jobLayout in this.JobLayouts)
                     this.HudConditionMatches.Add(new HudConditionMatch() {
                         ClassJob = jobLayout.Key,
                         Status = JobsCombatOnly ? Status.InCombat : default,
                         LayoutId = jobLayout.Value
                     });
 
-                JobLayouts.Clear();
+                this.JobLayouts.Clear();
             }
 
             if (this.StatusLayouts.Count != 0) {
-                foreach (var statusLayout in StatusLayouts) {
+                foreach (var statusLayout in this.StatusLayouts) {
                     var match = new HudConditionMatch() {Status = statusLayout.Key, LayoutId = statusLayout.Value};
                     if (HighPriorityJobs)
                         this.HudConditionMatches.Add(match);
@@ -130,7 +130,7 @@ namespace HudSwap {
                         this.HudConditionMatches.Insert(0, match);
                 }
 
-                StatusLayouts.Clear();
+                this.StatusLayouts.Clear();
             }
 #pragma warning restore 618
         }
