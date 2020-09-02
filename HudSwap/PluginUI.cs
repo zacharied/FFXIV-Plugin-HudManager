@@ -215,129 +215,11 @@ namespace HudSwap {
 
                         ImGui.Separator();
 
-                        ImGui.Text("Add conditions below for when to swap.\nThe topmost condition in the list has priority.");
-
-                        ImGui.Columns(4);
-
-                        var conditions = new List<HudConditionMatch>(plugin.Config.HudConditionMatches);
-                        if (this.editingConditionIndex == conditions.Count)
-                            conditions.Add(new HudConditionMatch());
-
-                        ImGui.Text("Job");
-                        ImGui.NextColumn();
-
-                        ImGui.Text("State");
-                        ImGui.NextColumn();
-
-                        ImGui.Text("Layout");
-                        ImGui.NextColumn();
-
-                        ImGui.Text("Options");
-                        ImGui.NextColumn();
-
-                        ImGui.Separator();
-
-                        bool addCondition = false;
-                        int actionedItemIndex = -1;
-                        int action = 0; // 0 for delete, otherwise move.
-                        foreach (var item in conditions.Select((cond, i) => new { cond, i })) {
-                            if (this.editingConditionIndex == item.i) {
-                                if (ImGui.BeginCombo("##condition-edit-job", this.editingCondition.ClassJob ?? "Any")) {
-                                    if (ImGui.Selectable("Any##condition-edit-job"))
-                                        this.editingCondition.ClassJob = null;
-                                    foreach (ClassJob job in this.pi.Data.GetExcelSheet<ClassJob>().ToList())
-                                        if (ImGui.Selectable($"{job.Abbreviation}##condition-edit-job"))
-                                            this.editingCondition.ClassJob = job.Abbreviation;
-                                    ImGui.EndCombo();
-                                }
-                                ImGui.NextColumn();
-
-                                if (ImGui.BeginCombo("##condition-edit-status", this.editingCondition.Status?.Name() ?? "Any")) {
-                                    if (ImGui.Selectable("Any##condition-edit-status"))
-                                        this.editingCondition.Status = null;
-                                    foreach (Status status in Enum.GetValues(typeof(Status)))
-                                        if (ImGui.Selectable($"{status.Name()}##condition-edit-status"))
-                                            this.editingCondition.Status = status;
-                                    ImGui.EndCombo();
-                                }
-                                ImGui.NextColumn();
-
-                                if (ImGui.BeginCombo("##condition-edit-layout", this.editingCondition.LayoutId == Guid.Empty ? string.Empty : this.plugin.Config.Layouts2[this.editingCondition.LayoutId].Name)) {
-                                    if (ImGui.Selectable("##condition-edit-layout-empty"))
-                                        this.editingCondition.LayoutId = Guid.Empty;
-                                    foreach (var layout in this.plugin.Config.Layouts2)
-                                        if (ImGui.Selectable($"{layout.Value.Name}##condition-edit-layout"))
-                                            this.editingCondition.LayoutId = layout.Key;
-                                    ImGui.EndCombo();
-                                }
-                                ImGui.NextColumn();
-
-                                if (this.editingCondition.LayoutId != Guid.Empty)
-                                    if (ImGui.Button("Confirm##condition-edit"))
-                                        addCondition = true;
-                            } else {
-                                ImGui.Text(item.cond.ClassJob ?? string.Empty);
-                                ImGui.NextColumn();
-
-                                ImGui.Text(item.cond.Status?.Name() ?? string.Empty);
-                                ImGui.NextColumn();
-
-                                ImGui.Text(this.plugin.Config.Layouts2[item.cond.LayoutId].Name);
-                                ImGui.NextColumn();
-
-                                if (ImGui.Button($"E##{item.i}")) {
-                                    this.editingConditionIndex = item.i;
-                                    this.editingCondition = item.cond;
-                                }
-
-                                ImGui.SameLine();
-                                if (ImGui.Button($"D##{item.i}"))
-                                    actionedItemIndex = item.i;
-                                ImGui.SameLine();
-                                if (ImGui.Button($"↑##{item.i}")) {
-                                    actionedItemIndex = item.i;
-                                    action = -1;
-                                }
-
-                                ImGui.SameLine();
-                                if (ImGui.Button($"↓##{item.i}")) {
-                                    actionedItemIndex = item.i;
-                                    action = 1;
-                                }
-                            }
-
-                            ImGui.NextColumn();
-                        }
-
-                        ImGui.Columns();
-
-                        if (ImGui.Button("Add##condition")) {
-                            this.editingConditionIndex = this.plugin.Config.HudConditionMatches.Count;
-                            this.editingCondition = new HudConditionMatch();
-                        }
-
-                        if (addCondition) {
-                            if (this.editingConditionIndex == this.plugin.Config.HudConditionMatches.Count)
-                                this.plugin.Config.HudConditionMatches.Add(this.editingCondition);
-                            else {
-                                this.plugin.Config.HudConditionMatches.RemoveAt(this.editingConditionIndex);
-                                this.plugin.Config.HudConditionMatches.Insert(this.editingConditionIndex, this.editingCondition);
-                            }
-                            this.plugin.Config.Save();
-                            this.editingConditionIndex = -1;
-                        }
-
-                        if (actionedItemIndex >= 0) {
-                            if (action == 0)
-                                this.plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
-                            else {
-                                if (actionedItemIndex + action >= 0 && actionedItemIndex + action < this.plugin.Config.HudConditionMatches.Count) {
-                                    // Move the condition.
-                                    var c = this.plugin.Config.HudConditionMatches[actionedItemIndex];
-                                    this.plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
-                                    this.plugin.Config.HudConditionMatches.Insert(actionedItemIndex + action, c);
-                                }
-                            }
+                        if (this.plugin.Config.Layouts2.Count == 0) {
+                            ImGui.Text("Create at least one layout to begin setting up swaps.");
+                        } else {
+                            ImGui.Text("Add conditions below for when to swap.\nThe topmost condition in the list has priority.");
+                            this.DrawConditionsTable();
                         }
 
                         ImGui.EndTabItem();
@@ -347,6 +229,134 @@ namespace HudSwap {
                 }
 
                 ImGui.End();
+            }
+        }
+
+        private void DrawConditionsTable()
+        {
+            ImGui.Columns(4);
+
+            var conditions = new List<HudConditionMatch>(plugin.Config.HudConditionMatches);
+            if (this.editingConditionIndex == conditions.Count)
+                conditions.Add(new HudConditionMatch());
+
+            ImGui.Text("Job");
+            ImGui.NextColumn();
+
+            ImGui.Text("State");
+            ImGui.NextColumn();
+
+            ImGui.Text("Layout");
+            ImGui.NextColumn();
+
+            ImGui.Text("Options");
+            ImGui.NextColumn();
+
+            ImGui.Separator();
+
+            bool addCondition = false;
+            int actionedItemIndex = -1;
+            int action = 0; // 0 for delete, otherwise move.
+            foreach (var item in conditions.Select((cond, i) => new { cond, i })) {
+                if (this.editingConditionIndex == item.i) {
+                    if (ImGui.BeginCombo("##condition-edit-job", this.editingCondition.ClassJob ?? "Any")) {
+                        if (ImGui.Selectable("Any##condition-edit-job"))
+                            this.editingCondition.ClassJob = null;
+                        foreach (ClassJob job in this.pi.Data.GetExcelSheet<ClassJob>().ToList())
+                            if (ImGui.Selectable($"{job.Abbreviation}##condition-edit-job"))
+                                this.editingCondition.ClassJob = job.Abbreviation;
+                        ImGui.EndCombo();
+                    }
+                    ImGui.NextColumn();
+
+                    if (ImGui.BeginCombo("##condition-edit-status", this.editingCondition.Status?.Name() ?? "Any")) {
+                        if (ImGui.Selectable("Any##condition-edit-status"))
+                            this.editingCondition.Status = null;
+                        foreach (Status status in Enum.GetValues(typeof(Status)))
+                            if (ImGui.Selectable($"{status.Name()}##condition-edit-status"))
+                                this.editingCondition.Status = status;
+                        ImGui.EndCombo();
+                    }
+                    ImGui.NextColumn();
+
+                    if (ImGui.BeginCombo("##condition-edit-layout", this.editingCondition.LayoutId == Guid.Empty ? string.Empty : this.plugin.Config.Layouts2[this.editingCondition.LayoutId].Name)) {
+                        if (ImGui.Selectable("##condition-edit-layout-empty"))
+                            this.editingCondition.LayoutId = Guid.Empty;
+                        foreach (var layout in this.plugin.Config.Layouts2)
+                            if (ImGui.Selectable($"{layout.Value.Name}##condition-edit-layout"))
+                                this.editingCondition.LayoutId = layout.Key;
+                        ImGui.EndCombo();
+                    }
+                    ImGui.NextColumn();
+
+                    if (this.editingCondition.LayoutId != Guid.Empty)
+                        if (ImGui.Button("Confirm##condition-edit"))
+                            addCondition = true;
+                } else {
+                    ImGui.Text(item.cond.ClassJob ?? string.Empty);
+                    ImGui.NextColumn();
+
+                    ImGui.Text(item.cond.Status?.Name() ?? string.Empty);
+                    ImGui.NextColumn();
+
+                    ImGui.Text(this.plugin.Config.Layouts2[item.cond.LayoutId].Name);
+                    ImGui.NextColumn();
+
+                    if (ImGui.Button($"E##{item.i}")) {
+                        this.editingConditionIndex = item.i;
+                        this.editingCondition = item.cond;
+                    }
+
+                    ImGui.SameLine();
+                    if (ImGui.Button($"D##{item.i}"))
+                        actionedItemIndex = item.i;
+                    ImGui.SameLine();
+                    if (ImGui.Button($"↑##{item.i}")) {
+                        actionedItemIndex = item.i;
+                        action = -1;
+                    }
+
+                    ImGui.SameLine();
+                    if (ImGui.Button($"↓##{item.i}")) {
+                        actionedItemIndex = item.i;
+                        action = 1;
+                    }
+                }
+
+                ImGui.NextColumn();
+            }
+
+            ImGui.Columns();
+
+            ImGui.Separator();
+
+            if (ImGui.Button("Add##condition")) {
+                this.editingConditionIndex = this.plugin.Config.HudConditionMatches.Count;
+                this.editingCondition = new HudConditionMatch();
+            }
+
+            if (addCondition) {
+                if (this.editingConditionIndex == this.plugin.Config.HudConditionMatches.Count)
+                    this.plugin.Config.HudConditionMatches.Add(this.editingCondition);
+                else {
+                    this.plugin.Config.HudConditionMatches.RemoveAt(this.editingConditionIndex);
+                    this.plugin.Config.HudConditionMatches.Insert(this.editingConditionIndex, this.editingCondition);
+                }
+                this.plugin.Config.Save();
+                this.editingConditionIndex = -1;
+            }
+
+            if (actionedItemIndex >= 0) {
+                if (action == 0)
+                    this.plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
+                else {
+                    if (actionedItemIndex + action >= 0 && actionedItemIndex + action < this.plugin.Config.HudConditionMatches.Count) {
+                        // Move the condition.
+                        var c = this.plugin.Config.HudConditionMatches[actionedItemIndex];
+                        this.plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
+                        this.plugin.Config.HudConditionMatches.Insert(actionedItemIndex + action, c);
+                    }
+                }
             }
         }
 
