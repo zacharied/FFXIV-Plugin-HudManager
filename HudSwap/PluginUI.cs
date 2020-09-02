@@ -355,6 +355,7 @@ namespace HudSwap {
                         this.plugin.Config.HudConditionMatches.Insert(actionedItemIndex + action, c);
                     }
                 }
+                this.plugin.Config.Save();
             }
         }
 
