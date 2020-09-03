@@ -21,6 +21,7 @@ namespace HudSwap {
 
         public HudSlot StagingSlot { get; set; } = HudSlot.Four;
 
+        [Obsolete("Superceded by HudConditionMatches")]
         public Guid DefaultLayout { get; set; } = Guid.Empty;
 
 #pragma warning disable CA1051 // Do not declare visible instance fields
@@ -111,23 +112,28 @@ namespace HudSwap {
             }
 
             if (this.JobLayouts.Count != 0) {
-                foreach (var jobLayout in this.JobLayouts)
+                foreach (var jobLayout in this.JobLayouts) {
                     this.HudConditionMatches.Add(new HudConditionMatch() {
                         ClassJob = jobLayout.Key,
                         Status = JobsCombatOnly ? Status.InCombat : default,
                         LayoutId = jobLayout.Value
                     });
+                }
 
                 this.JobLayouts.Clear();
             }
 
             if (this.StatusLayouts.Count != 0) {
                 foreach (var statusLayout in this.StatusLayouts) {
-                    var match = new HudConditionMatch() {Status = statusLayout.Key, LayoutId = statusLayout.Value};
-                    if (HighPriorityJobs)
+                    var match = new HudConditionMatch() {
+                        Status = statusLayout.Key,
+                        LayoutId = statusLayout.Value
+                    };
+                    if (this.HighPriorityJobs) {
                         this.HudConditionMatches.Add(match);
-                    else
+                    } else {
                         this.HudConditionMatches.Insert(0, match);
+                    }
                 }
 
                 this.StatusLayouts.Clear();

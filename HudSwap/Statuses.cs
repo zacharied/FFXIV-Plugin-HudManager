@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 // TODO: Zone swaps?
 
@@ -57,11 +58,12 @@ namespace HudSwap {
 
             foreach (var match in this.plugin.Config.HudConditionMatches) {
                 if ((!match.Status.HasValue || this.condition[match.Status.Value]) &&
-                    (match.ClassJob == null || this.job.Abbreviation == match.ClassJob))
+                    (match.ClassJob == null || this.job.Abbreviation == match.ClassJob)) {
                     return match.LayoutId;
+                }
             }
 
-            return this.plugin.Config.DefaultLayout;
+            return Guid.Empty;
         }
 
         public void SetHudLayout(PlayerCharacter player, bool update = false) {
@@ -92,11 +94,13 @@ namespace HudSwap {
         /// </summary>
         public string ClassJob { get; set; }
 
+        [JsonConverter(typeof(StringEnumConverter))]
         public Status? Status { get; set; }
 
         public Guid LayoutId { get; set; }
     }
 
+    // Note: Changing the names of these is a breaking change
     public enum Status {
         InCombat = ConditionFlag.InCombat,
         WeaponDrawn = ConditionFlag.None,
