@@ -18,7 +18,7 @@ namespace HudSwap {
                 throw new ArgumentNullException(nameof(framework), "Framework cannot be null");
             }
 
-            if (!(this.plugin.Config.SwapsEnabled && this.plugin.Config.UnderstandsRisks)) {
+            if (!this.plugin.Config.SwapsEnabled || !this.plugin.Config.UnderstandsRisks) {
                 return;
             }
 
