@@ -136,7 +136,7 @@ namespace HudSwap {
                         ImGui.PopFont();
 
                         ImGui.Text("Copy onto slot...");
-                        Vector2 slotButtonSize = new Vector2(40, ImGui.GetTextLineHeight());
+                        Vector2 slotButtonSize = new Vector2(40, 0);
                         foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                             // Surround the button with parentheses if this is the current slot
                             string slotText = slot == this.plugin.Hud.GetActiveHudSlot() ? $"({(int)slot + 1})" : ((int)slot + 1).ToString();
