@@ -60,26 +60,6 @@ namespace HudSwap {
         }
 
         public void DrawSettings() {
-            void DrawHudSlotButtons(string idSuffix, System.Action<HudSlot> hudSlotAction, System.Action clipboardAction) {
-                Vector2 slotButtonSize = new Vector2(40, 0);
-                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                    // Surround the button with parentheses if this is the current slot
-                    string slotText = slot == this.plugin.Hud.GetActiveHudSlot() ? $"({(int)slot + 1})" : ((int)slot + 1).ToString();
-                    string buttonName = $"{slotText}##${idSuffix}";
-                    if (ImGui.Button(buttonName, slotButtonSize)) {
-                        PluginLog.Log("Importing outer");
-                        hudSlotAction(slot);
-                    }
-                    ImGui.SameLine();
-                }
-
-                ImGui.SameLine();
-
-                if (ImGui.Button($"Clipboard##{idSuffix}")) {
-                    clipboardAction();
-                }
-            }
-
             if (!this.SettingsVisible) {
                 return;
             }
@@ -144,19 +124,18 @@ namespace HudSwap {
                         ImGui.InputText("##rename-input", ref this.renameName, 100);
                         ImGui.PopItemWidth();
                         ImGui.SameLine();
-                        if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayout != null) {
+                        if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayoutId != null) {
                             Layout layout = this.plugin.Config.Layouts2[this.selectedLayoutId];
                             Layout newLayout = new Layout(this.renameName, layout.Hud, layout.Positions);
                             this.plugin.Config.Layouts2[this.selectedLayoutId] = newLayout;
                             this.plugin.Config.Save();
                         }
 
-                        const int layoutActionButtonWidth = 30;
-                        // `layoutActionButtonWidth` must be multiplied by however many action buttons there are here
-                        ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - layoutActionButtonWidth * 1);
+                        const int deleteButtonWidth = 30;
+                        ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - deleteButtonWidth);
                         ImGui.PushFont(UiBuilder.IconFont);
-                        if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), new Vector2(layoutActionButtonWidth, 0)) &&
-                                this.selectedLayout != null) {
+                        if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), new Vector2(deleteButtonWidth, 0)) &&
+                                this.selectedLayoutId != null) {
                             this.plugin.Config.Layouts2.Remove(this.selectedLayoutId);
                             this.plugin.Config.HudConditionMatches.RemoveAll(m => m.LayoutId == this.selectedLayoutId);
                             this.selectedLayoutId = Guid.Empty;
@@ -166,21 +145,27 @@ namespace HudSwap {
                         ImGui.PopFont();
 
                         ImGui.Text("Copy to...");
-                        DrawHudSlotButtons("copy", slot => {
-                            if (this.selectedLayout == null) {
-                                return;
+                        Vector2 slotButtonSize = new Vector2(40, 0);
+                        foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
+                            // Surround the button with parentheses if this is the current slot
+                            string slotText = slot == this.plugin.Hud.GetActiveHudSlot() ? $"({(int)slot + 1})" : ((int)slot + 1).ToString();
+                            string buttonName = $"{slotText}##copy";
+                            if (ImGui.Button(buttonName, slotButtonSize) && this.selectedLayout != null) {
+                                this.plugin.Hud.WriteLayout(slot, this.selectedLayout.Hud);
                             }
+                            ImGui.SameLine();
+                        }
 
-                            this.plugin.Hud.WriteLayout(slot, this.selectedLayout.Hud);
-                        }, () => {
-                            if (this.selectedLayout == null) {
-                                return;
+                        ImGui.SameLine();
+
+                        if (ImGui.Button("Clipboard") && this.selectedLayoutId != null) {
+                            if (this.plugin.Config.Layouts2.TryGetValue(this.selectedLayoutId, out Layout layout)) {
+                                SharedLayout shared = new SharedLayout(layout);
+                                string json = JsonConvert.SerializeObject(shared);
+                                ImGui.SetClipboardText(json);
                             }
+                        }
 
-                            SharedLayout shared = new SharedLayout(selectedLayout);
-                            string json = JsonConvert.SerializeObject(shared);
-                            ImGui.SetClipboardText(json);
-                        });
                     }
 
                     ImGui.Separator();
@@ -197,15 +182,16 @@ namespace HudSwap {
                     ImGui.SameLine();
                     HelpMarker("If this is checked, the position of the chat box and the map will be saved with the imported layout.");
 
-                    bool isOverwriting =
-                        this.plugin.Config.Layouts2.Values.Any(layout => layout.Name == this.importName);
-                    ImGui.Text((isOverwriting ? "Overwrite" : "Import") + " from...");
+                    foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
+                        string buttonName = $"{(int)slot + 1}##import";
+                        if (ImGui.Button(buttonName) && this.importName.Length != 0) {
+                            this.ImportSlot(this.importName, slot);
+                            this.importName = "";
+                        }
+                        ImGui.SameLine();
+                    }
 
-                    DrawHudSlotButtons("import", slot => {
-                        PluginLog.Log("Importing inner");
-                        this.ImportSlot(this.importName, slot);
-                        this.importName = "";
-                    }, () => {
+                    if (ImGui.Button("Clipboard") && this.importName.Length != 0) {
                         SharedLayout shared = null;
                         try {
                             shared = (SharedLayout)JsonConvert.DeserializeObject(ImGui.GetClipboardText(), typeof(SharedLayout));
@@ -220,7 +206,7 @@ namespace HudSwap {
                                 this.importName = "";
                             }
                         }
-                    });
+                    }
 
                     ImGui.EndTabItem();
                 }
@@ -498,7 +484,9 @@ namespace HudSwap {
 
         public void Import(string name, byte[] layout, Dictionary<string, Vector2<short>> positions, bool save = true) {
             Guid guid = this.plugin.Config.Layouts2.FirstOrDefault(kv => kv.Value.Name == name).Key;
-            guid = guid != default ? guid : Guid.NewGuid();
+            if (guid == default) {
+                guid = new Guid();
+            }
 
             this.plugin.Config.Layouts2[Guid.NewGuid()] = new Layout(name, layout, positions);
             if (save) {
