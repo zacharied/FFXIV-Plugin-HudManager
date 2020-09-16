@@ -110,6 +110,7 @@ namespace HudSwap {
                                 if (ImGui.Selectable($"{entry.Value.Name}##{entry.Key}", this.selectedLayout == entry.Key)) {
                                     this.selectedLayout = entry.Key;
                                     this.renameName = entry.Value.Name;
+                                    this.importName = this.renameName;
                                 }
                             }
                             ImGui.ListBoxFooter();
@@ -468,6 +469,11 @@ namespace HudSwap {
         }
 
         public void Import(string name, byte[] layout, Dictionary<string, Vector2<short>> positions, bool save = true) {
+            Guid guid = this.plugin.Config.Layouts2.FirstOrDefault(kv => kv.Value.Name == name).Key;
+            if (guid == default) {
+                guid = new Guid();
+            }
+
             this.plugin.Config.Layouts2[Guid.NewGuid()] = new Layout(name, layout, positions);
             if (save) {
                 this.plugin.Config.Save();
