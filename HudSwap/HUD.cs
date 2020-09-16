@@ -11,6 +11,7 @@ namespace HudSwap {
         private const int LAYOUT_SIZE = 0xb40;
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
+
         private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);
 
         private readonly GetFilePointerDelegate _getFilePointer;
@@ -73,6 +74,16 @@ namespace HudSwap {
             return this.GetDataPointer() + 0x2c58 + (slotNum * LAYOUT_SIZE);
         }
 
+        public HudSlot GetActiveHudSlot() {
+            int slotVal = Marshal.ReadInt32(this.GetDataPointer() + 0x5958);
+
+            if (!Enum.IsDefined(typeof(HudSlot), slotVal)) {
+                throw new IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
+            }
+
+            return (HudSlot)slotVal;
+        }
+
         public byte[] ReadLayout(HudSlot slot) {
             IntPtr slotPtr = this.GetLayoutPointer(slot);
             byte[] bytes = new byte[LAYOUT_SIZE];
@@ -87,9 +98,17 @@ namespace HudSwap {
             if (layout.Length != LAYOUT_SIZE) {
                 throw new ArgumentException($"layout must be {LAYOUT_SIZE} bytes", nameof(layout));
             }
+
             IntPtr slotPtr = this.GetLayoutPointer(slot);
             Marshal.Copy(layout, 0, slotPtr, LAYOUT_SIZE);
+
+            var currentSlot = this.GetActiveHudSlot();
+            if (currentSlot == slot) {
+                this.SelectSlot(currentSlot, true);
+            }
         }
+
+        public void WriteLayout(byte[] layout) => WriteLayout(this.GetActiveHudSlot(), layout);
     }
 
     public enum HudSlot {

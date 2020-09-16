@@ -39,7 +39,10 @@ namespace HudSwap {
 
         private string importName = "";
         private string renameName = "";
-        private Guid selectedLayout = Guid.Empty;
+        private Guid selectedLayoutId = Guid.Empty;
+
+        private Layout selectedLayout =>
+            selectedLayoutId == Guid.Empty ? null : this.plugin.Config.Layouts2[this.selectedLayoutId];
 
         private int editingConditionIndex = -1;
         private HudConditionMatch editingCondition;
@@ -107,8 +110,8 @@ namespace HudSwap {
                         ImGui.PushItemWidth(-1);
                         if (ImGui.ListBoxHeader("##saved-layouts")) {
                             foreach (KeyValuePair<Guid, Layout> entry in this.plugin.Config.Layouts2) {
-                                if (ImGui.Selectable($"{entry.Value.Name}##{entry.Key}", this.selectedLayout == entry.Key)) {
-                                    this.selectedLayout = entry.Key;
+                                if (ImGui.Selectable($"{entry.Value.Name}##{entry.Key}", this.selectedLayoutId == entry.Key)) {
+                                    this.selectedLayoutId = entry.Key;
                                     this.renameName = entry.Value.Name;
                                     this.importName = this.renameName;
                                 }
@@ -117,27 +120,37 @@ namespace HudSwap {
                         }
                         ImGui.PopItemWidth();
 
+                        ImGui.NewLine();
+
+                        const int deleteButtonWidth = 30;
+                        ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - deleteButtonWidth);
+                        ImGui.PushFont(UiBuilder.IconFont);
+                        if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), new Vector2(deleteButtonWidth, ImGui.GetTextLineHeight())) &&
+                                this.selectedLayoutId != null) {
+                            this.plugin.Config.Layouts2.Remove(this.selectedLayoutId);
+                            this.plugin.Config.HudConditionMatches.RemoveAll(m => m.LayoutId == this.selectedLayoutId);
+                            this.selectedLayoutId = Guid.Empty;
+                            this.renameName = "";
+                            this.plugin.Config.Save();
+                        }
+                        ImGui.PopFont();
+
                         ImGui.Text("Copy onto slot...");
+                        Vector2 slotButtonSize = new Vector2(40, ImGui.GetTextLineHeight());
                         foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                            string buttonName = $"{(int)slot + 1}##copy";
-                            if (ImGui.Button(buttonName) && this.selectedLayout != null) {
-                                Layout layout = this.plugin.Config.Layouts2[this.selectedLayout];
-                                this.plugin.Hud.WriteLayout(slot, layout.Hud.ToArray());
+                            // Surround the button with parentheses if this is the current slot
+                            string slotText = slot == this.plugin.Hud.GetActiveHudSlot() ? $"({(int)slot + 1})" : ((int)slot + 1).ToString();
+                            string buttonName = $"{slotText}##copy";
+                            if (ImGui.Button(buttonName, slotButtonSize) && this.selectedLayout != null) {
+                                this.plugin.Hud.WriteLayout(slot, this.selectedLayout.Hud);
                             }
                             ImGui.SameLine();
                         }
 
-                        if (ImGui.Button("Delete") && this.selectedLayout != null) {
-                            this.plugin.Config.Layouts2.Remove(this.selectedLayout);
-                            this.plugin.Config.HudConditionMatches.RemoveAll(m => m.LayoutId == this.selectedLayout);
-                            this.selectedLayout = Guid.Empty;
-                            this.renameName = "";
-                            this.plugin.Config.Save();
-                        }
                         ImGui.SameLine();
 
-                        if (ImGui.Button("Copy to clipboard") && this.selectedLayout != null) {
-                            if (this.plugin.Config.Layouts2.TryGetValue(this.selectedLayout, out Layout layout)) {
+                        if (ImGui.Button("Clipboard") && this.selectedLayoutId != null) {
+                            if (this.plugin.Config.Layouts2.TryGetValue(this.selectedLayoutId, out Layout layout)) {
                                 SharedLayout shared = new SharedLayout(layout);
                                 string json = JsonConvert.SerializeObject(shared);
                                 ImGui.SetClipboardText(json);
@@ -146,10 +159,10 @@ namespace HudSwap {
 
                         ImGui.InputText("##rename-input", ref this.renameName, 100);
                         ImGui.SameLine();
-                        if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayout != null) {
-                            Layout layout = this.plugin.Config.Layouts2[this.selectedLayout];
+                        if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayoutId != null) {
+                            Layout layout = this.plugin.Config.Layouts2[this.selectedLayoutId];
                             Layout newLayout = new Layout(this.renameName, layout.Hud, layout.Positions);
-                            this.plugin.Config.Layouts2[this.selectedLayout] = newLayout;
+                            this.plugin.Config.Layouts2[this.selectedLayoutId] = newLayout;
                             this.plugin.Config.Save();
                         }
                     }
