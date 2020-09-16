@@ -120,12 +120,21 @@ namespace HudSwap {
                         }
                         ImGui.PopItemWidth();
 
-                        ImGui.NewLine();
+                        ImGui.PushItemWidth(200);
+                        ImGui.InputText("##rename-input", ref this.renameName, 100);
+                        ImGui.PopItemWidth();
+                        ImGui.SameLine();
+                        if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayoutId != null) {
+                            Layout layout = this.plugin.Config.Layouts2[this.selectedLayoutId];
+                            Layout newLayout = new Layout(this.renameName, layout.Hud, layout.Positions);
+                            this.plugin.Config.Layouts2[this.selectedLayoutId] = newLayout;
+                            this.plugin.Config.Save();
+                        }
 
                         const int deleteButtonWidth = 30;
                         ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - deleteButtonWidth);
                         ImGui.PushFont(UiBuilder.IconFont);
-                        if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), new Vector2(deleteButtonWidth, ImGui.GetTextLineHeight())) &&
+                        if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), new Vector2(deleteButtonWidth, 0)) &&
                                 this.selectedLayoutId != null) {
                             this.plugin.Config.Layouts2.Remove(this.selectedLayoutId);
                             this.plugin.Config.HudConditionMatches.RemoveAll(m => m.LayoutId == this.selectedLayoutId);
@@ -135,7 +144,7 @@ namespace HudSwap {
                         }
                         ImGui.PopFont();
 
-                        ImGui.Text("Copy onto slot...");
+                        ImGui.Text("Copy to...");
                         Vector2 slotButtonSize = new Vector2(40, 0);
                         foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                             // Surround the button with parentheses if this is the current slot
@@ -157,14 +166,6 @@ namespace HudSwap {
                             }
                         }
 
-                        ImGui.InputText("##rename-input", ref this.renameName, 100);
-                        ImGui.SameLine();
-                        if (ImGui.Button("Rename") && this.renameName.Length != 0 && this.selectedLayoutId != null) {
-                            Layout layout = this.plugin.Config.Layouts2[this.selectedLayoutId];
-                            Layout newLayout = new Layout(this.renameName, layout.Hud, layout.Positions);
-                            this.plugin.Config.Layouts2[this.selectedLayoutId] = newLayout;
-                            this.plugin.Config.Save();
-                        }
                     }
 
                     ImGui.Separator();
