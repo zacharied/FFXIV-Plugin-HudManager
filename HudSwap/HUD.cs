@@ -8,7 +8,8 @@ using System.Runtime.InteropServices;
 
 namespace HudSwap {
     public class HUD {
-        private const int LAYOUT_SIZE = 0xb40;
+        private const int LAYOUT_SIZE = 0xb40; // 5.4
+        private const int SLOT_OFFSET = 0x59e8; // 5.4
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
 
@@ -26,6 +27,7 @@ namespace HudSwap {
             if (getFilePointerPtr != IntPtr.Zero) {
                 this._getFilePointer = Marshal.GetDelegateForFunctionPointer<GetFilePointerDelegate>(getFilePointerPtr);
             }
+
             if (setHudLayoutPtr != IntPtr.Zero) {
                 this._setHudLayout = Marshal.GetDelegateForFunctionPointer<SetHudLayoutDelegate>(setHudLayoutPtr);
             }
@@ -38,29 +40,34 @@ namespace HudSwap {
         public uint SelectSlot(HudSlot slot, bool force = false) {
             IntPtr file = this.GetFilePointer(0);
             // change the current slot so the game lets us pick one that's currently in use
-            if (force) {
-                IntPtr currentSlotPtr = this.GetDataPointer() + 0x5958;
-                // read the current slot
-                uint currentSlot = (uint)Marshal.ReadInt32(currentSlotPtr);
-                // change it to a different slot
-                if (currentSlot == (uint)slot) {
-                    if (currentSlot < 3) {
-                        currentSlot += 1;
-                    } else {
-                        currentSlot = 0;
-                    }
-                    // back up this different slot
-                    byte[] backup = this.ReadLayout((HudSlot)currentSlot);
-                    // change the current slot in memory
-                    Marshal.WriteInt32(currentSlotPtr, (int)currentSlot);
-                    // ask the game to change slot to our desired slot
-                    // for some reason, this overwrites the current slot, so this is why we back up
-                    uint res = this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
-                    // restore the backup
-                    this.WriteLayout((HudSlot)currentSlot, backup);
-                    return res;
-                }
+            if (!force) {
+                goto Return;
             }
+
+            IntPtr currentSlotPtr = this.GetDataPointer() + SLOT_OFFSET;
+            // read the current slot
+            uint currentSlot = (uint)Marshal.ReadInt32(currentSlotPtr);
+            // change it to a different slot
+            if (currentSlot == (uint)slot) {
+                if (currentSlot < 3) {
+                    currentSlot += 1;
+                } else {
+                    currentSlot = 0;
+                }
+
+                // back up this different slot
+                byte[] backup = this.ReadLayout((HudSlot)currentSlot);
+                // change the current slot in memory
+                Marshal.WriteInt32(currentSlotPtr, (int)currentSlot);
+                // ask the game to change slot to our desired slot
+                // for some reason, this overwrites the current slot, so this is why we back up
+                uint res = this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
+                // restore the backup
+                this.WriteLayout((HudSlot)currentSlot, backup);
+                return res;
+            }
+
+            Return:
             return this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
         }
 
@@ -75,7 +82,7 @@ namespace HudSwap {
         }
 
         public HudSlot GetActiveHudSlot() {
-            int slotVal = Marshal.ReadInt32(this.GetDataPointer() + 0x5958);
+            int slotVal = Marshal.ReadInt32(this.GetDataPointer() + SLOT_OFFSET);
 
             if (!Enum.IsDefined(typeof(HudSlot), slotVal)) {
                 throw new IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
@@ -95,6 +102,7 @@ namespace HudSwap {
             if (layout == null) {
                 throw new ArgumentNullException(nameof(layout), "layout cannot be null");
             }
+
             if (layout.Length != LAYOUT_SIZE) {
                 throw new ArgumentException($"layout must be {LAYOUT_SIZE} bytes", nameof(layout));
             }
@@ -132,6 +140,7 @@ namespace HudSwap {
     public class SharedLayout {
         [JsonProperty]
         private readonly byte[] compressed;
+
         [NonSerialized]
         private byte[] uncompressed = null;
 
@@ -175,6 +184,7 @@ namespace HudSwap {
                         uncompressed.CopyTo(gzip);
                     }
                 }
+
                 this.compressed = compressed.ToArray();
             }
 
