@@ -1,64 +1,62 @@
-﻿using Dalamud.Game.ClientState;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Actors.Types;
 using Dalamud.Plugin;
 using Lumina.Excel.GeneratedSheets;
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 // TODO: Zone swaps?
 
-namespace HudSwap {
+namespace HUD_Manager {
     public class Statuses {
-        private readonly HudSwapPlugin plugin;
-        private readonly DalamudPluginInterface pi;
+        private Plugin Plugin { get; }
 
-        private readonly Dictionary<Status, bool> condition = new Dictionary<Status, bool>();
-        private ClassJob job;
+        private readonly Dictionary<Status, bool> _condition = new();
+        private ClassJob? _job;
 
         internal static byte GetStatus(DalamudPluginInterface pi, Actor actor) {
-            IntPtr statusPtr = pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1980);
+            var statusPtr = pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1980);
             return Marshal.ReadByte(statusPtr);
         }
 
-        public Statuses(HudSwapPlugin plugin, DalamudPluginInterface pi) {
-            this.plugin = plugin;
-            this.pi = pi;
+        public Statuses(Plugin plugin) {
+            this.Plugin = plugin;
         }
 
-        public bool Update(PlayerCharacter player) {
+        public bool Update(PlayerCharacter? player) {
             if (player == null) {
                 return false;
             }
 
-            bool anyChanged = false;
+            var anyChanged = false;
 
-            ClassJob currentJob = this.pi.Data.GetExcelSheet<ClassJob>().GetRow(player.ClassJob.Id);
-            if (this.job != null && this.job != currentJob) {
+            var currentJob = this.Plugin.Interface.Data.GetExcelSheet<ClassJob>().GetRow(player.ClassJob.Id);
+            if (this._job != null && this._job != currentJob) {
                 anyChanged = true;
             }
-            this.job = currentJob;
+            this._job = currentJob;
 
             foreach (Status status in Enum.GetValues(typeof(Status))) {
-                var old = this.condition.ContainsKey(status) && this.condition[status];
-                this.condition[status] = status.Active(player, this.pi);
-                anyChanged |= old != this.condition[status];
+                var old = this._condition.ContainsKey(status) && this._condition[status];
+                this._condition[status] = status.Active(player, this.Plugin.Interface);
+                anyChanged |= old != this._condition[status];
             }
 
             return anyChanged;
         }
 
-        public Guid CalculateCurrentHud() {
-            PlayerCharacter player = this.pi.ClientState.LocalPlayer;
+        private Guid CalculateCurrentHud() {
+            var player = this.Plugin.Interface.ClientState.LocalPlayer;
             if (player == null) {
                 return Guid.Empty;
             }
 
-            foreach (var match in this.plugin.Config.HudConditionMatches) {
-                if ((!match.Status.HasValue || this.condition[match.Status.Value]) &&
-                    (match.ClassJob == null || this.job.Abbreviation == match.ClassJob)) {
+            foreach (var match in this.Plugin.Config.HudConditionMatches) {
+                if ((!match.Status.HasValue || this._condition[match.Status.Value]) &&
+                    (match.ClassJob == null || this._job?.Abbreviation == match.ClassJob)) {
                     return match.LayoutId;
                 }
             }
@@ -66,23 +64,23 @@ namespace HudSwap {
             return Guid.Empty;
         }
 
-        public void SetHudLayout(PlayerCharacter player, bool update = false) {
+        public void SetHudLayout(PlayerCharacter? player, bool update = false) {
             if (update && player != null) {
                 this.Update(player);
             }
 
-            Guid layoutId = this.CalculateCurrentHud();
+            var layoutId = this.CalculateCurrentHud();
             if (layoutId == Guid.Empty) {
                 return; // FIXME: do something better
             }
-            if (!this.plugin.Config.Layouts2.TryGetValue(layoutId, out Layout layout)) {
+            if (!this.Plugin.Config.Layouts.TryGetValue(layoutId, out var layout)) {
                 return; // FIXME: do something better
             }
-            this.plugin.Hud.WriteLayout(this.plugin.Config.StagingSlot, layout.Hud);
-            this.plugin.Hud.SelectSlot(this.plugin.Config.StagingSlot, true);
+            this.Plugin.Hud.WriteLayout(this.Plugin.Config.StagingSlot, layout.ToLayout());
+            this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
 
-            foreach (KeyValuePair<string, Vector2<short>> entry in layout.Positions) {
-                this.plugin.GameFunctions.MoveWindow(entry.Key, entry.Value.X, entry.Value.Y);
+            foreach (var entry in layout.Positions) {
+                this.Plugin.GameFunctions.MoveWindow(entry.Key, entry.Value.X, entry.Value.Y);
             }
         }
     }
@@ -92,7 +90,7 @@ namespace HudSwap {
         /// Values stored here should be the abbreviation of the class/job name (all caps).
         /// We do this because using <see cref="ClassJob"/> results in circular dependency errors when serializing.
         /// </summary>
-        public string ClassJob { get; set; }
+        public string? ClassJob { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public Status? Status { get; set; }
@@ -141,7 +139,7 @@ namespace HudSwap {
                 throw new ArgumentNullException(nameof(pi), "DalamudPluginInterface cannot be null");
             }
 
-            ConditionFlag flag = (ConditionFlag)status;
+            var flag = (ConditionFlag)status;
             if (flag != ConditionFlag.None) {
                 return pi.ClientState.Condition[flag];
             }
