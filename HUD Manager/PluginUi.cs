@@ -405,7 +405,7 @@ namespace HUD_Manager {
                 }
 
                 if (update) {
-                    this.Plugin.Hud.WriteLayout(this.Plugin.Config.StagingSlot, layout.ToLayout());
+                    this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, this._selectedEditLayout);
                     this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
                 }
 

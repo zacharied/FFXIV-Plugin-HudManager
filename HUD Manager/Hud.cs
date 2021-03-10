@@ -106,7 +106,7 @@ namespace HUD_Manager {
             return Marshal.PtrToStructure<Layout>(slotPtr);
         }
 
-        public void WriteLayout(HudSlot slot, Layout layout) {
+        private void WriteLayout(HudSlot slot, Layout layout) {
             var slotPtr = this.GetLayoutPointer(slot);
 
             var dict = layout.ToDictionary();

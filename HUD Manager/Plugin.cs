@@ -78,9 +78,7 @@ namespace HUD_Manager {
                 return;
             }
 
-            var layout = entry.Value;
-
-            this.Hud.WriteLayout(this.Config.StagingSlot, layout.ToLayout());
+            this.Hud.WriteEffectiveLayout(this.Config.StagingSlot, entry.Key);
             this.Hud.SelectSlot(this.Config.StagingSlot, true);
         }
     }
