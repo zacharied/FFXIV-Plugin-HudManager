@@ -10,6 +10,7 @@ using HUD_Manager.Structs;
 using HUD_Manager.Tree;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 
 // TODO: Zone swaps?
 
@@ -266,9 +267,18 @@ namespace HUD_Manager {
                 ImGui.OpenPopup(Popups.ImportLayout);
             }
 
-            HoverTooltip("Import a layout from an in-game HUD slot");
+            HoverTooltip("Import a layout from an in-game HUD slot or the clipboard");
 
             this.SetUpImportLayoutPopup();
+
+            ImGui.SameLine();
+            if (IconButton(FontAwesomeIcon.FileExport, "uimanager-export-layout")) {
+                ImGui.OpenPopup(Popups.ExportLayout);
+            }
+
+            HoverTooltip("Export a layout to an in-game HUD slot or the clipboard");
+
+            this.SetUpExportLayoutPopup();
 
             if (this._selectedEditLayout == Guid.Empty) {
                 goto EndTabItem;
@@ -436,7 +446,7 @@ namespace HUD_Manager {
             var current = this.Plugin.Hud.GetActiveHudSlot();
             foreach (var slot in (HudSlot[]) Enum.GetValues(typeof(HudSlot))) {
                 var name = current == slot ? $"({(int) slot + 1})" : $"{(int) slot + 1}";
-                if (ImGui.Button($"{name}##import-{slot}")) {
+                if (ImGui.Button($"{name}##import-{slot}") && this._importName != null) {
                     Guid id;
                     string newName;
                     Dictionary<string, Vector2<short>> positions;
@@ -447,7 +457,7 @@ namespace HUD_Manager {
                         positions = overwriting.Value.Positions;
                     } else {
                         id = Guid.NewGuid();
-                        newName = this._importName!;
+                        newName = this._importName;
                         positions = new Dictionary<string, Vector2<short>>();
                     }
 
@@ -464,7 +474,54 @@ namespace HUD_Manager {
                 ImGui.SameLine();
             }
 
-            if (IconButton(FontAwesomeIcon.Clipboard, "import-clipboard")) {
+            if (IconButton(FontAwesomeIcon.Clipboard, "import-clipboard") && this._importName != null) {
+                SavedLayout? saved;
+                try {
+                    saved = JsonConvert.DeserializeObject<SavedLayout>(ImGui.GetClipboardText());
+                } catch (Exception) {
+                    saved = null;
+                }
+
+                if (saved != null) {
+                    saved.Name = this._importName;
+
+                    var id = Guid.NewGuid();
+                    this.Plugin.Config.Layouts[id] = saved;
+                    this.Plugin.Config.Save();
+
+                    this._selectedEditLayout = id;
+
+                    ImGui.CloseCurrentPopup();
+                }
+            }
+
+            ImGui.EndPopup();
+        }
+
+        private void SetUpExportLayoutPopup() {
+            if (!ImGui.BeginPopup(Popups.ExportLayout)) {
+                return;
+            }
+
+            if (!this.Plugin.Config.Layouts.TryGetValue(this._selectedEditLayout, out var layout)) {
+                return;
+            }
+
+            var current = this.Plugin.Hud.GetActiveHudSlot();
+            foreach (var slot in (HudSlot[]) Enum.GetValues(typeof(HudSlot))) {
+                var name = current == slot ? $"({(int) slot + 1})" : $"{(int) slot + 1}";
+                if (ImGui.Button($"{name}##export-{slot}")) {
+                    this.Plugin.Hud.WriteEffectiveLayout(slot, this._selectedEditLayout);
+
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.SameLine();
+            }
+
+            if (IconButton(FontAwesomeIcon.Clipboard, "export-clipboard")) {
+                var json = JsonConvert.SerializeObject(layout);
+                ImGui.SetClipboardText(json);
             }
 
             ImGui.EndPopup();
@@ -918,6 +975,7 @@ namespace HUD_Manager {
         public const string AddLayout = "uimanager-add-layout-popup";
         public const string RenameLayout = "uimanager-rename-layout-popup";
         public const string ImportLayout = "uimanager-import-layout-popup";
+        public const string ExportLayout = "uimanager-export-layout-popup";
         public const string AddElement = "uimanager-add-element-popup";
         public const string DeleteVerify = "Delete layout?##uimanager-delete-layout-modal";
     }
