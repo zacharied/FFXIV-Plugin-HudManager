@@ -30,7 +30,7 @@ namespace HUD_Manager.Configuration {
         public Layout ToLayout() {
             var elements = this.Elements.Values.ToList();
 
-            while (elements.Count < 81) {
+            while (elements.Count < Hud.InMemoryLayoutElements) {
                 elements.Add(new Element(new RawElement()));
             }
 
