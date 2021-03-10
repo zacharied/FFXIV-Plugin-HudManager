@@ -1,4 +1,8 @@
-﻿namespace HUD_Manager.Structs {
+﻿using Dalamud.Data;
+using HUD_Manager.Lumina;
+using Lumina.Excel.GeneratedSheets;
+
+namespace HUD_Manager.Structs {
     public enum ElementKind : uint {
         FocusTargetBar = 3264409695,
         StatusInfoEnfeeblements = 511728259,
@@ -75,5 +79,113 @@
         TheFeastAllyInfo = 933766972,
         TheFeastScore = 3622852831,
         BattleHighGauge = 884971695,
+    }
+
+    public static class ElementKindExt {
+        public static string LocalisedName(this ElementKind kind, DataManager data) {
+            uint? id = kind switch {
+                ElementKind.Hotbar1 => 0,
+                ElementKind.Hotbar2 => 1,
+                ElementKind.Hotbar3 => 2,
+                ElementKind.Hotbar4 => 3,
+                ElementKind.Hotbar5 => 4,
+                ElementKind.Hotbar6 => 5,
+                ElementKind.Hotbar7 => 6,
+                ElementKind.Hotbar8 => 7,
+                ElementKind.Hotbar9 => 8,
+                ElementKind.Hotbar10 => 9,
+                ElementKind.PetHotbar => 10,
+                ElementKind.CrossHotbar => 11,
+                ElementKind.ProgressBar => 12,
+                ElementKind.TargetBar => 13,
+                ElementKind.FocusTargetBar => 14,
+                ElementKind.PartyList => 15,
+                ElementKind.EnemyList => 16,
+                ElementKind.ParameterBar => 17,
+                ElementKind.Notices => 18,
+                ElementKind.Minimap => 19,
+                ElementKind.MainMenu => 20,
+                ElementKind.ServerInfo => 21,
+                ElementKind.Gil => 22,
+                ElementKind.InventoryGrid => 23,
+                ElementKind.DutyList => 24,
+                ElementKind.ItemHelp => 25,
+                ElementKind.ActionHelp => 26,
+                ElementKind.LimitGauge => 27,
+                ElementKind.ExperienceBar => 28,
+                ElementKind.StatusEffects => 29,
+                ElementKind.AllianceList1 => 30,
+                ElementKind.AllianceList2 => 31,
+                // ElementKind.DutyList => 32, // listed twice?
+                // 33 is "Timers"
+                // 34-39 empty
+                ElementKind.OathGauge => 40,
+                // 41 is "LightningGauge" - guessing that's for GL
+                ElementKind.BeastGauge => 42,
+                ElementKind.DragonGauge => 43,
+                ElementKind.SongGauge => 44,
+                ElementKind.HealingGauge => 45,
+                ElementKind.ElementalGauge => 46,
+                ElementKind.AetherflowGaugeSch => 47, // order?
+                ElementKind.AetherflowGaugeSmn => 48, // order?
+                ElementKind.TranceGauge => 49,
+                ElementKind.FaerieGauge => 50,
+                ElementKind.NinkiGauge => 51,
+                ElementKind.HeatGauge => 52,
+                // 53 is empty
+                ElementKind.BloodGauge => 54,
+                ElementKind.ArcanaGauge => 55,
+                ElementKind.KenkiGauge => 56,
+                ElementKind.SenGauge => 57,
+                ElementKind.BalanceGauge => 58,
+                ElementKind.DutyGauge => 59,
+                ElementKind.DutyAction => 60,
+                ElementKind.ChakraGauge => 61,
+                ElementKind.HutonGauge => 62,
+                ElementKind.ScenarioGuide => 63,
+                ElementKind.RivalWingsGauges => 64,
+                ElementKind.RivalWingsAllianceList => 65,
+                ElementKind.RivalWingsTeamInfo => 66,
+                ElementKind.StatusInfoEnhancements => 67,
+                ElementKind.StatusInfoEnfeeblements => 68,
+                ElementKind.StatusInfoOther => 69,
+                ElementKind.TargetInfoStatus => 70,
+                ElementKind.TargetInfoProgressBar => 71,
+                ElementKind.TargetInfoHp => 72,
+                ElementKind.TheFeastScore => 73,
+                ElementKind.TheFeastAllyInfo => 74,
+                ElementKind.TheFeastEnemyInfo => 75,
+                ElementKind.RivalWingsStationInfo => 76,
+                ElementKind.RivalWingsMercenaryInfo => 77,
+                ElementKind.DarksideGauge => 78,
+                ElementKind.PowderGauge => 79,
+                ElementKind.StepGauge => 80,
+                ElementKind.FourfoldFeathers => 81,
+                ElementKind.BattleHighGauge => 82,
+                ElementKind.NewGamePlusGuide => 83,
+                ElementKind.CompressedAether => 84,
+                // 84 is "Ocean Fishing: Voyage Missions"
+                _ => null,
+            };
+
+            if (id == null) {
+                return kind.ToString();
+            }
+
+            var name = data.GetExcelSheet<HudSheet>().GetRow(id.Value).Name;
+
+            uint? jobId = kind switch {
+                ElementKind.AetherflowGaugeSmn => 27,
+                ElementKind.AetherflowGaugeSch => 28,
+                _ => null,
+            };
+
+            if (jobId != null) {
+                var abbr = data.GetExcelSheet<ClassJob>().GetRow(jobId.Value).Abbreviation;
+                name += $" ({abbr})";
+            }
+
+            return name;
+        }
     }
 }

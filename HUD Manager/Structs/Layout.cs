@@ -5,7 +5,7 @@ namespace HUD_Manager.Structs {
     [StructLayout(LayoutKind.Sequential)]
     public struct Layout {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 81)]
-        public Element[] elements;
+        public RawElement[] elements;
 
         public Dictionary<ElementKind, Element> ToDictionary() {
             // NOTE: not using ToDictionary here because duplicate keys are possible with old broken layouts
@@ -15,7 +15,7 @@ namespace HUD_Manager.Structs {
                     continue;
                 }
 
-                dict[elem.id] = elem;
+                dict[elem.id] = new Element(elem);
             }
 
             return dict;

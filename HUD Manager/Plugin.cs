@@ -4,6 +4,9 @@ using System.Linq;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using HUD_Manager.Configuration;
+using Resourcer;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace HUD_Manager {
     public class Plugin : IDalamudPlugin {
@@ -17,6 +20,7 @@ namespace HUD_Manager {
         public Statuses Statuses { get; private set; } = null!;
         public GameFunctions GameFunctions { get; private set; } = null!;
         public Config Config { get; private set; } = null!;
+        public HelpFile Help { get; private set; } = null!;
 
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.Interface = pluginInterface;
@@ -24,6 +28,11 @@ namespace HUD_Manager {
             this.Config = Migrator.LoadConfig(this);
             this.Config.Initialize(this.Interface);
             this.Config.Save();
+
+            var deserializer = new DeserializerBuilder()
+                .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                .Build();
+            this.Help = deserializer.Deserialize<HelpFile>(Resource.AsString("help.yaml"));
 
             this.Ui = new PluginUi(this);
             this.Hud = new Hud(this);
@@ -46,7 +55,7 @@ namespace HUD_Manager {
             this.Interface.UiBuilder.OnOpenConfigUi += this.Ui.ConfigUi;
             this.Interface.Framework.OnUpdateEvent += this.Swapper.OnFrameworkUpdate;
 
-            this.Interface.CommandManager.AddHandler("/hud", new CommandInfo(this.OnCommand) {
+            this.Interface.CommandManager.AddHandler("/hudman", new CommandInfo(this.OnCommand) {
                 HelpMessage = "Open the HUD Manager settings or swap to layout name",
             });
         }
@@ -55,7 +64,7 @@ namespace HUD_Manager {
             this.Interface.UiBuilder.OnBuildUi -= this.Ui.Draw;
             this.Interface.UiBuilder.OnOpenConfigUi -= this.Ui.ConfigUi;
             this.Interface.Framework.OnUpdateEvent -= this.Swapper.OnFrameworkUpdate;
-            this.Interface.CommandManager.RemoveHandler("/hud");
+            this.Interface.CommandManager.RemoveHandler("/hudman");
         }
 
         private void OnCommand(string command, string args) {

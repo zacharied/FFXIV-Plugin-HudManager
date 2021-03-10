@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
+using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
+using HUD_Manager.Tree;
 
 namespace HUD_Manager {
     public class Hud {
@@ -110,7 +114,7 @@ namespace HUD_Manager {
             var slotLayout = this.ReadLayout(slot);
             for (var i = 0; i < slotLayout.elements.Length; i++) {
                 if (dict.TryGetValue(slotLayout.elements[i].id, out var element)) {
-                    slotLayout.elements[i] = element;
+                    slotLayout.elements[i] = new RawElement(element);
                 }
             }
 
@@ -123,6 +127,41 @@ namespace HUD_Manager {
             if (currentSlot == slot) {
                 this.SelectSlot(currentSlot, true);
             }
+        }
+
+        public void WriteEffectiveLayout(HudSlot slot, Guid id) {
+            // find the node for this id
+            var nodes = Node<SavedLayout>.BuildTree(this.Plugin.Config.Layouts);
+            var node = nodes.Find(id);
+            if (node == null) {
+                return;
+            }
+
+            var elements = new Dictionary<ElementKind, Element>();
+
+            // get the ancestors and their elements for this node
+            foreach (var ancestor in node.Ancestors().Reverse()) {
+                foreach (var element in ancestor.Value.Elements) {
+                    elements[element.Key] = element.Value;
+                }
+            }
+
+            // apply this node's elements
+            foreach (var element in node.Value.Elements) {
+                elements[element.Key] = element.Value;
+            }
+
+            var elemList = elements.Values.ToList();
+
+            while (elemList.Count < 81) {
+                elemList.Add(new Element(new RawElement()));
+            }
+
+            var effective = new Layout {
+                elements = elemList.Select(elem => new RawElement(elem)).ToArray(),
+            };
+
+            this.WriteLayout(slot, effective);
         }
     }
 

@@ -7,10 +7,9 @@ using Dalamud.Interface;
 using Dalamud.Plugin;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
+using HUD_Manager.Tree;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json;
-using Action = System.Action;
 
 // TODO: Zone swaps?
 
@@ -25,6 +24,32 @@ namespace HUD_Manager {
             "ChatLogPanel_3",
         };
 
+        private static readonly float[] ScaleOptions = {
+            2.0f,
+            1.8f,
+            1.6f,
+            1.4f,
+            1.2f,
+            1.1f,
+            1.0f,
+            0.9f,
+            0.8f,
+            0.6f,
+        };
+
+        private static readonly string[] ScaleOptionsNames = {
+            "200%",
+            "180%",
+            "160%",
+            "140%",
+            "120%",
+            "110%",
+            "100%",
+            "90%",
+            "80%",
+            "60%",
+        };
+
         private Plugin Plugin { get; }
 
         private bool _settingsVisible;
@@ -34,9 +59,15 @@ namespace HUD_Manager {
             set => this._settingsVisible = value;
         }
 
-        private string _importName = "";
-        private string _renameName = "";
+        private string? _editorSearch;
+        private float _dragSpeed = 1.0f;
+
+        private string? _importName;
         private Guid _selectedLayoutId = Guid.Empty;
+
+        private string? _newLayoutName;
+        private string? _renameLayout;
+        private Guid _selectedEditLayout = Guid.Empty;
 
         private SavedLayout? SelectedSavedLayout => this._selectedLayoutId == Guid.Empty ? null : this.Plugin.Config.Layouts[this._selectedLayoutId];
 
@@ -53,27 +84,6 @@ namespace HUD_Manager {
         }
 
         private void DrawSettings() {
-            void DrawHudSlotButtons(string idSuffix, Action<HudSlot> hudSlotAction, Action clipboardAction) {
-                var slotButtonSize = new Vector2(40, 0);
-                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                    // Surround the button with parentheses if this is the current slot
-                    var slotText = slot == this.Plugin.Hud.GetActiveHudSlot() ? $"({(int) slot + 1})" : ((int) slot + 1).ToString();
-                    var buttonName = $"{slotText}##${idSuffix}";
-                    if (ImGui.Button(buttonName, slotButtonSize)) {
-                        PluginLog.Log("Importing outer");
-                        hudSlotAction(slot);
-                    }
-
-                    ImGui.SameLine();
-                }
-
-                ImGui.SameLine();
-
-                if (ImGui.Button($"Clipboard##{idSuffix}")) {
-                    clipboardAction();
-                }
-            }
-
             if (!this.SettingsVisible) {
                 return;
             }
@@ -90,17 +100,17 @@ namespace HUD_Manager {
                         ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), "Read this first");
                         ImGui.Separator();
                         ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20f);
-                        ImGui.Text("HUD Manager will use the configured staging slot as its own slot to make changes to. This means the staging slot will be overwritten whenever any swap happens.");
+                        ImGui.TextUnformatted("HUD Manager will use the configured staging slot as its own slot to make changes to. This means the staging slot will be overwritten whenever any swap happens.");
                         ImGui.Spacing();
-                        ImGui.Text("Any HUD layout changes you make while HUD Manager is enabled may potentially be lost, no matter what slot. If you want to make changes to your HUD layout, TURN OFF HUD Manager first.");
+                        ImGui.TextUnformatted("Any HUD layout changes you make while HUD Manager is enabled may potentially be lost, no matter what slot. If you want to make changes to your HUD layout, TURN OFF HUD Manager first.");
                         ImGui.Spacing();
-                        ImGui.Text("When editing or making a new layout, to be completely safe, turn off swaps, set up your layout, import the layout into HUD Manager, then turn on swaps.");
+                        ImGui.TextUnformatted("When editing or making a new layout, to be completely safe, turn off swaps, set up your layout, import the layout into HUD Manager, then turn on swaps.");
                         ImGui.Spacing();
-                        ImGui.Text("If you are a new user, HUD Manager auto-imported your existing layouts on startup.");
+                        ImGui.TextUnformatted("If you are a new user, HUD Manager auto-imported your existing layouts on startup.");
                         ImGui.Spacing();
-                        ImGui.Text("Finally, HUD Manager is beta software. Back up your character data before using this plugin. You may lose some to all of your HUD layouts while testing this plugin.");
+                        ImGui.TextUnformatted("Finally, HUD Manager is beta software. Back up your character data before using this plugin. You may lose some to all of your HUD layouts while testing this plugin.");
                         ImGui.Separator();
-                        ImGui.Text("If you have read all of the above and are okay with continuing, check the box below to enable HUD Manager. You only need to do this once.");
+                        ImGui.TextUnformatted("If you have read all of the above and are okay with continuing, check the box below to enable HUD Manager. You only need to do this once.");
                         ImGui.PopTextWrapPos();
                         var understandsRisks = this.Plugin.Config.UnderstandsRisks;
                         if (ImGui.Checkbox("I understand", ref understandsRisks)) {
@@ -116,266 +126,14 @@ namespace HUD_Manager {
                     return;
                 }
 
-                if (ImGui.BeginTabItem("Layouts")) {
-                    ImGui.Text("Saved layouts");
-                    if (this.Plugin.Config.Layouts.Count == 0) {
-                        ImGui.Text("None saved!");
-                    } else {
-                        ImGui.PushItemWidth(-1);
-                        if (ImGui.ListBoxHeader("##saved-layouts")) {
-                            foreach (var entry in this.Plugin.Config.Layouts) {
-                                if (!ImGui.Selectable($"{entry.Value.Name}##{entry.Key}", this._selectedLayoutId == entry.Key)) {
-                                    continue;
-                                }
+                this.DrawLayoutEditor();
 
-                                this._selectedLayoutId = entry.Key;
-                                this._renameName = entry.Value.Name;
-                                this._importName = this._renameName;
-                            }
+                this.DrawSwaps();
 
-                            ImGui.ListBoxFooter();
-                        }
-
-                        ImGui.PopItemWidth();
-
-                        ImGui.PushItemWidth(200);
-                        ImGui.InputText("##rename-input", ref this._renameName, 100);
-                        ImGui.PopItemWidth();
-                        ImGui.SameLine();
-                        if (ImGui.Button("Rename") && this._renameName.Length != 0 && this.SelectedSavedLayout != null) {
-                            var layout = this.Plugin.Config.Layouts[this._selectedLayoutId];
-                            var newLayout = new SavedLayout(this._renameName, layout.ToLayout(), layout.Positions);
-                            this.Plugin.Config.Layouts[this._selectedLayoutId] = newLayout;
-                            this.Plugin.Config.Save();
-                        }
-
-                        const int layoutActionButtonWidth = 30;
-                        // `layoutActionButtonWidth` must be multiplied by however many action buttons there are here
-                        ImGui.SameLine(ImGui.GetWindowContentRegionWidth() - layoutActionButtonWidth * 1);
-                        ImGui.PushFont(UiBuilder.IconFont);
-                        if (ImGui.Button(FontAwesomeIcon.Trash.ToIconString(), new Vector2(layoutActionButtonWidth, 0)) &&
-                            this.SelectedSavedLayout != null) {
-                            this.Plugin.Config.Layouts.Remove(this._selectedLayoutId);
-                            this.Plugin.Config.HudConditionMatches.RemoveAll(m => m.LayoutId == this._selectedLayoutId);
-                            this._selectedLayoutId = Guid.Empty;
-                            this._renameName = "";
-                            this.Plugin.Config.Save();
-                        }
-
-                        ImGui.PopFont();
-
-                        ImGui.Text("Copy to...");
-                        DrawHudSlotButtons("copy", slot => {
-                            if (this.SelectedSavedLayout == null) {
-                                return;
-                            }
-
-                            this.Plugin.Hud.WriteLayout(slot, this.SelectedSavedLayout.ToLayout());
-                        }, () => {
-                            if (this.SelectedSavedLayout == null) {
-                                return;
-                            }
-
-                            var json = JsonConvert.SerializeObject(this.SelectedSavedLayout);
-                            ImGui.SetClipboardText(json);
-                        });
-                    }
-
-                    ImGui.Separator();
-
-                    ImGui.Text("Import");
-
-                    ImGui.InputText("Imported layout name", ref this._importName, 100);
-
-                    var importPositions = this.Plugin.Config.ImportPositions;
-                    if (ImGui.Checkbox("Import window positions", ref importPositions)) {
-                        this.Plugin.Config.ImportPositions = importPositions;
-                        this.Plugin.Config.Save();
-                    }
-
-                    ImGui.SameLine();
-                    HelpMarker("If this is checked, the position of the chat box and the map will be saved with the imported layout.");
-
-                    var isOverwriting = this.Plugin.Config.Layouts.Values.Any(layout => layout.Name == this._importName);
-                    ImGui.Text((isOverwriting ? "Overwrite" : "Import") + " from...");
-
-                    DrawHudSlotButtons("import", slot => {
-                        PluginLog.Log("Importing inner");
-                        this.ImportSlot(this._importName, slot);
-                        this._importName = "";
-                    }, () => {
-                        SavedLayout? shared = null;
-                        try {
-                            shared = JsonConvert.DeserializeObject<SavedLayout>(ImGui.GetClipboardText());
-                        } catch (Exception) {
-                            // ignored
-                        }
-
-                        if (shared == null) {
-                            return;
-                        }
-
-                        this.Import(this._importName, shared.ToLayout(), shared.Positions);
-                        this._importName = "";
-                    });
-
-                    ImGui.EndTabItem();
-                }
-
-                if (ImGui.BeginTabItem("Swaps")) {
-                    var enabled = this.Plugin.Config.SwapsEnabled;
-                    if (ImGui.Checkbox("Enable swaps", ref enabled)) {
-                        this.Plugin.Config.SwapsEnabled = enabled;
-                        this.Plugin.Config.Save();
-                    }
-
-                    ImGui.Text("Note: Disable swaps when editing your HUD.");
-
-                    ImGui.Spacing();
-                    var staging = ((int) this.Plugin.Config.StagingSlot + 1).ToString();
-                    if (ImGui.BeginCombo("Staging slot", staging)) {
-                        foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                            if (!ImGui.Selectable(((int) slot + 1).ToString())) {
-                                continue;
-                            }
-
-                            this.Plugin.Config.StagingSlot = slot;
-                            this.Plugin.Config.Save();
-                        }
-
-                        ImGui.EndCombo();
-                    }
-
-                    ImGui.SameLine();
-                    HelpMarker("The staging slot is the HUD layout slot that will be used as your HUD layout. All changes will be written to this slot when swaps are enabled.");
-
-                    ImGui.Separator();
-
-                    if (this.Plugin.Config.Layouts.Count == 0) {
-                        ImGui.Text("Create at least one layout to begin setting up swaps.");
-                    } else {
-                        ImGui.Text("Add swap conditions below.\nThe first condition that is satisfied will be the layout that is used.");
-                        ImGui.Separator();
-                        this.DrawConditionsTable();
-                    }
-
-                    ImGui.EndTabItem();
-                }
+                this.DrawHelp();
 
                 #if DEBUG
-                if (ImGui.BeginTabItem("Debug")) {
-                    ImGui.TextUnformatted("Print layout pointer address");
-
-                    if (ImGui.Button("1")) {
-                        var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
-                        this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
-                    }
-
-                    ImGui.SameLine();
-
-                    if (ImGui.Button("2")) {
-                        var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Two);
-                        this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
-                    }
-
-                    ImGui.SameLine();
-
-                    if (ImGui.Button("3")) {
-                        var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Three);
-                        this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
-                    }
-
-                    ImGui.SameLine();
-
-                    if (ImGui.Button("4")) {
-                        var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Four);
-                        this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
-                    }
-
-                    if (ImGui.Button("Save layout")) {
-                        var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
-                        var layout = Marshal.PtrToStructure<Layout>(ptr);
-                        this.PreviousLayout = layout;
-                    }
-
-                    ImGui.SameLine();
-
-                    if (ImGui.Button("Find difference")) {
-                        var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
-                        var layout = Marshal.PtrToStructure<Layout>(ptr);
-
-                        foreach (var prevElem in this.PreviousLayout.elements) {
-                            var currElem = layout.elements.FirstOrDefault(el => el.id == prevElem.id);
-                            if (currElem.visibility == prevElem.visibility && !(Math.Abs(currElem.x - prevElem.x) > .01)) {
-                                continue;
-                            }
-
-                            PluginLog.Log(currElem.id.ToString());
-                            this.Plugin.Interface.Framework.Gui.Chat.Print(currElem.id.ToString());
-                        }
-                    }
-
-                    if (ImGui.BeginChild("ui-elements", new Vector2(0, 0))) {
-                        var ptr = this.Plugin.Hud.GetLayoutPointer(this.Plugin.Hud.GetActiveHudSlot());
-                        var layout = Marshal.PtrToStructure<Layout>(ptr);
-
-                        var changed = false;
-
-                        var elements = (ElementKind[]) Enum.GetValues(typeof(ElementKind));
-                        foreach (var kind in elements.OrderBy(el => el.ToString())) {
-                            for (var i = 0; i < layout.elements.Length; i++) {
-                                if (layout.elements[i].id != kind) {
-                                    continue;
-                                }
-
-                                ImGui.TextUnformatted(kind.ToString());
-
-                                var x = layout.elements[i].x;
-                                if (ImGui.DragFloat($"X##{kind}", ref x)) {
-                                    layout.elements[i].x = x;
-                                    changed = true;
-                                }
-
-                                var y = layout.elements[i].y;
-                                if (ImGui.DragFloat($"Y##{kind}", ref y)) {
-                                    layout.elements[i].y = y;
-                                    changed = true;
-                                }
-
-                                var visible = layout.elements[i].visibility == Visibility.Visible;
-                                if (ImGui.Checkbox($"Visible##{kind}", ref visible)) {
-                                    layout.elements[i].visibility = visible ? Visibility.Visible : Visibility.Hidden;
-                                    changed = true;
-                                }
-
-                                var scale = layout.elements[i].scale;
-                                if (ImGui.DragFloat($"Scale##{kind}", ref scale)) {
-                                    layout.elements[i].scale = scale;
-                                    changed = true;
-                                }
-
-                                var opacity = (int) layout.elements[i].opacity;
-                                if (ImGui.DragInt($"Opacity##{kind}", ref opacity, 1, 1, 255)) {
-                                    layout.elements[i].opacity = (byte) opacity;
-                                    changed = true;
-                                }
-
-                                ImGui.Separator();
-
-                                break;
-                            }
-                        }
-
-                        if (changed) {
-                            Marshal.StructureToPtr(layout, ptr, false);
-                            this.Plugin.Hud.SelectSlot(this.Plugin.Hud.GetActiveHudSlot(), true);
-                        }
-
-                        ImGui.EndChild();
-                    }
-
-                    ImGui.EndTabItem();
-                }
+                this.DrawDebug();
                 #endif
 
                 ImGui.EndTabBar();
@@ -384,7 +142,507 @@ namespace HUD_Manager {
             ImGui.End();
         }
 
+        private void DrawSwaps() {
+            if (!ImGui.BeginTabItem("Swaps")) {
+                return;
+            }
+
+            var enabled = this.Plugin.Config.SwapsEnabled;
+            if (ImGui.Checkbox("Enable swaps", ref enabled)) {
+                this.Plugin.Config.SwapsEnabled = enabled;
+                this.Plugin.Config.Save();
+
+                this.Plugin.Statuses.SetHudLayout(this.Plugin.Interface.ClientState.LocalPlayer, true);
+            }
+
+            ImGui.TextUnformatted("Note: Disable swaps when editing your HUD.");
+
+            ImGui.Spacing();
+            var staging = ((int) this.Plugin.Config.StagingSlot + 1).ToString();
+            if (ImGui.BeginCombo("Staging slot", staging)) {
+                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
+                    if (!ImGui.Selectable(((int) slot + 1).ToString())) {
+                        continue;
+                    }
+
+                    this.Plugin.Config.StagingSlot = slot;
+                    this.Plugin.Config.Save();
+                }
+
+                ImGui.EndCombo();
+            }
+
+            ImGui.SameLine();
+            HelpMarker("The staging slot is the HUD layout slot that will be used as your HUD layout. All changes will be written to this slot when swaps are enabled.");
+
+            ImGui.Separator();
+
+            if (this.Plugin.Config.Layouts.Count == 0) {
+                ImGui.TextUnformatted("Create at least one layout to begin setting up swaps.");
+            } else {
+                ImGui.TextUnformatted("Add swap conditions below.\nThe first condition that is satisfied will be the layout that is used.");
+                ImGui.Separator();
+                this.DrawConditionsTable();
+            }
+
+            ImGui.EndTabItem();
+        }
+
+        private void DrawLayoutEditor() {
+            if (!ImGui.BeginTabItem("Layout editor")) {
+                return;
+            }
+
+            if (this.Plugin.Config.SwapsEnabled) {
+                ImGui.TextUnformatted("Cannot edit layouts while swaps are enabled.");
+
+                if (ImGui.Button("Disable swaps")) {
+                    this.Plugin.Config.SwapsEnabled = false;
+                    this.Plugin.Config.Save();
+                }
+
+                goto EndTabItem;
+            }
+
+            var update = false;
+
+            ImGui.TextUnformatted("Layout");
+
+            var nodes = Node<SavedLayout>.BuildTree(this.Plugin.Config.Layouts);
+
+            this.Plugin.Config.Layouts.TryGetValue(this._selectedEditLayout, out var selected);
+            var selectedName = selected?.Name ?? "<none>";
+
+            if (ImGui.BeginCombo("##edit-layout", selectedName)) {
+                if (ImGui.Selectable("<none>")) {
+                    this._selectedEditLayout = Guid.Empty;
+                }
+
+                foreach (var node in nodes) {
+                    foreach (var (child, depth) in node.TraverseWithDepth()) {
+                        var indent = new string(' ', (int) depth * 4);
+                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##edit-{child.Id}")) {
+                            continue;
+                        }
+
+                        this._selectedEditLayout = child.Id;
+                        update = true;
+                    }
+                }
+
+                ImGui.EndCombo();
+            }
+
+            ImGui.SameLine();
+            if (IconButton(FontAwesomeIcon.Plus, "uimanager-add-layout")) {
+                ImGui.OpenPopup(Popups.AddLayout);
+            }
+
+            HoverTooltip("Add a new layout");
+
+            this.SetUpAddLayoutPopup();
+
+            ImGui.SameLine();
+            if (IconButton(FontAwesomeIcon.TrashAlt, "uimanager-delete-layout") && this._selectedEditLayout != Guid.Empty) {
+                ImGui.OpenPopup(Popups.DeleteVerify);
+            }
+
+            this.SetUpDeleteVerifyPopup(nodes);
+
+            HoverTooltip("Delete the selected layout");
+
+            ImGui.SameLine();
+            if (IconButton(FontAwesomeIcon.PencilAlt, "uimanager-rename-layout") && this._selectedEditLayout != Guid.Empty) {
+                this._renameLayout = this.Plugin.Config.Layouts[this._selectedEditLayout].Name;
+                ImGui.OpenPopup(Popups.RenameLayout);
+            }
+
+            HoverTooltip("Rename the selected layout");
+
+            this.SetUpRenameLayoutPopup();
+
+            ImGui.SameLine();
+            if (IconButton(FontAwesomeIcon.FileImport, "uimanager-import-layout")) {
+                ImGui.OpenPopup(Popups.ImportLayout);
+            }
+
+            HoverTooltip("Import a layout from an in-game HUD slot");
+
+            this.SetUpImportLayoutPopup();
+
+            if (this._selectedEditLayout == Guid.Empty) {
+                goto EndTabItem;
+            }
+
+            var layout = this.Plugin.Config.Layouts[this._selectedEditLayout];
+
+            this.Plugin.Config.Layouts.TryGetValue(layout.Parent, out var parent);
+            var parentName = parent?.Name ?? "<none>";
+
+            if (ImGui.BeginCombo("Parent", parentName)) {
+                if (ImGui.Selectable("<none>")) {
+                    layout.Parent = Guid.Empty;
+                    this.Plugin.Config.Save();
+                }
+
+                foreach (var node in nodes) {
+                    foreach (var (child, depth) in node.TraverseWithDepth()) {
+                        var indent = new string(' ', (int) depth * 4);
+                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##parent-{child.Id}") || child.Id == this._selectedEditLayout) {
+                            continue;
+                        }
+
+                        layout.Parent = child.Id;
+                        this.Plugin.Config.Save();
+                    }
+                }
+
+                ImGui.EndCombo();
+            }
+
+            ImGui.Separator();
+
+            ImGui.TextUnformatted("Search");
+
+            ImGui.PushItemWidth(-1);
+            var search = this._editorSearch ?? string.Empty;
+            if (ImGui.InputText("##ui-editor-search", ref search, 100)) {
+                this._editorSearch = string.IsNullOrWhiteSpace(search) ? null : search;
+            }
+
+            ImGui.PopItemWidth();
+
+            ImGui.DragFloat("Slider speed", ref this._dragSpeed, 0.01f, 0.01f, 10f);
+
+            ImGui.Separator();
+
+            ImGui.TextUnformatted("HUD Elements");
+
+            ImGui.SameLine();
+            if (IconButton(FontAwesomeIcon.Plus, "uimanager-add-hud-element")) {
+                ImGui.OpenPopup(Popups.AddElement);
+            }
+
+            HoverTooltip("Add a new HUD element to this layout");
+
+            if (ImGui.BeginPopup(Popups.AddElement)) {
+                var kinds = Enum.GetValues(typeof(ElementKind))
+                    .Cast<ElementKind>()
+                    .OrderBy(el => el.LocalisedName(this.Plugin.Interface.Data));
+                foreach (var kind in kinds) {
+                    if (!ImGui.Selectable($"{kind.LocalisedName(this.Plugin.Interface.Data)}##{kind}")) {
+                        continue;
+                    }
+
+                    var currentLayout = this.Plugin.Hud.ReadLayout(this.Plugin.Hud.GetActiveHudSlot());
+                    var element = currentLayout.elements.FirstOrDefault(el => el.id == kind);
+                    this.Plugin.Config.Layouts[this._selectedEditLayout].Elements[kind] = new Element(element);
+
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.EndPopup();
+            }
+
+            if (ImGui.BeginChild("uimanager-layout-editor-elements", new Vector2(0, 0))) {
+                var toRemove = new List<ElementKind>();
+
+                foreach (var entry in layout.Elements) {
+                    var name = entry.Key.LocalisedName(this.Plugin.Interface.Data);
+
+                    if (this._editorSearch != null && !name.ContainsIgnoreCase(this._editorSearch)) {
+                        continue;
+                    }
+
+                    ImGui.TextUnformatted(name);
+
+                    var element = entry.Value;
+
+                    var visible = element.Visibility == Visibility.Visible;
+                    if (ImGui.Checkbox($"Visible##{entry.Key}", ref visible)) {
+                        element.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
+                        update = true;
+                    }
+
+                    ImGui.SameLine();
+                    if (IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{entry.Key}")) {
+                        toRemove.Add(entry.Key);
+                    }
+
+                    var x = element.X;
+                    if (ImGui.DragFloat($"X##{entry.Key}", ref x, this._dragSpeed)) {
+                        element.X = x;
+                        update = true;
+                    }
+
+                    var y = element.Y;
+                    if (ImGui.DragFloat($"Y##{entry.Key}", ref y, this._dragSpeed)) {
+                        element.Y = y;
+                        update = true;
+                    }
+
+                    var scaleIdx = Array.IndexOf(ScaleOptions, element.Scale);
+                    if (scaleIdx == -1) {
+                        scaleIdx = 6;
+                    }
+
+                    if (ImGui.Combo($"Scale##{entry.Key}", ref scaleIdx, ScaleOptionsNames, ScaleOptionsNames.Length)) {
+                        element.Scale = ScaleOptions[scaleIdx];
+                        update = true;
+                    }
+
+                    var opacity = (int) element.Opacity;
+                    if (ImGui.DragInt($"Opacity##{entry.Key}", ref opacity, 1, 1, 255)) {
+                        element.Opacity = (byte) opacity;
+                        update = true;
+                    }
+
+                    ImGui.Separator();
+                }
+
+                foreach (var remove in toRemove) {
+                    layout.Elements.Remove(remove);
+                }
+
+                if (update) {
+                    this.Plugin.Hud.WriteLayout(this.Plugin.Config.StagingSlot, layout.ToLayout());
+                    this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
+                }
+
+                ImGui.EndChild();
+            }
+
+            EndTabItem:
+            ImGui.EndTabItem();
+        }
+
+        private void SetUpImportLayoutPopup() {
+            if (!ImGui.BeginPopup(Popups.ImportLayout)) {
+                return;
+            }
+
+            var importName = this._importName ?? "";
+            if (ImGui.InputText("Imported layout name", ref importName, 100)) {
+                this._importName = string.IsNullOrWhiteSpace(importName) ? null : importName;
+            }
+
+            var exists = this.Plugin.Config.Layouts.Values.Any(layout => layout.Name == this._importName);
+            if (exists) {
+                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, .8f, .2f, 1f));
+                ImGui.TextUnformatted("This will overwrite an existing layout.");
+                ImGui.PopStyleColor();
+            }
+
+            var current = this.Plugin.Hud.GetActiveHudSlot();
+            foreach (var slot in (HudSlot[]) Enum.GetValues(typeof(HudSlot))) {
+                var name = current == slot ? $"({(int) slot + 1})" : $"{(int) slot + 1}";
+                if (ImGui.Button($"{name}##import-{slot}")) {
+                    Guid id;
+                    string newName;
+                    Dictionary<string, Vector2<short>> positions;
+                    if (exists) {
+                        var overwriting = this.Plugin.Config.Layouts.First(entry => entry.Value.Name == this._importName);
+                        id = overwriting.Key;
+                        newName = overwriting.Value.Name;
+                        positions = overwriting.Value.Positions;
+                    } else {
+                        id = Guid.NewGuid();
+                        newName = this._importName!;
+                        positions = new Dictionary<string, Vector2<short>>();
+                    }
+
+                    var currentLayout = this.Plugin.Hud.ReadLayout(slot);
+                    var newLayout = new SavedLayout(newName, currentLayout, positions);
+                    this.Plugin.Config.Layouts[id] = newLayout;
+                    this.Plugin.Config.Save();
+
+                    this._selectedEditLayout = id;
+
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.SameLine();
+            }
+
+            if (IconButton(FontAwesomeIcon.Clipboard, "import-clipboard")) {
+            }
+
+            ImGui.EndPopup();
+        }
+
+        private void SetUpRenameLayoutPopup() {
+            if (!ImGui.BeginPopup(Popups.RenameLayout)) {
+                return;
+            }
+
+            var name = this._renameLayout ?? "<none>";
+            if (ImGui.InputText("Name", ref name, 100)) {
+                this._renameLayout = string.IsNullOrWhiteSpace(name) ? null : name;
+            }
+
+            if (ImGui.Button("Rename") && this._renameLayout != null) {
+                this.Plugin.Config.Layouts[this._selectedEditLayout].Name = this._renameLayout;
+                this.Plugin.Config.Save();
+
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        private void SetUpDeleteVerifyPopup(IEnumerable<Node<SavedLayout>> nodes) {
+            if (!ImGui.BeginPopupModal(Popups.DeleteVerify)) {
+                return;
+            }
+
+            if (this.Plugin.Config.Layouts.TryGetValue(this._selectedEditLayout, out var deleting)) {
+                ImGui.TextUnformatted($"Are you sure you want to delete the layout \"{deleting.Name}\"?");
+
+                if (ImGui.Button("Yes")) {
+                    // unset the parent of any child layouts
+                    var node = nodes.Find(this._selectedEditLayout);
+                    if (node != null) {
+                        foreach (var child in node.Children) {
+                            child.Parent = null;
+                            child.Value.Parent = Guid.Empty;
+                        }
+                    }
+
+                    this.Plugin.Config.Layouts.Remove(this._selectedEditLayout);
+                    this._selectedEditLayout = Guid.Empty;
+                    this.Plugin.Config.Save();
+
+                    ImGui.CloseCurrentPopup();
+                }
+
+                ImGui.SameLine();
+                if (ImGui.Button("No")) {
+                    ImGui.CloseCurrentPopup();
+                }
+            }
+
+            ImGui.EndPopup();
+        }
+
+        private void SetUpAddLayoutPopup() {
+            if (!ImGui.BeginPopup(Popups.AddLayout)) {
+                return;
+            }
+
+            var name = this._newLayoutName ?? string.Empty;
+            if (ImGui.InputText("Name", ref name, 100)) {
+                this._newLayoutName = string.IsNullOrWhiteSpace(name) ? null : name;
+            }
+
+            var exists = this.Plugin.Config.Layouts.Values.Any(layout => layout.Name == this._newLayoutName);
+            if (exists) {
+                ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f));
+                ImGui.TextUnformatted("A layout with that name already exists.");
+                ImGui.PopStyleColor();
+            }
+
+            if (!exists && ImGui.Button("Add") && this._newLayoutName != null) {
+                // create the layout
+                var saved = new SavedLayout(this._newLayoutName, new Dictionary<ElementKind, Element>(), new Dictionary<string, Vector2<short>>(), Guid.Empty);
+                // reset the new layout name
+                this._newLayoutName = null;
+
+                // generate a new id
+                var id = Guid.NewGuid();
+
+                // add the layout and save the config
+                this.Plugin.Config.Layouts[id] = saved;
+                this.Plugin.Config.Save();
+
+                // switch the editor to the new layout
+                this._selectedEditLayout = id;
+
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        private void DrawHelp() {
+            if (!ImGui.BeginTabItem("Help")) {
+                return;
+            }
+
+            ImGui.PushTextWrapPos();
+
+            foreach (var entry in this.Plugin.Help.Help) {
+                if (ImGui.CollapsingHeader(entry.Name)) {
+                    ImGui.TextUnformatted(entry.Description.Replace("\n", "\n\n"));
+                }
+            }
+
+            ImGui.PopTextWrapPos();
+
+            ImGui.EndTabItem();
+        }
+
+        #if DEBUG
         private Layout PreviousLayout { get; set; }
+
+        private void DrawDebug() {
+            if (!ImGui.BeginTabItem("Debug")) {
+                return;
+            }
+
+            ImGui.TextUnformatted("Print layout pointer address");
+
+            if (ImGui.Button("1")) {
+                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
+                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button("2")) {
+                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Two);
+                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button("3")) {
+                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Three);
+                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button("4")) {
+                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Four);
+                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+            }
+
+            if (ImGui.Button("Save layout")) {
+                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
+                var layout = Marshal.PtrToStructure<Layout>(ptr);
+                this.PreviousLayout = layout;
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Button("Find difference")) {
+                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
+                var layout = Marshal.PtrToStructure<Layout>(ptr);
+
+                foreach (var prevElem in this.PreviousLayout.elements) {
+                    var currElem = layout.elements.FirstOrDefault(el => el.id == prevElem.id);
+                    if (currElem.visibility == prevElem.visibility && !(Math.Abs(currElem.x - prevElem.x) > .01)) {
+                        continue;
+                    }
+
+                    PluginLog.Log(currElem.id.ToString());
+                    this.Plugin.Interface.Framework.Gui.Chat.Print(currElem.id.ToString());
+                }
+            }
+
+            ImGui.EndTabItem();
+        }
+        #endif
 
         private void DrawConditionsTable() {
             ImGui.PushFont(UiBuilder.IconFont);
@@ -401,16 +659,16 @@ namespace HUD_Manager {
                 conditions.Add(new HudConditionMatch());
             }
 
-            ImGui.Text("Job");
+            ImGui.TextUnformatted("Job");
             ImGui.NextColumn();
 
-            ImGui.Text("State");
+            ImGui.TextUnformatted("State");
             ImGui.NextColumn();
 
-            ImGui.Text("Layout");
+            ImGui.TextUnformatted("Layout");
             ImGui.NextColumn();
 
-            ImGui.Text("Options");
+            ImGui.TextUnformatted("Options");
             ImGui.NextColumn();
 
             ImGui.Separator();
@@ -489,14 +747,14 @@ namespace HUD_Manager {
                         ImGui.SetScrollHereY();
                     }
                 } else {
-                    ImGui.Text(item.cond.ClassJob ?? string.Empty);
+                    ImGui.TextUnformatted(item.cond.ClassJob ?? string.Empty);
                     ImGui.NextColumn();
 
-                    ImGui.Text(item.cond.Status?.Name() ?? string.Empty);
+                    ImGui.TextUnformatted(item.cond.Status?.Name() ?? string.Empty);
                     ImGui.NextColumn();
 
                     this.Plugin.Config.Layouts.TryGetValue(item.cond.LayoutId, out var condLayout);
-                    ImGui.Text(condLayout?.Name ?? string.Empty);
+                    ImGui.TextUnformatted(condLayout?.Name ?? string.Empty);
                     ImGui.NextColumn();
 
                     if (IconButton(FontAwesomeIcon.PencilAlt, $"{item.i}")) {
@@ -581,11 +839,29 @@ namespace HUD_Manager {
             this.Plugin.Statuses.SetHudLayout(null);
         }
 
-        private static bool IconButton(FontAwesomeIcon icon, string append = "") {
+        private static bool IconButton(FontAwesomeIcon icon, string? id = null) {
             ImGui.PushFont(UiBuilder.IconFont);
-            var button = ImGui.Button($"{icon.ToIconString()}##{append}");
+
+            var text = icon.ToIconString();
+            if (id != null) {
+                text += $"##{id}";
+            }
+
+            var result = ImGui.Button(text);
+
             ImGui.PopFont();
-            return button;
+
+            return result;
+        }
+
+        private static void HoverTooltip(string text) {
+            if (!ImGui.IsItemHovered()) {
+                return;
+            }
+
+            ImGui.BeginTooltip();
+            ImGui.TextUnformatted(text);
+            ImGui.EndTooltip();
         }
 
         private static void HelpMarker(string text) {
@@ -635,5 +911,14 @@ namespace HUD_Manager {
                 this.Plugin.Config.Save();
             }
         }
+    }
+
+
+    public static class Popups {
+        public const string AddLayout = "uimanager-add-layout-popup";
+        public const string RenameLayout = "uimanager-rename-layout-popup";
+        public const string ImportLayout = "uimanager-import-layout-popup";
+        public const string AddElement = "uimanager-add-element-popup";
+        public const string DeleteVerify = "Delete layout?##uimanager-delete-layout-modal";
     }
 }

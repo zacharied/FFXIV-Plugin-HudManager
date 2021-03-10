@@ -1,5 +1,4 @@
-﻿using System;
-using Dalamud.Game.Internal;
+﻿using Dalamud.Game.Internal;
 
 namespace HUD_Manager {
     public class Swapper {
@@ -10,10 +9,6 @@ namespace HUD_Manager {
         }
 
         public void OnFrameworkUpdate(Framework framework) {
-            if (framework == null) {
-                throw new ArgumentNullException(nameof(framework), "Framework cannot be null");
-            }
-
             if (!this.Plugin.Config.SwapsEnabled || !this.Plugin.Config.UnderstandsRisks) {
                 return;
             }

@@ -9,14 +9,16 @@ namespace HUD_Manager.Configuration {
     public class SavedLayout {
         public Dictionary<ElementKind, Element> Elements { get; }
         public Dictionary<string, Vector2<short>> Positions { get; private set; }
+        public Guid Parent { get; set; } = Guid.Empty;
 
-        public string Name { get; private set; }
+        public string Name { get; set; }
 
         [JsonConstructor]
-        public SavedLayout(string name, Dictionary<ElementKind, Element> elements, Dictionary<string, Vector2<short>> positions) {
+        public SavedLayout(string name, Dictionary<ElementKind, Element> elements, Dictionary<string, Vector2<short>> positions, Guid parent) {
             this.Name = name;
             this.Elements = elements;
             this.Positions = positions;
+            this.Parent = parent;
         }
 
         public SavedLayout(string name, Layout hud, Dictionary<string, Vector2<short>> positions) {
@@ -29,11 +31,11 @@ namespace HUD_Manager.Configuration {
             var elements = this.Elements.Values.ToList();
 
             while (elements.Count < 81) {
-                elements.Add(new Element());
+                elements.Add(new Element(new RawElement()));
             }
 
             return new Layout {
-                elements = elements.ToArray(),
+                elements = elements.Select(elem => new RawElement(elem)).ToArray(),
             };
         }
     }

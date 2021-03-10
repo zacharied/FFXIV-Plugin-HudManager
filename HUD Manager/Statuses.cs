@@ -76,7 +76,7 @@ namespace HUD_Manager {
             if (!this.Plugin.Config.Layouts.TryGetValue(layoutId, out var layout)) {
                 return; // FIXME: do something better
             }
-            this.Plugin.Hud.WriteLayout(this.Plugin.Config.StagingSlot, layout.ToLayout());
+            this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId);
             this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
 
             foreach (var entry in layout.Positions) {

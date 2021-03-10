@@ -1,0 +1,31 @@
+﻿help:
+  - name: Basic overview
+    description: >-
+      HUD Manager allows you to create infinite HUD layouts and
+      dynamically swap to them based on in-game conditions.
+  - name: What is the staging slot?
+    description: >-
+      The staging slot is the in-game HUD slot that the plugin will
+      update. For example, if it is set to 4, your in-game HUD slot
+      will always be 4 while the plugin is active. The plugin will
+      update that slot with whichever layout is appropriate when
+      necessary.
+  - name: What is a layout parent?/How does inheritance work?
+    description: >-
+      Every layout created by HUD Manager may have a parent. Layouts
+      with parents are called child layouts. Child layouts inherit all
+      HUD elements from all of their parents but can override
+      them. This system allows for you to create one base layout and
+      have several variations. When you update the base layout, all
+      the variations will reflect that update automatically without
+      any extra work on your part.
+
+      For example, imagine a layout called "Default" and a layout
+      called "Battle". The Battle layout is a child of the Default
+      layout and is set to turn on in combat. The Battle layout has
+      one HUD element added: gil, and gil is hidden. The Default
+      layout has gil visible. When not in combat, gil will be visible,
+      but when entering combat, gil will be hidden. This is because
+      the Battle layout inherits all the HUD elements from the Default
+      layout, but it overrides the gil HUD element to hide it during
+      combat.

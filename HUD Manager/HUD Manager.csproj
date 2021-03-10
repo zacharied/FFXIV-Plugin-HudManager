@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <TargetFramework>net48</TargetFramework>
-        <Version>2.0.0.1</Version>
+        <Version>2.0.0.2</Version>
         <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
@@ -34,6 +34,16 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="1.2.0" />
+        <PackageReference Include="Costura.Fody" Version="5.0.2" PrivateAssets="all"/>
+        <PackageReference Include="DalamudPackager" Version="1.2.0"/>
+        <PackageReference Include="Fody" Version="6.4.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Resourcer.Fody" Version="1.8.0" PrivateAssets="all"/>
+        <PackageReference Include="YamlDotNet" Version="9.1.4"/>
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="help.yaml"/>
     </ItemGroup>
 </Project>
