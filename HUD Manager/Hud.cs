@@ -11,9 +11,11 @@ namespace HUD_Manager {
     public class Hud {
         // Updated 5.45
         public const int InMemoryLayoutElements = 81;
+
         // Updated 5.45
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
         private const int LayoutSize = InMemoryLayoutElements * 36;
+
         // Updated 5.4
         private const int SlotOffset = 0x59e8;
 
@@ -54,27 +56,32 @@ namespace HUD_Manager {
                 goto Return;
             }
 
-            var currentSlotPtr = this.GetDataPointer() + SlotOffset;
-            // read the current slot
-            var currentSlot = (uint) Marshal.ReadInt32(currentSlotPtr);
-            // change it to a different slot
-            if (currentSlot == (uint) slot) {
-                if (currentSlot < 3) {
-                    currentSlot += 1;
-                } else {
-                    currentSlot = 0;
-                }
+            unsafe {
+                var currentSlotPtr = (uint*) (this.GetDataPointer() + SlotOffset);
+                // read the current slot
+                var currentSlot = *currentSlotPtr;
+                // if the current slot is the slot we want to change to, we can force a reload by
+                // telling the game it's on a different slot and swapping back to the desired slot
+                if (currentSlot == (uint) slot) {
+                    var backupSlot = currentSlot;
+                    if (backupSlot < 3) {
+                        backupSlot += 1;
+                    } else {
+                        backupSlot = 0;
+                    }
 
-                // back up this different slot
-                var backup = this.ReadLayout((HudSlot) currentSlot);
-                // change the current slot in memory
-                Marshal.WriteInt32(currentSlotPtr, (int) currentSlot);
-                // ask the game to change slot to our desired slot
-                // for some reason, this overwrites the current slot, so this is why we back up
-                this._setHudLayout.Invoke(file, (uint) slot, 0, 1);
-                // restore the backup
-                this.WriteLayout((HudSlot) currentSlot, backup);
-                return;
+                    // back up this different slot
+                    var backup = this.ReadLayout((HudSlot) backupSlot);
+                    // change the current slot in memory
+                    *currentSlotPtr = backupSlot;
+
+                    // ask the game to change slot to our desired slot
+                    // for some reason, this overwrites the current slot, so this is why we back up
+                    this._setHudLayout.Invoke(file, (uint) slot, 0, 1);
+                    // restore the backup
+                    this.WriteLayout((HudSlot) backupSlot, backup, false);
+                    return;
+                }
             }
 
             Return:
@@ -106,7 +113,7 @@ namespace HUD_Manager {
             return Marshal.PtrToStructure<Layout>(slotPtr);
         }
 
-        private void WriteLayout(HudSlot slot, Layout layout) {
+        private void WriteLayout(HudSlot slot, Layout layout, bool reloadIfNecessary = true) {
             var slotPtr = this.GetLayoutPointer(slot);
 
             var dict = layout.ToDictionary();
@@ -123,6 +130,10 @@ namespace HUD_Manager {
 
             // copy directly over
             // Marshal.StructureToPtr(layout, slotPtr, false);
+
+            if (!reloadIfNecessary) {
+                return;
+            }
 
             var currentSlot = this.GetActiveHudSlot();
             if (currentSlot == slot) {

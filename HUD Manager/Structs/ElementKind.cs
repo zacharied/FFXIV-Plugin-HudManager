@@ -187,5 +187,55 @@ namespace HUD_Manager.Structs {
 
             return name;
         }
+
+        public static bool IsJobGauge(this ElementKind kind) {
+            switch (kind) {
+                case ElementKind.AetherflowGaugeSch:
+                case ElementKind.AetherflowGaugeSmn:
+                case ElementKind.ArcanaGauge:
+                case ElementKind.BalanceGauge:
+                case ElementKind.BeastGauge:
+                case ElementKind.BloodGauge:
+                case ElementKind.ChakraGauge:
+                case ElementKind.DarksideGauge:
+                case ElementKind.DragonGauge:
+                case ElementKind.ElementalGauge:
+                case ElementKind.FaerieGauge:
+                case ElementKind.FourfoldFeathers:
+                case ElementKind.HealingGauge:
+                case ElementKind.HeatGauge:
+                case ElementKind.HutonGauge:
+                case ElementKind.KenkiGauge:
+                case ElementKind.NinkiGauge:
+                case ElementKind.OathGauge:
+                case ElementKind.PowderGauge:
+                case ElementKind.SenGauge:
+                case ElementKind.SongGauge:
+                case ElementKind.StepGauge:
+                case ElementKind.TranceGauge:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        public static bool IsHotbar(this ElementKind kind) {
+            switch (kind) {
+                case ElementKind.Hotbar1:
+                case ElementKind.Hotbar2:
+                case ElementKind.Hotbar3:
+                case ElementKind.Hotbar4:
+                case ElementKind.Hotbar5:
+                case ElementKind.Hotbar6:
+                case ElementKind.Hotbar7:
+                case ElementKind.Hotbar8:
+                case ElementKind.Hotbar9:
+                case ElementKind.Hotbar10:
+                case ElementKind.PetHotbar:
+                    return true;
+                default:
+                    return false;
+            }
+        }
     }
 }

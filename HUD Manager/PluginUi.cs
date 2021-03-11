@@ -7,6 +7,7 @@ using Dalamud.Interface;
 using Dalamud.Plugin;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
+using HUD_Manager.Structs.Options;
 using HUD_Manager.Tree;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -38,19 +39,6 @@ namespace HUD_Manager {
             0.6f,
         };
 
-        private static readonly string[] ScaleOptionsNames = {
-            "200%",
-            "180%",
-            "160%",
-            "140%",
-            "120%",
-            "110%",
-            "100%",
-            "90%",
-            "80%",
-            "60%",
-        };
-
         private Plugin Plugin { get; }
 
         private bool _settingsVisible;
@@ -64,13 +52,10 @@ namespace HUD_Manager {
         private float _dragSpeed = 1.0f;
 
         private string? _importName;
-        private Guid _selectedLayoutId = Guid.Empty;
 
         private string? _newLayoutName;
         private string? _renameLayout;
         private Guid _selectedEditLayout = Guid.Empty;
-
-        private SavedLayout? SelectedSavedLayout => this._selectedLayoutId == Guid.Empty ? null : this.Plugin.Config.Layouts[this._selectedLayoutId];
 
         private int _editingConditionIndex = -1;
         private HudConditionMatch? _editingCondition;
@@ -202,6 +187,12 @@ namespace HUD_Manager {
                     this.Plugin.Config.Save();
                 }
 
+                goto EndTabItem;
+            }
+
+            var charConfig = this.Plugin.Interface.Framework.Gui.GetAddonByName("ConfigCharacter", 1);
+            if (charConfig != null && charConfig.Visible) {
+                ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
                 goto EndTabItem;
             }
 
@@ -357,57 +348,181 @@ namespace HUD_Manager {
             if (ImGui.BeginChild("uimanager-layout-editor-elements", new Vector2(0, 0))) {
                 var toRemove = new List<ElementKind>();
 
-                foreach (var entry in layout.Elements) {
-                    var name = entry.Key.LocalisedName(this.Plugin.Interface.Data);
-
+                var sortedElements = layout.Elements
+                    .Select(entry => Tuple.Create(entry.Key, entry.Value, entry.Key.LocalisedName(this.Plugin.Interface.Data)))
+                    .OrderBy(tuple => tuple.Item3);
+                foreach (var (kind, element, name) in sortedElements) {
                     if (this._editorSearch != null && !name.ContainsIgnoreCase(this._editorSearch)) {
                         continue;
                     }
 
-                    ImGui.TextUnformatted(name);
-
-                    var element = entry.Value;
-
-                    var visible = element.Visibility == Visibility.Visible;
-                    if (ImGui.Checkbox($"Visible##{entry.Key}", ref visible)) {
-                        element.Visibility = visible ? Visibility.Visible : Visibility.Hidden;
-                        update = true;
+                    if (!ImGui.CollapsingHeader(name)) {
+                        continue;
                     }
 
-                    ImGui.SameLine();
-                    if (IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{entry.Key}")) {
-                        toRemove.Add(entry.Key);
+                    var drawVisibility = !kind.IsJobGauge();
+
+                    void DrawDelete() {
+                        ImGui.SameLine(ImGui.GetContentRegionAvail().X - 30);
+                        if (IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}")) {
+                            toRemove.Add(kind);
+                        }
+                    }
+
+                    if (drawVisibility) {
+                        ImGui.TextUnformatted("Visibility");
+
+                        DrawDelete();
+
+                        var keyboard = element[VisibilityFlags.Keyboard];
+                        if (IconCheckbox(FontAwesomeIcon.Keyboard, ref keyboard, $"{kind}")) {
+                            element[VisibilityFlags.Keyboard] = keyboard;
+                            update = true;
+                        }
+
+                        ImGui.SameLine();
+                        var gamepad = element[VisibilityFlags.Gamepad];
+                        if (IconCheckbox(FontAwesomeIcon.Gamepad, ref gamepad, $"{kind}")) {
+                            element[VisibilityFlags.Gamepad] = gamepad;
+                            update = true;
+                        }
                     }
 
                     var x = element.X;
-                    if (ImGui.DragFloat($"X##{entry.Key}", ref x, this._dragSpeed)) {
+                    if (ImGui.DragFloat($"X##{kind}", ref x, this._dragSpeed)) {
                         element.X = x;
                         update = true;
                     }
 
+                    if (!drawVisibility) {
+                        DrawDelete();
+                    }
+
                     var y = element.Y;
-                    if (ImGui.DragFloat($"Y##{entry.Key}", ref y, this._dragSpeed)) {
+                    if (ImGui.DragFloat($"Y##{kind}", ref y, this._dragSpeed)) {
                         element.Y = y;
                         update = true;
                     }
 
-                    var scaleIdx = Array.IndexOf(ScaleOptions, element.Scale);
-                    if (scaleIdx == -1) {
-                        scaleIdx = 6;
+                    var currentScale = $"{element.Scale * 100}%";
+                    if (ImGui.BeginCombo($"Scale##{kind}", currentScale)) {
+                        foreach (var scale in ScaleOptions) {
+                            if (!ImGui.Selectable($"{scale * 100}%")) {
+                                continue;
+                            }
+
+                            element.Scale = scale;
+                            update = true;
+                        }
+
+                        ImGui.EndCombo();
                     }
 
-                    if (ImGui.Combo($"Scale##{entry.Key}", ref scaleIdx, ScaleOptionsNames, ScaleOptionsNames.Length)) {
-                        element.Scale = ScaleOptions[scaleIdx];
-                        update = true;
+                    if (!kind.IsJobGauge()) {
+                        var opacity = (int) element.Opacity;
+                        if (ImGui.DragInt($"Opacity##{kind}", ref opacity, 1, 1, 255)) {
+                            element.Opacity = (byte) opacity;
+                            update = true;
+                        }
                     }
 
-                    var opacity = (int) element.Opacity;
-                    if (ImGui.DragInt($"Opacity##{entry.Key}", ref opacity, 1, 1, 255)) {
-                        element.Opacity = (byte) opacity;
-                        update = true;
+                    if (kind == ElementKind.TargetBar) {
+                        var targetBarOpts = new TargetBarOptions(element.Options);
+
+                        var independent = targetBarOpts.ShowIndependently;
+                        if (ImGui.Checkbox("Display target information independently", ref independent)) {
+                            targetBarOpts.ShowIndependently = independent;
+                            update = true;
+                        }
                     }
 
-                    ImGui.Separator();
+                    if (kind == ElementKind.StatusEffects) {
+                        var statusOpts = new StatusOptions(element.Options);
+
+                        if (ImGui.BeginCombo($"Style##{kind}", statusOpts.Style.ToString())) {
+                            foreach (var style in (StatusStyle[]) Enum.GetValues(typeof(StatusStyle))) {
+                                if (!ImGui.Selectable($"{style}##{kind}")) {
+                                    continue;
+                                }
+
+                                statusOpts.Style = style;
+                                update = true;
+                            }
+
+                            ImGui.EndCombo();
+                        }
+                    }
+
+                    if (kind == ElementKind.StatusInfoEnhancements || kind == ElementKind.StatusInfoEnfeeblements || kind == ElementKind.StatusInfoOther) {
+                        var statusOpts = new StatusInfoOptions(kind, element.Options);
+
+                        if (ImGui.BeginCombo($"Layout##{kind}", statusOpts.Layout.ToString())) {
+                            foreach (var sLayout in (StatusLayout[]) Enum.GetValues(typeof(StatusLayout))) {
+                                if (!ImGui.Selectable($"{sLayout}##{kind}")) {
+                                    continue;
+                                }
+
+                                statusOpts.Layout = sLayout;
+                                update = true;
+                            }
+
+                            ImGui.EndCombo();
+                        }
+
+                        if (ImGui.BeginCombo($"Alignment##{kind}", statusOpts.Alignment.ToString())) {
+                            foreach (var alignment in (StatusAlignment[]) Enum.GetValues(typeof(StatusAlignment))) {
+                                if (!ImGui.Selectable($"{alignment}##{kind}")) {
+                                    continue;
+                                }
+
+                                statusOpts.Alignment = alignment;
+                                update = true;
+                            }
+
+                            ImGui.EndCombo();
+                        }
+
+                        var focusable = statusOpts.Gamepad == StatusGamepad.Focusable;
+                        if (ImGui.Checkbox($"Focusable by gamepad##{kind}", ref focusable)) {
+                            statusOpts.Gamepad = focusable ? StatusGamepad.Focusable : StatusGamepad.NonFocusable;
+                            update = true;
+                        }
+                    }
+
+                    if (kind.IsHotbar()) {
+                        var hotbarOpts = new HotbarOptions(element.Options);
+
+                        if (kind != ElementKind.PetHotbar) {
+                            var hotbarIndex = (int) hotbarOpts.Index;
+                            if (ImGui.InputInt($"Hotbar number##{kind}", ref hotbarIndex)) {
+                                hotbarOpts.Index = (byte) Math.Max(0, Math.Min(9, hotbarIndex));
+                                update = true;
+                            }
+                        }
+
+                        if (ImGui.BeginCombo($"Hotbar layout##{kind}", hotbarOpts.Layout.ToString())) {
+                            foreach (var hotbarLayout in (HotbarLayout[]) Enum.GetValues(typeof(HotbarLayout))) {
+                                if (!ImGui.Selectable($"{hotbarLayout}##{kind}")) {
+                                    continue;
+                                }
+
+                                hotbarOpts.Layout = hotbarLayout;
+                                update = true;
+                            }
+
+                            ImGui.EndCombo();
+                        }
+                    }
+
+                    if (kind.IsJobGauge()) {
+                        var gaugeOpts = new GaugeOptions(element.Options);
+
+                        var simple = gaugeOpts.Style == GaugeStyle.Simple;
+                        if (ImGui.Checkbox($"Simple##{kind}", ref simple)) {
+                            gaugeOpts.Style = simple ? GaugeStyle.Simple : GaugeStyle.Normal;
+                            update = true;
+                        }
+                    }
                 }
 
                 foreach (var remove in toRemove) {
@@ -697,6 +812,19 @@ namespace HUD_Manager {
                 }
             }
 
+            if (ImGui.Button("Print current slot")) {
+                var slot = this.Plugin.Hud.GetActiveHudSlot();
+                this.Plugin.Interface.Framework.Gui.Chat.Print($"{slot}");
+            }
+
+            var current = this.Plugin.Hud.ReadLayout(this.Plugin.Hud.GetActiveHudSlot());
+            foreach (var element in current.elements) {
+                ImGui.TextUnformatted(element.id.LocalisedName(this.Plugin.Interface.Data));
+                ImGui.TextUnformatted($"Width: {element.width}");
+                ImGui.TextUnformatted($"Height: {element.height}");
+                ImGui.Separator();
+            }
+
             ImGui.EndTabItem();
         }
         #endif
@@ -905,6 +1033,21 @@ namespace HUD_Manager {
             }
 
             var result = ImGui.Button(text);
+
+            ImGui.PopFont();
+
+            return result;
+        }
+
+        public static bool IconCheckbox(FontAwesomeIcon icon, ref bool value, string? id = null) {
+            ImGui.PushFont(UiBuilder.IconFont);
+
+            var text = icon.ToIconString();
+            if (id != null) {
+                text += $"##{id}";
+            }
+
+            var result = ImGui.Checkbox(text, ref value);
 
             ImGui.PopFont();
 

@@ -6,7 +6,7 @@ using Dalamud.Plugin;
 namespace HUD_Manager.Configuration {
     [Serializable]
     public class Config : IPluginConfiguration {
-        public int Version { get; set; } = 2;
+        public int Version { get; set; } = 3;
 
         private DalamudPluginInterface Interface { get; set; } = null!;
 

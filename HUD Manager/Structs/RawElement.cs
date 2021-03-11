@@ -11,10 +11,16 @@ namespace HUD_Manager.Structs {
 
         public float scale;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 9)]
-        public byte[] unknown4;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public byte[] options;
 
-        public Visibility visibility;
+        public ushort width;
+
+        public ushort height;
+
+        public byte unknown4;
+
+        public VisibilityFlags visibility;
 
         public byte unknown6;
 
@@ -28,6 +34,9 @@ namespace HUD_Manager.Structs {
             this.x = element.X;
             this.y = element.Y;
             this.scale = element.Scale;
+            this.options = element.Options;
+            this.width = element.Width;
+            this.height = element.Height;
             this.unknown4 = element.Unknown4;
             this.visibility = element.Visibility;
             this.unknown6 = element.Unknown6;
@@ -45,9 +54,15 @@ namespace HUD_Manager.Structs {
 
         public float Scale { get; set; }
 
-        public byte[] Unknown4 { get; set; }
+        public byte[] Options { get; set; }
 
-        public Visibility Visibility { get; set; }
+        public ushort Width { get; set; }
+
+        public ushort Height { get; set; }
+
+        public byte Unknown4 { get; set; }
+
+        public VisibilityFlags Visibility { get; set; }
 
         public byte Unknown6 { get; set; }
 
@@ -55,11 +70,25 @@ namespace HUD_Manager.Structs {
 
         public byte[] Unknown8 { get; set; }
 
+        public bool this[VisibilityFlags flags] {
+            get => (this.Visibility & flags) > 0;
+            set {
+                if (value) {
+                    this.Visibility |= flags;
+                } else {
+                    this.Visibility &= ~flags;
+                }
+            }
+        }
+
         public Element(RawElement raw) {
             this.Id = raw.id;
             this.X = raw.x;
             this.Y = raw.y;
             this.Scale = raw.scale;
+            this.Options = raw.options;
+            this.Width = raw.width;
+            this.Height = raw.height;
             this.Unknown4 = raw.unknown4;
             this.Visibility = raw.visibility;
             this.Unknown6 = raw.unknown6;
