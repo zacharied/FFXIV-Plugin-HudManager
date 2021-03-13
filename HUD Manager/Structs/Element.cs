@@ -80,6 +80,7 @@ namespace HUD_Manager.Structs {
 
         public Element Clone() {
             return new() {
+                Enabled = this.Enabled,
                 Id = this.Id,
                 X = this.X,
                 Y = this.Y,
@@ -90,6 +91,7 @@ namespace HUD_Manager.Structs {
                 MeasuredFrom = this.MeasuredFrom,
                 Visibility = this.Visibility,
                 Unknown6 = this.Unknown6,
+                Opacity = this.Opacity,
                 Unknown8 = (byte[]) this.Unknown8.Clone(),
             };
         }
