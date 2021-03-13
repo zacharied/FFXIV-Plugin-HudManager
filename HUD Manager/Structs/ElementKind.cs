@@ -126,7 +126,7 @@ namespace HUD_Manager.Structs {
                 ElementKind.SongGauge => 44,
                 ElementKind.HealingGauge => 45,
                 ElementKind.ElementalGauge => 46,
-                ElementKind.AetherflowGaugeSch => 47, // order?
+                ElementKind.AetherflowGaugeSch => 47, // order? - same name, so not sure which key is for which
                 ElementKind.AetherflowGaugeSmn => 48, // order?
                 ElementKind.TranceGauge => 49,
                 ElementKind.FaerieGauge => 50,

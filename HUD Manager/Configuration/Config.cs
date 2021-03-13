@@ -6,7 +6,9 @@ using Dalamud.Plugin;
 namespace HUD_Manager.Configuration {
     [Serializable]
     public class Config : IPluginConfiguration {
-        public int Version { get; set; } = 3;
+        public const int LatestVersion = 4;
+
+        public int Version { get; set; } = LatestVersion;
 
         private DalamudPluginInterface Interface { get; set; } = null!;
 
@@ -17,6 +19,8 @@ namespace HUD_Manager.Configuration {
         public bool SwapsEnabled { get; set; }
 
         public HudSlot StagingSlot { get; set; } = HudSlot.Four;
+
+        public PositioningMode PositioningMode { get; set; } = PositioningMode.Percentage;
 
         public Dictionary<Guid, SavedLayout> Layouts { get; } = new();
 

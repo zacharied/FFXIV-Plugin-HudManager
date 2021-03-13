@@ -114,16 +114,27 @@ namespace HUD_Manager {
         }
 
         private void WriteLayout(HudSlot slot, Layout layout, bool reloadIfNecessary = true) {
-            var slotPtr = this.GetLayoutPointer(slot);
+            this.WriteLayout(slot, layout.ToDictionary(), reloadIfNecessary);
+        }
 
-            var dict = layout.ToDictionary();
+        private void WriteLayout(HudSlot slot, IReadOnlyDictionary<ElementKind, Element> dict, bool reloadIfNecessary = true) {
+            var slotPtr = this.GetLayoutPointer(slot);
 
             // update existing elements with saved data instead of wholesale overwriting
             var slotLayout = this.ReadLayout(slot);
             for (var i = 0; i < slotLayout.elements.Length; i++) {
-                if (dict.TryGetValue(slotLayout.elements[i].id, out var element)) {
-                    slotLayout.elements[i] = new RawElement(element);
+                if (!dict.TryGetValue(slotLayout.elements[i].id, out var element)) {
+                    continue;
                 }
+
+                // just replace the struct if all options are enabled
+                if (element.Enabled == Element.AllEnabled) {
+                    slotLayout.elements[i] = new RawElement(element);
+                    continue;
+                }
+
+                // otherwise only replace the enabled options
+                slotLayout.elements[i].UpdateEnabled(element);
             }
 
             Marshal.StructureToPtr(slotLayout, slotPtr, false);
@@ -154,26 +165,26 @@ namespace HUD_Manager {
             // get the ancestors and their elements for this node
             foreach (var ancestor in node.Ancestors().Reverse()) {
                 foreach (var element in ancestor.Value.Elements) {
-                    elements[element.Key] = element.Value;
+                    if (element.Value.Enabled == Element.AllEnabled || !elements.ContainsKey(element.Key)) {
+                        elements[element.Key] = element.Value.Clone();
+                        continue;
+                    }
+
+                    elements[element.Key].UpdateEnabled(element.Value);
                 }
             }
 
             // apply this node's elements
             foreach (var element in node.Value.Elements) {
-                elements[element.Key] = element.Value;
+                if (element.Value.Enabled == Element.AllEnabled || !elements.ContainsKey(element.Key)) {
+                    elements[element.Key] = element.Value.Clone();
+                    continue;
+                }
+
+                elements[element.Key].UpdateEnabled(element.Value);
             }
 
-            var elemList = elements.Values.ToList();
-
-            while (elemList.Count < InMemoryLayoutElements) {
-                elemList.Add(new Element(new RawElement()));
-            }
-
-            var effective = new Layout {
-                elements = elemList.Select(elem => new RawElement(elem)).ToArray(),
-            };
-
-            this.WriteLayout(slot, effective);
+            this.WriteLayout(slot, elements);
         }
     }
 

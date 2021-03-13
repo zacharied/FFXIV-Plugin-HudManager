@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Dalamud.Plugin;
 using HUD_Manager.Structs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -31,7 +32,7 @@ namespace HUD_Manager.Configuration {
             return config;
         }
 
-        private static Config MigrateV2(JObject old) {
+        private static void WithEachElement(JObject old, Action<JObject> action) {
             foreach (var property in old["Layouts"].Children<JProperty>()) {
                 if (property.Name == "$type") {
                     continue;
@@ -46,26 +47,41 @@ namespace HUD_Manager.Configuration {
                     }
 
                     var element = (JObject) elementProp.Value;
-                    var bytes = element["Unknown4"].ToObject<byte[]>();
 
-                    var options = new byte[4];
-                    Buffer.BlockCopy(bytes, 0, options, 0, 4);
-
-                    var width = BitConverter.ToUInt16(bytes, 4);
-                    var height = BitConverter.ToUInt16(bytes, 6);
-                    var unknown4 = bytes[8];
-
-                    element.Remove("Unknown4");
-                    element["Options"] = options;
-                    element["Width"] = width;
-                    element["Height"] = height;
-                    element["Unknown4"] = unknown4;
+                    action(element);
                 }
             }
+        }
+
+        private static void MigrateV2(JObject old) {
+            WithEachElement(old, element => {
+                var bytes = element["Unknown4"].ToObject<byte[]>();
+
+                var options = new byte[4];
+                Buffer.BlockCopy(bytes, 0, options, 0, 4);
+
+                var width = BitConverter.ToUInt16(bytes, 4);
+                var height = BitConverter.ToUInt16(bytes, 6);
+                var unknown4 = bytes[8];
+
+                element.Remove("Unknown4");
+                element["Options"] = options;
+                element["Width"] = width;
+                element["Height"] = height;
+                element["Unknown4"] = unknown4;
+            });
 
             old["Version"] = 3;
+        }
 
-            return old.ToObject<Config>();
+        private static void MigrateV3(JObject old) {
+            WithEachElement(old, element => {
+                var measuredFrom = element["Unknown4"].ToObject<byte>();
+                element.Remove("Unknown4");
+                element["MeasuredFrom"] = measuredFrom;
+            });
+
+            old["Version"] = 4;
         }
 
         private static string PluginConfig(string? pluginName = null) {
@@ -99,22 +115,50 @@ namespace HUD_Manager.Configuration {
             }
 
             var config = JsonConvert.DeserializeObject<JObject>(text);
-            uint version = 1;
-            if (config.TryGetValue("Version", out var token)) {
-                version = token.Value<uint>();
+
+            int GetVersion() {
+                if (config.TryGetValue("Version", out var token)) {
+                    return token.Value<int>();
+                }
+
+                return -1;
             }
 
-            switch (version) {
-                case 1: {
-                    var v1 = config.ToObject<ConfigV1>(new JsonSerializer {
-                        TypeNameHandling = TypeNameHandling.None,
-                    });
+            var version = GetVersion();
+            if (version < 1) {
+                goto DefaultConfig;
+            }
 
-                    return Migrate(v1);
+            // v1 is a special case - this is an old HudSwap config that we can interpret as a memory chunk
+            // it does not need to go through migration steps after doing this, since it will be interpreted
+            // as the layout would be in memory, so the existing code can deal with it normally
+            if (version == 1) {
+                var v1 = config.ToObject<ConfigV1>(new JsonSerializer {
+                    TypeNameHandling = TypeNameHandling.None,
+                });
+
+                return Migrate(v1);
+            }
+
+            // otherwise, run migrations until done
+            while (version < Config.LatestVersion) {
+                switch (version) {
+                    case 2:
+                        MigrateV2(config);
+                        break;
+                    case 3:
+                        MigrateV3(config);
+                        break;
+                    default:
+                        PluginLog.Warning($"Tried to migration from an unknown version: {version}");
+                        goto DefaultConfig;
                 }
-                case 2: {
-                    return MigrateV2(config);
-                }
+
+                version = GetVersion();
+            }
+
+            if (version == Config.LatestVersion) {
+                return config.ToObject<Config>();
             }
 
             DefaultConfig:
