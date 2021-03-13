@@ -288,8 +288,11 @@ namespace HUD_Manager {
 
                 foreach (var node in nodes) {
                     foreach (var (child, depth) in node.TraverseWithDepth()) {
+                        var selectedParent = child.Id == layout.Parent;
+                        var flags = child.Id == this._selectedEditLayout ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None;
+
                         var indent = new string(' ', (int) depth * 4);
-                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##parent-{child.Id}") || child.Id == this._selectedEditLayout) {
+                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##parent-{child.Id}", selectedParent, flags)) {
                             continue;
                         }
 
