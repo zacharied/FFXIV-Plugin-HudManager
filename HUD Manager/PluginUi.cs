@@ -369,7 +369,7 @@ namespace HUD_Manager {
                         continue;
                     }
 
-                    if (!ImGui.CollapsingHeader(name)) {
+                    if (!ImGui.CollapsingHeader($"{name}##{kind}")) {
                         continue;
                     }
 
@@ -395,6 +395,8 @@ namespace HUD_Manager {
                     if (IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}")) {
                         toRemove.Add(kind);
                     }
+
+                    ImGui.Separator();
 
                     void DrawEnabledCheckbox(ElementKind kind, ElementComponent component) {
                         ImGui.NextColumn();

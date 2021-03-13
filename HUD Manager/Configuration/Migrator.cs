@@ -150,7 +150,7 @@ namespace HUD_Manager.Configuration {
                         MigrateV3(config);
                         break;
                     default:
-                        PluginLog.Warning($"Tried to migration from an unknown version: {version}");
+                        PluginLog.Warning($"Tried to migrate from an unknown version: {version}");
                         goto DefaultConfig;
                 }
 
