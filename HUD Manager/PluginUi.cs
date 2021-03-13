@@ -280,6 +280,11 @@ namespace HUD_Manager {
             this.Plugin.Config.Layouts.TryGetValue(layout.Parent, out var parent);
             var parentName = parent?.Name ?? "<none>";
 
+            var ourChildren = nodes.Find(this._selectedEditLayout)
+                ?.Traverse()
+                .Select(el => el.Id)
+                .ToArray() ?? new Guid[0];
+
             if (ImGui.BeginCombo("Parent", parentName)) {
                 if (ImGui.Selectable("<none>")) {
                     layout.Parent = Guid.Empty;
@@ -288,8 +293,9 @@ namespace HUD_Manager {
 
                 foreach (var node in nodes) {
                     foreach (var (child, depth) in node.TraverseWithDepth()) {
-                        var selectedParent = child.Id == layout.Parent;
-                        var flags = child.Id == this._selectedEditLayout ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None;
+                        var selectedParent = child.Id == this._selectedEditLayout;
+                        var disabled = selectedParent || ourChildren.Contains(child.Id);
+                        var flags = disabled ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None;
 
                         var indent = new string(' ', (int) depth * 4);
                         if (!ImGui.Selectable($"{indent}{child.Value.Name}##parent-{child.Id}", selectedParent, flags)) {
@@ -369,7 +375,7 @@ namespace HUD_Manager {
                         continue;
                     }
 
-                    if (!ImGui.CollapsingHeader($"{name}##{kind}")) {
+                    if (!ImGui.CollapsingHeader($"{name}##{kind}-{this._selectedEditLayout}")) {
                         continue;
                     }
 
@@ -977,6 +983,7 @@ namespace HUD_Manager {
                 ImGui.TextUnformatted(element.id.LocalisedName(this.Plugin.Interface.Data));
                 ImGui.TextUnformatted($"Width: {element.width}");
                 ImGui.TextUnformatted($"Height: {element.height}");
+                ImGui.TextUnformatted($"Opacity: {element.opacity}");
                 ImGui.Separator();
             }
 
