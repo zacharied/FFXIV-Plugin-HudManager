@@ -213,7 +213,7 @@ namespace HUD_Manager {
                 foreach (var node in nodes) {
                     foreach (var (child, depth) in node.TraverseWithDepth()) {
                         var indent = new string(' ', (int) depth * 4);
-                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##edit-{child.Id}")) {
+                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##edit-{child.Id}", child.Id == this._selectedEditLayout)) {
                             continue;
                         }
 
