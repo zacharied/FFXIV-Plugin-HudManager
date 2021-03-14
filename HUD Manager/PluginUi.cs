@@ -841,6 +841,8 @@ namespace HUD_Manager {
                         }
                     }
 
+                    this.Plugin.Config.HudConditionMatches.RemoveAll(match => match.LayoutId == this._selectedEditLayout);
+
                     this.Plugin.Config.Layouts.Remove(this._selectedEditLayout);
                     this._selectedEditLayout = Guid.Empty;
                     this.Plugin.Config.Save();
