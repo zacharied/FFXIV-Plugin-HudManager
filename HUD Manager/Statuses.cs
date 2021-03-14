@@ -17,9 +17,12 @@ namespace HUD_Manager {
         private readonly Dictionary<Status, bool> _condition = new();
         private ClassJob? _job;
 
-        internal static byte GetStatus(DalamudPluginInterface pi, Actor actor) {
-            var statusPtr = pi.TargetModuleScanner.ResolveRelativeAddress(actor.Address, 0x1980);
-            return Marshal.ReadByte(statusPtr);
+        internal static byte GetStatus(Actor actor) {
+            return Marshal.ReadByte(actor.Address + 0x1980);
+        }
+
+        internal static byte GetOnlineStatus(Actor actor) {
+            return Marshal.ReadByte(actor.Address + 0x195F);
         }
 
         public Statuses(Plugin plugin) {
@@ -37,6 +40,7 @@ namespace HUD_Manager {
             if (this._job != null && this._job != currentJob) {
                 anyChanged = true;
             }
+
             this._job = currentJob;
 
             foreach (Status status in Enum.GetValues(typeof(Status))) {
@@ -73,9 +77,11 @@ namespace HUD_Manager {
             if (layoutId == Guid.Empty) {
                 return; // FIXME: do something better
             }
+
             if (!this.Plugin.Config.Layouts.TryGetValue(layoutId, out var layout)) {
                 return; // FIXME: do something better
             }
+
             this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId);
             this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
 
@@ -101,12 +107,12 @@ namespace HUD_Manager {
     // Note: Changing the names of these is a breaking change
     public enum Status {
         InCombat = ConditionFlag.InCombat,
-        WeaponDrawn = ConditionFlag.None,
+        WeaponDrawn = -1,
         InInstance = ConditionFlag.BoundByDuty,
         Crafting = ConditionFlag.Crafting,
         Gathering = ConditionFlag.Gathering,
         Fishing = ConditionFlag.Fishing,
-        Roleplaying = ConditionFlag.RolePlaying,
+        Roleplaying = -2,
     }
 
     public static class StatusExtensions {
@@ -135,19 +141,19 @@ namespace HUD_Manager {
             if (player == null) {
                 throw new ArgumentNullException(nameof(player), "PlayerCharacter cannot be null");
             }
-            if (pi == null) {
-                throw new ArgumentNullException(nameof(pi), "DalamudPluginInterface cannot be null");
-            }
 
-            var flag = (ConditionFlag)status;
-            if (flag != ConditionFlag.None) {
+            if (status > 0) {
+                var flag = (ConditionFlag) status;
                 return pi.ClientState.Condition[flag];
             }
 
             switch (status) {
                 case Status.WeaponDrawn:
-                    return (Statuses.GetStatus(pi, player) & 4) > 0;
+                    return (Statuses.GetStatus(player) & 4) > 0;
+                case Status.Roleplaying:
+                    return Statuses.GetOnlineStatus(player) == 22;
             }
+
             return false;
         }
     }
