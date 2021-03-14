@@ -483,7 +483,7 @@ namespace HUD_Manager {
                         var screen = ImGui.GetIO().DisplaySize;
 
                         ImGui.PushItemWidth(-1);
-                        var x = (int) Math.Truncate(element.X * screen.X / 100);
+                        var x = (int) Math.Round(element.X * screen.X / 100);
                         if (ImGui.InputInt($"##x-{kind}", ref x)) {
                             element.X = x / screen.X * 100;
                             update = true;
@@ -494,7 +494,7 @@ namespace HUD_Manager {
                         DrawSettingName("Y");
 
                         ImGui.PushItemWidth(-1);
-                        var y = (int) Math.Truncate(element.Y * screen.Y / 100);
+                        var y = (int) Math.Round(element.Y * screen.Y / 100);
                         if (ImGui.InputInt($"##y-{kind}", ref y)) {
                             element.Y = y / screen.Y * 100;
                             update = true;
