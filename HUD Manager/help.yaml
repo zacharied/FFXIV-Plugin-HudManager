@@ -29,3 +29,15 @@
       the Battle layout inherits all the HUD elements from the Default
       layout, but it overrides the gil HUD element to hide it during
       combat.
+  - name: Why do my hotbars keep appearing/disappearing when visibility is disabled?
+    description: >-
+      Please make sure that any hotbar with a visibility that the
+      plugin is not supposed to change has its visibility disabled in
+      all layouts. This means if you want Hotbar 1's visibility to not
+      be managed by the plugin, and you use layout C, which is
+      underneath layout A and B, you must set Hotbar 1's visibility to
+      disabled in layouts A, B, and C.
+
+      Additionally, due to HUD shenanigans, you cannot use /hotbar
+      display X on/off to toggle hotbar visibility. Please use /hud
+      HotbarX instead. This will fix your issue.
