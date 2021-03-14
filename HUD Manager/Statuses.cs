@@ -25,6 +25,10 @@ namespace HUD_Manager {
             return Marshal.ReadByte(actor.Address + 0x195F);
         }
 
+        internal static byte GetBardThing(Actor actor) {
+            return Marshal.ReadByte(actor.Address + 0x195C);
+        }
+
         public Statuses(Plugin plugin) {
             this.Plugin = plugin;
         }
@@ -113,6 +117,7 @@ namespace HUD_Manager {
         Gathering = ConditionFlag.Gathering,
         Fishing = ConditionFlag.Fishing,
         Roleplaying = -2,
+        PlayingMusic = -3,
     }
 
     public static class StatusExtensions {
@@ -132,6 +137,8 @@ namespace HUD_Manager {
                     return "Fishing";
                 case Status.Roleplaying:
                     return "Roleplaying";
+                case Status.PlayingMusic:
+                    return "Playing music";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
@@ -152,6 +159,8 @@ namespace HUD_Manager {
                     return (Statuses.GetStatus(player) & 4) > 0;
                 case Status.Roleplaying:
                     return Statuses.GetOnlineStatus(player) == 22;
+                case Status.PlayingMusic:
+                    return Statuses.GetBardThing(player) == 16;
             }
 
             return false;
