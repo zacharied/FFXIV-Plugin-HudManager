@@ -61,12 +61,184 @@ namespace HUD_Manager {
         private HudConditionMatch? _editingCondition;
         private bool _scrollToAdd;
 
+        private HashSet<ElementKind> Previews { get; } = new();
+        private HashSet<ElementKind> UpdatePreviews { get; } = new();
+
         public PluginUi(Plugin plugin) {
             this.Plugin = plugin;
         }
 
         public void ConfigUi(object sender, EventArgs args) {
             this.SettingsVisible = true;
+        }
+
+        private static Tuple<Vector2, Vector2> CalcPosAndSize(Element element) {
+            // get X & Y coords from the element, which are percentages (0 - 100)
+            var percentagePos = new Vector2(element.X, element.Y);
+
+            // get size in pixels
+            var size = new Vector2(element.Width, element.Height);
+            // scale size according to the element's scale
+            size.X = (float) Math.Round(size.X * element.Scale);
+            size.Y = (float) Math.Round(size.Y * element.Scale);
+
+            // convert the percentages into pixels
+            var screen = ImGui.GetIO().DisplaySize;
+            var pixelPos = new Vector2(
+                (float) Math.Round(percentagePos.X * screen.X / 100),
+                (float) Math.Round(percentagePos.Y * screen.Y / 100)
+            );
+
+            // split the measured from into x and y parts
+            var (xMeasure, yMeasure) = element.MeasuredFrom.ToParts();
+
+            // determine subtraction values to make the coords point to the top left
+            var subX = xMeasure switch {
+                MeasuredX.Left => 0,
+                MeasuredX.Middle => size.X / 2,
+                MeasuredX.Right => size.X,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+
+            var subY = yMeasure switch {
+                MeasuredY.Top => 0,
+                MeasuredY.Middle => size.Y / 2,
+                MeasuredY.Bottom => size.Y,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+
+            // transform coords to top left for ImGui
+            pixelPos.X -= subX;
+            pixelPos.Y -= subY;
+
+            // round the coords
+            pixelPos.X = (float) Math.Round(pixelPos.X);
+            pixelPos.Y = (float) Math.Round(pixelPos.Y);
+
+            return Tuple.Create(pixelPos, size);
+        }
+
+        private static Vector2 ConvertImGuiPos(Element element, Vector2 im) {
+            // get the coordinates in pixels
+            var pos = new Vector2(im.X, im.Y);
+
+            // get the size of the element
+            var size = new Vector2(element.Width, element.Height);
+            // scale the size of the element
+            size.X = (float) Math.Round(size.X * element.Scale);
+            size.Y = (float) Math.Round(size.Y * element.Scale);
+
+            // split the measured from into x and y parts
+            var (xMeasure, yMeasure) = element.MeasuredFrom.ToParts();
+
+            // determine how much to add to convert top left coords into the element's system
+            var addX = xMeasure switch {
+                MeasuredX.Left => 0,
+                MeasuredX.Middle => size.X / 2,
+                MeasuredX.Right => size.X,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+
+            var addY = yMeasure switch {
+                MeasuredY.Top => 0,
+                MeasuredY.Middle => size.Y / 2,
+                MeasuredY.Bottom => size.Y,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+
+            // convert from top left to given type
+            pos.X += addX;
+            pos.Y += addY;
+
+            // switch (element.MeasuredFrom) {
+            //     case MeasuredFrom.TopLeft:
+            //         // already top left
+            //         break;
+            //     case MeasuredFrom.TopMiddle:
+            //         pos.X += size.X / 2;
+            //         break;
+            //     case MeasuredFrom.TopRight:
+            //         pos.X += size.X;
+            //         break;
+            //     case MeasuredFrom.MiddleLeft:
+            //         pos.Y += size.Y / 2;
+            //         break;
+            //     case MeasuredFrom.Middle:
+            //         pos.X += size.X / 2;
+            //         pos.Y += size.Y / 2;
+            //         break;
+            //     case MeasuredFrom.MiddleRight:
+            //         pos.X += size.X;
+            //         pos.Y += size.Y / 2;
+            //         break;
+            //     case MeasuredFrom.BottomLeft:
+            //         pos.Y += size.Y;
+            //         break;
+            //     case MeasuredFrom.BottomMiddle:
+            //         pos.X += size.X / 2;
+            //         pos.Y += size.Y;
+            //         break;
+            //     case MeasuredFrom.BottomRight:
+            //         pos.X += size.X;
+            //         pos.Y += size.Y;
+            //         break;
+            //     default:
+            //         throw new ArgumentOutOfRangeException();
+            // }
+
+            // convert the pixels into percentages
+            var screen = ImGui.GetIO().DisplaySize;
+            pos.X /= screen.X / 100;
+            pos.Y /= screen.Y / 100;
+
+            return pos;
+        }
+
+        private void DrawPreviews(ref bool update) {
+            const float tolerance = 0.0001f;
+            const ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar
+                                           | ImGuiWindowFlags.NoResize
+                                           | ImGuiWindowFlags.NoFocusOnAppearing
+                                           | ImGuiWindowFlags.NoScrollbar;
+
+            if (this._selectedEditLayout == Guid.Empty) {
+                return;
+            }
+
+            if (!this.Plugin.Config.Layouts.TryGetValue(this._selectedEditLayout, out var layout)) {
+                return;
+            }
+
+            foreach (var element in layout.Elements.Values) {
+                if (!this.Previews.Contains(element.Id)) {
+                    continue;
+                }
+
+                var (pos, size) = CalcPosAndSize(element);
+                if (this.UpdatePreviews.Remove(element.Id)) {
+                    ImGui.SetNextWindowPos(pos);
+                } else {
+                    ImGui.SetNextWindowPos(pos, ImGuiCond.Appearing);
+                }
+
+                ImGui.SetNextWindowSize(size);
+
+                if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
+                    continue;
+                }
+
+                ImGui.TextUnformatted(element.Id.LocalisedName(this.Plugin.Interface.Data));
+
+                // determine if the window has moved and update if it has
+                var newPos = ConvertImGuiPos(element, ImGui.GetWindowPos());
+                if (Math.Abs(newPos.X - element.X) > tolerance || Math.Abs(newPos.Y - element.Y) > tolerance) {
+                    element.X = newPos.X;
+                    element.Y = newPos.Y;
+                    update = true;
+                }
+
+                ImGui.End();
+            }
         }
 
         private void DrawSettings() {
@@ -197,6 +369,8 @@ namespace HUD_Manager {
             }
 
             var update = false;
+
+            this.DrawPreviews(ref update);
 
             ImGui.TextUnformatted("Layout");
 
@@ -397,7 +571,16 @@ namespace HUD_Manager {
 
                     ImGui.TextUnformatted("Control");
 
-                    ImGui.SameLine(ImGui.GetContentRegionAvail().X - 30);
+                    ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.GetStyle().ItemSpacing.X * 6);
+                    if (IconButton(FontAwesomeIcon.Search, $"uimanager-preview-element-{kind}")) {
+                        if (this.Previews.Contains(kind)) {
+                            this.Previews.Remove(kind);
+                        } else {
+                            this.Previews.Add(kind);
+                        }
+                    }
+
+                    ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
                     if (IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}")) {
                         toRemove.Add(kind);
                     }
@@ -455,6 +638,7 @@ namespace HUD_Manager {
 
                         ImGui.EndCombo();
                     }
+
                     ImGui.PopItemWidth();
 
                     DrawEnabledCheckbox(element.Id, ElementComponent.X);
@@ -466,7 +650,11 @@ namespace HUD_Manager {
                         if (ImGui.DragFloat($"##x-{kind}", ref x, this._dragSpeed)) {
                             element.X = x;
                             update = true;
+                            if (this.Previews.Contains(kind)) {
+                                this.UpdatePreviews.Add(kind);
+                            }
                         }
+
                         ImGui.PopItemWidth();
 
                         DrawEnabledCheckbox(element.Id, ElementComponent.Y);
@@ -477,7 +665,11 @@ namespace HUD_Manager {
                         if (ImGui.DragFloat($"##y-{kind}", ref y, this._dragSpeed)) {
                             element.Y = y;
                             update = true;
+                            if (this.Previews.Contains(kind)) {
+                                this.UpdatePreviews.Add(kind);
+                            }
                         }
+
                         ImGui.PopItemWidth();
                     } else {
                         var screen = ImGui.GetIO().DisplaySize;
@@ -487,7 +679,11 @@ namespace HUD_Manager {
                         if (ImGui.InputInt($"##x-{kind}", ref x)) {
                             element.X = x / screen.X * 100;
                             update = true;
+                            if (this.Previews.Contains(kind)) {
+                                this.UpdatePreviews.Add(kind);
+                            }
                         }
+
                         ImGui.PopItemWidth();
 
                         DrawEnabledCheckbox(element.Id, ElementComponent.Y);
@@ -498,7 +694,11 @@ namespace HUD_Manager {
                         if (ImGui.InputInt($"##y-{kind}", ref y)) {
                             element.Y = y / screen.Y * 100;
                             update = true;
+                            if (this.Previews.Contains(kind)) {
+                                this.UpdatePreviews.Add(kind);
+                            }
                         }
+
                         ImGui.PopItemWidth();
                     }
 
@@ -519,6 +719,7 @@ namespace HUD_Manager {
 
                         ImGui.EndCombo();
                     }
+
                     ImGui.PopItemWidth();
 
                     if (!kind.IsJobGauge()) {
@@ -531,6 +732,7 @@ namespace HUD_Manager {
                             element.Opacity = (byte) opacity;
                             update = true;
                         }
+
                         ImGui.PopItemWidth();
                     }
 
@@ -547,6 +749,7 @@ namespace HUD_Manager {
                             targetBarOpts.ShowIndependently = independent;
                             update = true;
                         }
+
                         ImGui.PopItemWidth();
                     }
 
@@ -570,6 +773,7 @@ namespace HUD_Manager {
 
                             ImGui.EndCombo();
                         }
+
                         ImGui.PopItemWidth();
                     }
 
@@ -593,6 +797,7 @@ namespace HUD_Manager {
 
                             ImGui.EndCombo();
                         }
+
                         ImGui.PopItemWidth();
 
                         ImGui.NextColumn();
@@ -612,6 +817,7 @@ namespace HUD_Manager {
 
                             ImGui.EndCombo();
                         }
+
                         ImGui.PopItemWidth();
 
                         ImGui.NextColumn();
@@ -624,6 +830,7 @@ namespace HUD_Manager {
                             statusOpts.Gamepad = focusable ? StatusGamepad.Focusable : StatusGamepad.NonFocusable;
                             update = true;
                         }
+
                         ImGui.PopItemWidth();
                     }
 
@@ -641,6 +848,7 @@ namespace HUD_Manager {
                                 hotbarOpts.Index = (byte) Math.Max(0, Math.Min(9, hotbarIndex - 1));
                                 update = true;
                             }
+
                             ImGui.PopItemWidth();
                         }
 
@@ -662,6 +870,7 @@ namespace HUD_Manager {
 
                             ImGui.EndCombo();
                         }
+
                         ImGui.PopItemWidth();
                     }
 
@@ -678,6 +887,7 @@ namespace HUD_Manager {
                             gaugeOpts.Style = simple ? GaugeStyle.Simple : GaugeStyle.Normal;
                             update = true;
                         }
+
                         ImGui.PopItemWidth();
                     }
 
