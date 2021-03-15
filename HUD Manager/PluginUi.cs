@@ -580,10 +580,14 @@ namespace HUD_Manager {
                         }
                     }
 
+                    HoverTooltip("Toggle a movable preview for this element");
+
                     ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
                     if (IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}")) {
                         toRemove.Add(kind);
                     }
+
+                    HoverTooltip("Remove this element from this layout");
 
                     ImGui.Separator();
 
