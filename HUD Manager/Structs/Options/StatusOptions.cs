@@ -22,6 +22,19 @@ namespace HUD_Manager.Structs.Options {
         ThreeGroups = 0,
     }
 
+    public static class StatusStyleExt {
+        public static string Name(this StatusStyle style) {
+            return style switch {
+                StatusStyle.Normal => "Normal",
+                StatusStyle.NormalLeftJustified1 => "Normal (left-justified 1)",
+                StatusStyle.NormalLeftJustified2 => "Normal (left-justified 2)",
+                StatusStyle.NormalLeftJustified3 => "Normal (left-justified 3)",
+                StatusStyle.ThreeGroups => "Split into three groups",
+                _ => style.ToString(),
+            };
+        }
+    }
+
     public class StatusInfoOptions {
         private const int GamepadBit = 1 << 4;
 
@@ -104,9 +117,31 @@ namespace HUD_Manager.Structs.Options {
         FiveByFour,
     }
 
+    public static class StatusLayoutExt {
+        public static string Name(this StatusLayout layout) {
+            return layout switch {
+                StatusLayout.TwentyByOne => "20x1",
+                StatusLayout.TenByTwo => "10x2",
+                StatusLayout.SevenByThree => "7x3",
+                StatusLayout.FiveByFour => "5x4",
+                _ => layout.ToString(),
+            };
+        }
+    }
+
     public enum StatusAlignment {
         LeftJustified,
         RightJustified,
+    }
+
+    public static class StatusAlignmentExt {
+        public static string Name(this StatusAlignment alignment) {
+            return alignment switch {
+                StatusAlignment.LeftJustified => "Left-justified",
+                StatusAlignment.RightJustified => "Right-justified",
+                _ => alignment.ToString(),
+            };
+        }
     }
 
     public enum StatusGamepad {

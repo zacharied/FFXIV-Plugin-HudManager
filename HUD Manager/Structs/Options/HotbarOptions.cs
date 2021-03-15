@@ -25,4 +25,18 @@
         TwoBySix = 5,
         OneByTwelve = 6,
     }
+
+    public static class HotbarLayoutExt {
+        public static string Name(this HotbarLayout layout) {
+            return layout switch {
+                HotbarLayout.TwelveByOne => "12x1",
+                HotbarLayout.SixByTwo => "6x2",
+                HotbarLayout.FourByThree => "4x3",
+                HotbarLayout.ThreeByFour => "3x4",
+                HotbarLayout.TwoBySix => "2x6",
+                HotbarLayout.OneByTwelve => "1x12",
+                _ => layout.ToString(),
+            };
+        }
+    }
 }

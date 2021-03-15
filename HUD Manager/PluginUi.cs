@@ -626,9 +626,9 @@ namespace HUD_Manager {
 
                     ImGui.PushItemWidth(-1);
                     var measuredFrom = element.MeasuredFrom;
-                    if (ImGui.BeginCombo($"##measured-from-{kind}", measuredFrom.ToString())) {
+                    if (ImGui.BeginCombo($"##measured-from-{kind}", measuredFrom.Name())) {
                         foreach (var measured in (MeasuredFrom[]) Enum.GetValues(typeof(MeasuredFrom))) {
-                            if (!ImGui.Selectable($"{measured}##{kind}", measuredFrom == measured)) {
+                            if (!ImGui.Selectable($"{measured.Name()}##{kind}", measuredFrom == measured)) {
                                 continue;
                             }
 
@@ -761,9 +761,9 @@ namespace HUD_Manager {
                         DrawSettingName("Style");
 
                         ImGui.PushItemWidth(-1);
-                        if (ImGui.BeginCombo($"##style-{kind}", statusOpts.Style.ToString())) {
+                        if (ImGui.BeginCombo($"##style-{kind}", statusOpts.Style.Name())) {
                             foreach (var style in (StatusStyle[]) Enum.GetValues(typeof(StatusStyle))) {
-                                if (!ImGui.Selectable($"{style}##{kind}")) {
+                                if (!ImGui.Selectable($"{style.Name()}##{kind}")) {
                                     continue;
                                 }
 
@@ -785,9 +785,9 @@ namespace HUD_Manager {
                         DrawSettingName("Layout");
 
                         ImGui.PushItemWidth(-1);
-                        if (ImGui.BeginCombo($"##layout-{kind}", statusOpts.Layout.ToString())) {
+                        if (ImGui.BeginCombo($"##layout-{kind}", statusOpts.Layout.Name())) {
                             foreach (var sLayout in (StatusLayout[]) Enum.GetValues(typeof(StatusLayout))) {
-                                if (!ImGui.Selectable($"{sLayout}##{kind}")) {
+                                if (!ImGui.Selectable($"{sLayout.Name()}##{kind}")) {
                                     continue;
                                 }
 
@@ -805,9 +805,9 @@ namespace HUD_Manager {
                         DrawSettingName("Alignment");
 
                         ImGui.PushItemWidth(-1);
-                        if (ImGui.BeginCombo($"##alignment-{kind}", statusOpts.Alignment.ToString())) {
+                        if (ImGui.BeginCombo($"##alignment-{kind}", statusOpts.Alignment.Name())) {
                             foreach (var alignment in (StatusAlignment[]) Enum.GetValues(typeof(StatusAlignment))) {
-                                if (!ImGui.Selectable($"{alignment}##{kind}")) {
+                                if (!ImGui.Selectable($"{alignment.Name()}##{kind}")) {
                                     continue;
                                 }
 
@@ -858,9 +858,9 @@ namespace HUD_Manager {
 
 
                         ImGui.PushItemWidth(-1);
-                        if (ImGui.BeginCombo($"##hotbar-layout-{kind}", hotbarOpts.Layout.ToString())) {
+                        if (ImGui.BeginCombo($"##hotbar-layout-{kind}", hotbarOpts.Layout.Name())) {
                             foreach (var hotbarLayout in (HotbarLayout[]) Enum.GetValues(typeof(HotbarLayout))) {
-                                if (!ImGui.Selectable($"{hotbarLayout}##{kind}")) {
+                                if (!ImGui.Selectable($"{hotbarLayout.Name()}##{kind}")) {
                                     continue;
                                 }
 
