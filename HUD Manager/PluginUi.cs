@@ -835,7 +835,7 @@ namespace HUD_Manager {
                     }
 
                     if (kind.IsHotbar()) {
-                        var hotbarOpts = new HotbarOptions(element.Options);
+                        var hotbarOpts = new HotbarOptions(element);
 
                         if (kind != ElementKind.PetHotbar) {
                             ImGui.NextColumn();

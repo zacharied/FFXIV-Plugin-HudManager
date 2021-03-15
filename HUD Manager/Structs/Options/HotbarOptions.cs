@@ -1,5 +1,8 @@
-﻿namespace HUD_Manager.Structs.Options {
+﻿using System;
+
+namespace HUD_Manager.Structs.Options {
     public class HotbarOptions {
+        private readonly Element _element;
         private readonly byte[] _options;
 
         public byte Index {
@@ -9,11 +12,17 @@
 
         public HotbarLayout Layout {
             get => (HotbarLayout) this._options[1];
-            set => this._options[1] = (byte) value;
+            set {
+                this._options[1] = (byte) value;
+                var size = value.Size();
+                this._element.Width = size.X;
+                this._element.Height = size.Y;
+            }
         }
 
-        public HotbarOptions(byte[] options) {
-            this._options = options;
+        public HotbarOptions(Element element) {
+            this._element = element;
+            this._options = element.Options;
         }
     }
 
@@ -36,6 +45,18 @@
                 HotbarLayout.TwoBySix => "2x6",
                 HotbarLayout.OneByTwelve => "1x12",
                 _ => layout.ToString(),
+            };
+        }
+
+        public static Vector2<ushort> Size(this HotbarLayout layout) {
+            return layout switch {
+                HotbarLayout.TwelveByOne => new Vector2<ushort>(624, 72),
+                HotbarLayout.SixByTwo => new Vector2<ushort>(331, 121),
+                HotbarLayout.FourByThree => new Vector2<ushort>(241, 170),
+                HotbarLayout.ThreeByFour => new Vector2<ushort>(162, 260),
+                HotbarLayout.TwoBySix => new Vector2<ushort>(117, 358),
+                HotbarLayout.OneByTwelve => new Vector2<ushort>(72, 618),
+                _ => throw new ArgumentOutOfRangeException(nameof(layout), layout, null),
             };
         }
     }
