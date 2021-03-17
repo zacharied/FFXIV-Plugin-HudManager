@@ -935,14 +935,16 @@ namespace HUD_Manager {
 
                 foreach (var window in WindowKindExt.All) {
                     var addon = this.Plugin.Interface.Framework.Gui.GetAddonByName(window, 1);
-                    var flags = addon?.Visible == true ? ImGuiSelectableFlags.None : ImGuiSelectableFlags.Disabled;
+                    var flags = addon?.Visible == true && !layout.Windows.ContainsKey(window)
+                        ? ImGuiSelectableFlags.None
+                        : ImGuiSelectableFlags.Disabled;
 
                     if (!ImGui.Selectable(window, false, flags)) {
                         continue;
                     }
 
                     var pos = this.Plugin.GameFunctions.GetAddonPosition(window);
-                    if (pos != null && !layout.Windows.ContainsKey(window)) {
+                    if (pos != null) {
                         layout.Windows.Add(window, new Window(pos));
                     }
                 }
@@ -953,6 +955,8 @@ namespace HUD_Manager {
             if (!ImGui.BeginChild("uimanager-layout-editor-windows", new Vector2(0, 0))) {
                 return;
             }
+
+            var toRemove = new HashSet<string>();
 
             foreach (var entry in layout.Windows) {
                 if (!ImGui.CollapsingHeader($"{entry.Key}##uimanager-window-{entry.Key}")) {
@@ -967,11 +971,20 @@ namespace HUD_Manager {
                     this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
                 }
 
+                ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
+                if (IconButton(FontAwesomeIcon.Trash, $"uimanager-remove-window-{entry.Key}")) {
+                    toRemove.Add(entry.Key);
+                }
+
                 var y = (int) pos.Y;
                 if (ImGui.InputInt($"Y##uimanager-window-{entry.Key}", ref y)) {
                     pos.Y = (short) y;
                     this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
                 }
+            }
+
+            foreach (var remove in toRemove) {
+                layout.Windows.Remove(remove);
             }
 
             ImGui.EndChild();
