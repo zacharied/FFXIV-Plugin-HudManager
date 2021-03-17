@@ -6,7 +6,7 @@ using Dalamud.Plugin;
 namespace HUD_Manager.Configuration {
     [Serializable]
     public class Config : IPluginConfiguration {
-        public const int LatestVersion = 4;
+        public const int LatestVersion = 5;
 
         public int Version { get; set; } = LatestVersion;
 
@@ -15,7 +15,6 @@ namespace HUD_Manager.Configuration {
         public bool FirstRun { get; set; } = true;
         public bool UnderstandsRisks { get; set; }
 
-        public bool ImportPositions { get; set; }
         public bool SwapsEnabled { get; set; }
 
         public HudSlot StagingSlot { get; set; } = HudSlot.Four;

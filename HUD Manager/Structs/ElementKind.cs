@@ -1,4 +1,7 @@
-﻿using Dalamud.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Dalamud.Data;
 using HUD_Manager.Lumina;
 using Lumina.Excel.GeneratedSheets;
 
@@ -79,9 +82,25 @@ namespace HUD_Manager.Structs {
         TheFeastAllyInfo = 933766972,
         TheFeastScore = 3622852831,
         BattleHighGauge = 884971695,
+        LeftWCrossHotbar = 1717924701,
+        RightWCrossHotbar = 1893596455,
+        OceanFishingVoyageMissions = 1917955123,
+        Timers = 2578885979,
     }
 
     public static class ElementKindExt {
+        public static readonly ElementKind[] Immutable = {
+            // cannot be moved with the current method the plugin is using
+            ElementKind.OceanFishingVoyageMissions,
+
+            // don't actually know if this is immutable, but idk what it is
+            ElementKind.Timers,
+        };
+
+        public static IEnumerable<ElementKind> All() => Enum.GetValues(typeof(ElementKind))
+            .Cast<ElementKind>()
+            .Where(kind => !Immutable.Contains(kind));
+
         public static string LocalisedName(this ElementKind kind, DataManager data) {
             uint? id = kind switch {
                 ElementKind.Hotbar1 => 0,
@@ -117,8 +136,10 @@ namespace HUD_Manager.Structs {
                 ElementKind.AllianceList1 => 30,
                 ElementKind.AllianceList2 => 31,
                 // ElementKind.DutyList => 32, // listed twice?
-                // 33 is "Timers"
-                // 34-39 empty
+                ElementKind.Timers => 33,
+                // 34-37 empty
+                ElementKind.LeftWCrossHotbar => 38,
+                ElementKind.RightWCrossHotbar => 39,
                 ElementKind.OathGauge => 40,
                 // 41 is "LightningGauge" - guessing that's for GL
                 ElementKind.BeastGauge => 42,
@@ -164,7 +185,7 @@ namespace HUD_Manager.Structs {
                 ElementKind.BattleHighGauge => 82,
                 ElementKind.NewGamePlusGuide => 83,
                 ElementKind.CompressedAether => 84,
-                // 84 is "Ocean Fishing: Voyage Missions"
+                ElementKind.OceanFishingVoyageMissions => 85,
                 _ => null,
             };
 

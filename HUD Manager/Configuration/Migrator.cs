@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Dalamud.Plugin;
@@ -25,20 +27,34 @@ namespace HUD_Manager.Configuration {
                     }
                 }
 
-                var saved = new SavedLayout(entry.Value.Name, layout, entry.Value.Positions);
+                var positions = entry.Value.Positions.ToDictionary(
+                    pos => pos.Key,
+                    pos => new Window(
+                        WindowComponent.X | WindowComponent.Y,
+                        pos.Value
+                    )
+                );
+                var saved = new SavedLayout(entry.Value.Name, layout, positions);
                 config.Layouts[entry.Key] = saved;
             }
 
             return config;
         }
 
-        private static void WithEachElement(JObject old, Action<JObject> action) {
+        private static void WithEachLayout(JObject old, Action<JObject> action) {
             foreach (var property in old["Layouts"].Children<JProperty>()) {
                 if (property.Name == "$type") {
                     continue;
                 }
 
                 var layout = (JObject) property.Value;
+
+                action(layout);
+            }
+        }
+
+        private static void WithEachElement(JObject old, Action<JObject> action) {
+            WithEachLayout(old, layout => {
                 var elements = (JObject) layout["Elements"];
 
                 foreach (var elementProp in elements.Children<JProperty>()) {
@@ -50,7 +66,7 @@ namespace HUD_Manager.Configuration {
 
                     action(element);
                 }
-            }
+            });
         }
 
         private static void MigrateV2(JObject old) {
@@ -82,6 +98,35 @@ namespace HUD_Manager.Configuration {
             });
 
             old["Version"] = 4;
+        }
+
+        private static void MigrateV4(JObject old) {
+            WithEachLayout(old, layout => {
+                var oldPositions = (JObject) layout["Positions"];
+                var windows = new Dictionary<string, Window>();
+
+                foreach (var elementProp in oldPositions.Children<JProperty>()) {
+                    if (elementProp.Name == "$type") {
+                        continue;
+                    }
+
+                    var position = (JObject) elementProp.Value;
+                    windows[elementProp.Name] = new Window(
+                        WindowComponent.X | WindowComponent.Y,
+                        new Vector2<short>(
+                            position["X"].ToObject<short>(),
+                            position["Y"].ToObject<short>()
+                        )
+                    );
+                }
+
+                layout["Windows"] = JObject.FromObject(windows);
+
+                layout.Remove("Positions");
+            });
+
+            old.Remove("ImportPositions");
+            old["Version"] = 5;
         }
 
         private static string PluginConfig(string? pluginName = null) {
@@ -148,6 +193,9 @@ namespace HUD_Manager.Configuration {
                         break;
                     case 3:
                         MigrateV3(config);
+                        break;
+                    case 4:
+                        MigrateV4(config);
                         break;
                     default:
                         PluginLog.Warning($"Tried to migrate from an unknown version: {version}");

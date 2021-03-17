@@ -89,8 +89,8 @@ namespace HUD_Manager {
             this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId);
             this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
 
-            foreach (var entry in layout.Positions) {
-                this.Plugin.GameFunctions.MoveWindow(entry.Key, entry.Value.X, entry.Value.Y);
+            foreach (var entry in layout.Windows) {
+                this.Plugin.GameFunctions.SetAddonPosition(entry.Key, entry.Value.Position.X, entry.Value.Position.Y);
             }
         }
     }

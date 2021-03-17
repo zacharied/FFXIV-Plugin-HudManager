@@ -41,8 +41,13 @@ namespace HUD_Manager {
             }
         }
 
-        private IntPtr GetFilePointer(byte index) {
+        public IntPtr GetFilePointer(byte index) {
             return this._getFilePointer?.Invoke(index) ?? IntPtr.Zero;
+        }
+
+        public void SaveAddonData() {
+            var saveMarker = this.GetFilePointer(0) + 0x3E;
+            Marshal.WriteByte(saveMarker, 1);
         }
 
         public void SelectSlot(HudSlot slot, bool force = false) {
@@ -91,6 +96,10 @@ namespace HUD_Manager {
         private IntPtr GetDataPointer() {
             var dataPtr = this.GetFilePointer(0) + 0x50;
             return Marshal.ReadIntPtr(dataPtr);
+        }
+
+        internal IntPtr GetDefaultLayoutPointer() {
+            return this.GetDataPointer() + 0x1c4;
         }
 
         internal IntPtr GetLayoutPointer(HudSlot slot) {
@@ -196,8 +205,8 @@ namespace HUD_Manager {
     }
 
     public class Vector2<T> {
-        public T X { get; }
-        public T Y { get; }
+        public T X { get; set; }
+        public T Y { get; set; }
 
         public Vector2(T x, T y) {
             this.X = x;

@@ -8,23 +8,30 @@ namespace HUD_Manager.Configuration {
     [Serializable]
     public class SavedLayout {
         public Dictionary<ElementKind, Element> Elements { get; }
-        public Dictionary<string, Vector2<short>> Positions { get; private set; }
+        public Dictionary<string, Window> Windows { get; }
+        // public Dictionary<string, Vector2<short>> Positions { get; private set; }
         public Guid Parent { get; set; } = Guid.Empty;
 
         public string Name { get; set; }
 
         [JsonConstructor]
-        public SavedLayout(string name, Dictionary<ElementKind, Element> elements, Dictionary<string, Vector2<short>> positions, Guid parent) {
+        public SavedLayout(string name, Dictionary<ElementKind, Element> elements, Dictionary<string, Window> windows, Guid parent) {
             this.Name = name;
             this.Elements = elements;
-            this.Positions = positions;
+            this.Windows = windows;
             this.Parent = parent;
         }
 
-        public SavedLayout(string name, Layout hud, Dictionary<string, Vector2<short>> positions) {
+        public SavedLayout(string name, Layout hud, Dictionary<string, Window> windows) {
             this.Name = name;
             this.Elements = hud.ToDictionary();
-            this.Positions = positions;
+            this.Windows = windows;
+        }
+
+        public SavedLayout(string name, Layout hud) {
+            this.Name = name;
+            this.Elements = hud.ToDictionary();
+            this.Windows = new Dictionary<string, Window>();
         }
 
         public Layout ToLayout() {
