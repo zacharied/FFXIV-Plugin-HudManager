@@ -930,8 +930,14 @@ namespace HUD_Manager {
             }
 
             if (ImGui.BeginPopup(Popups.AddWindow)) {
+                ImGui.TextUnformatted("Windows must be open to add them");
+                ImGui.Separator();
+
                 foreach (var window in WindowKindExt.All) {
-                    if (!ImGui.Selectable(window)) {
+                    var addon = this.Plugin.Interface.Framework.Gui.GetAddonByName(window, 1);
+                    var flags = addon?.Visible == true ? ImGuiSelectableFlags.None : ImGuiSelectableFlags.Disabled;
+
+                    if (!ImGui.Selectable(window, false, flags)) {
                         continue;
                     }
 
