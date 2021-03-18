@@ -25,6 +25,9 @@ namespace HUD_Manager {
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.Interface = pluginInterface;
 
+            // it's time to do a murder
+            _ = new HudSwapMurderer(this);
+
             this.Config = Migrator.LoadConfig(this);
             this.Config.Initialize(this.Interface);
             this.Config.Save();
