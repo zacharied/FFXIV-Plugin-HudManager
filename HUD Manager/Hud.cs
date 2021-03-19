@@ -195,6 +195,20 @@ namespace HUD_Manager {
 
             this.WriteLayout(slot, elements);
         }
+
+        internal void ImportSlot(string name, HudSlot slot, bool save = true) {
+            this.Import(name, this.Plugin.Hud.ReadLayout(slot), save);
+        }
+
+        private void Import(string name, Layout layout, bool save = true) {
+            var guid = this.Plugin.Config.Layouts.FirstOrDefault(kv => kv.Value.Name == name).Key;
+            guid = guid != default ? guid : Guid.NewGuid();
+
+            this.Plugin.Config.Layouts[guid] = new SavedLayout(name, layout);
+            if (save) {
+                this.Plugin.Config.Save();
+            }
+        }
     }
 
     public enum HudSlot {

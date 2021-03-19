@@ -1,11 +1,18 @@
-﻿using Dalamud.Game.Internal;
+﻿using System;
+using Dalamud.Game.Internal;
 
 namespace HUD_Manager {
-    public class Swapper {
+    public class Swapper : IDisposable {
         private Plugin Plugin { get; }
 
         public Swapper(Plugin plugin) {
             this.Plugin = plugin;
+
+            this.Plugin.Interface.Framework.OnUpdateEvent += this.OnFrameworkUpdate;
+        }
+
+        public void Dispose() {
+            this.Plugin.Interface.Framework.OnUpdateEvent -= this.OnFrameworkUpdate;
         }
 
         public void OnFrameworkUpdate(Framework framework) {
