@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface;
 using HUD_Manager.Configuration;
@@ -52,24 +53,68 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     continue;
                 }
 
-                var pos = entry.Value.Position;
+                var maxSettingWidth = ImGui.CalcTextSize("Setting").X;
 
-                var x = (int) pos.X;
-                if (ImGui.InputInt($"X##uimanager-window-{entry.Key}", ref x)) {
-                    pos.X = (short) x;
-                    this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
+                void DrawSettingName(string name) {
+                    maxSettingWidth = Math.Max(maxSettingWidth, ImGui.CalcTextSize(name).X);
+                    ImGui.TextUnformatted(name);
+                    ImGui.NextColumn();
                 }
+
+                ImGui.Columns(3);
+                ImGui.SetColumnWidth(0, ImGui.CalcTextSize("Enabled").X + ImGui.GetStyle().ItemSpacing.X * 2);
+
+                ImGui.TextUnformatted("Enabled");
+                ImGui.NextColumn();
+
+                DrawSettingName("Setting");
+
+                ImGui.TextUnformatted("Control");
 
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
                 if (ImGuiExt.IconButton(FontAwesomeIcon.Trash, $"uimanager-remove-window-{entry.Key}")) {
                     toRemove.Add(entry.Key);
                 }
 
+                ImGui.Separator();
+
+                void DrawEnabledCheckbox(string kind, WindowComponent component) {
+                    ImGui.NextColumn();
+
+                    var enabled = entry.Value[component];
+                    if (ImGui.Checkbox($"###{component}-enabled-{kind}", ref enabled)) {
+                        entry.Value[component] = enabled;
+                        this.Plugin.Config.Save();
+                    }
+
+                    ImGui.NextColumn();
+                }
+
+                var pos = entry.Value.Position;
+
+                DrawEnabledCheckbox(entry.Key, WindowComponent.X);
+
+                DrawSettingName("X");
+
+                var x = (int) pos.X;
+                if (ImGui.InputInt($"##uimanager-x-window-{entry.Key}", ref x)) {
+                    pos.X = (short) x;
+                    this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
+                }
+
+                DrawEnabledCheckbox(entry.Key, WindowComponent.Y);
+
+                DrawSettingName("Y");
+
                 var y = (int) pos.Y;
-                if (ImGui.InputInt($"Y##uimanager-window-{entry.Key}", ref y)) {
+                if (ImGui.InputInt($"##uimanager-y-window-{entry.Key}", ref y)) {
                     pos.Y = (short) y;
                     this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
                 }
+
+                ImGui.SetColumnWidth(1, maxSettingWidth + ImGui.GetStyle().ItemSpacing.X * 2);
+
+                ImGui.Columns();
             }
 
             foreach (var remove in toRemove) {

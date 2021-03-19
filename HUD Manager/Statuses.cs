@@ -82,16 +82,12 @@ namespace HUD_Manager {
                 return; // FIXME: do something better
             }
 
-            if (!this.Plugin.Config.Layouts.TryGetValue(layoutId, out var layout)) {
+            if (!this.Plugin.Config.Layouts.ContainsKey(layoutId)) {
                 return; // FIXME: do something better
             }
 
             this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId);
             this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
-
-            foreach (var entry in layout.Windows) {
-                this.Plugin.GameFunctions.SetAddonPosition(entry.Key, entry.Value.Position.X, entry.Value.Position.Y);
-            }
         }
     }
 

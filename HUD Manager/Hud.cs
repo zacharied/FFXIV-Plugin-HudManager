@@ -161,15 +161,16 @@ namespace HUD_Manager {
             }
         }
 
-        public void WriteEffectiveLayout(HudSlot slot, Guid id) {
+        private SavedLayout? GetEffectiveLayout(Guid id) {
             // find the node for this id
             var nodes = Node<SavedLayout>.BuildTree(this.Plugin.Config.Layouts);
             var node = nodes.Find(id);
             if (node == null) {
-                return;
+                return null;
             }
 
             var elements = new Dictionary<ElementKind, Element>();
+            var windows = new Dictionary<string, Window>();
 
             // get the ancestors and their elements for this node
             foreach (var ancestor in node.Ancestors().Reverse()) {
@@ -180,6 +181,15 @@ namespace HUD_Manager {
                     }
 
                     elements[element.Key].UpdateEnabled(element.Value);
+                }
+
+                foreach (var window in ancestor.Value.Windows) {
+                    if (window.Value.Enabled == Window.AllEnabled || !windows.ContainsKey(window.Key)) {
+                        windows[window.Key] = window.Value.Clone();
+                        continue;
+                    }
+
+                    windows[window.Key].UpdateEnabled(window.Value);
                 }
             }
 
@@ -193,7 +203,29 @@ namespace HUD_Manager {
                 elements[element.Key].UpdateEnabled(element.Value);
             }
 
-            this.WriteLayout(slot, elements);
+            foreach (var window in node.Value.Windows) {
+                if (window.Value.Enabled == Window.AllEnabled || !windows.ContainsKey(window.Key)) {
+                    windows[window.Key] = window.Value.Clone();
+                    continue;
+                }
+
+                windows[window.Key].UpdateEnabled(window.Value);
+            }
+
+            return new SavedLayout($"Effective {id}", elements, windows, Guid.Empty);
+        }
+
+        public void WriteEffectiveLayout(HudSlot slot, Guid id) {
+            var effective = this.GetEffectiveLayout(id);
+            if (effective == null) {
+                return;
+            }
+
+            this.WriteLayout(slot, effective.Elements);
+
+            foreach (var window in effective.Windows) {
+                this.Plugin.GameFunctions.SetAddonPosition(window.Key, window.Value.Position.X, window.Value.Position.Y);
+            }
         }
 
         internal void ImportSlot(string name, HudSlot slot, bool save = true) {
