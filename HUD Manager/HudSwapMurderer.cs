@@ -44,10 +44,10 @@ namespace HUD_Manager {
             }
 
             // get the list of plugins
-            var pluginsField = manager.GetType().GetField("Plugins", BindingFlags.Instance | BindingFlags.Public);
+            var pluginsField = manager.GetType().GetProperty("Plugins", BindingFlags.Instance | BindingFlags.Public);
             var plugins = (List<(IDalamudPlugin plugin, PluginDefinition def, DalamudPluginInterface PluginInterface, bool IsRaw)>?) pluginsField?.GetValue(manager);
             if (plugins == null) {
-                PluginLog.LogWarning("Could not kill HudSwap since Plugins field was null");
+                PluginLog.LogWarning("Could not kill HudSwap since Plugins property was null");
                 return;
             }
 
