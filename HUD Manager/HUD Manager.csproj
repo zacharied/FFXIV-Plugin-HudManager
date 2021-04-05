@@ -8,7 +8,7 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <Reference Include="Dalamud, Version=5.2.3.3, Culture=neutral, PublicKeyToken=null">
+        <Reference Include="Dalamud, Version=5.2.4.2, Culture=neutral, PublicKeyToken=null">
             <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
             <Private>False</Private>
         </Reference>
@@ -34,16 +34,16 @@
         </Reference>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Costura.Fody" Version="5.0.2" PrivateAssets="all" />
-        <PackageReference Include="DalamudPackager" Version="1.2.0" />
-        <PackageReference Include="Fody" Version="6.4.0">
+        <PackageReference Include="Costura.Fody" Version="5.1.0" PrivateAssets="all"/>
+        <PackageReference Include="DalamudPackager" Version="1.2.1"/>
+        <PackageReference Include="Fody" Version="6.5.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Resourcer.Fody" Version="1.8.0" PrivateAssets="all" />
-        <PackageReference Include="YamlDotNet" Version="9.1.4" />
+        <PackageReference Include="Resourcer.Fody" Version="1.8.0" PrivateAssets="all"/>
+        <PackageReference Include="YamlDotNet" Version="11.0.1"/>
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="help.yaml" />
+        <EmbeddedResource Include="help.yaml"/>
     </ItemGroup>
 </Project>
