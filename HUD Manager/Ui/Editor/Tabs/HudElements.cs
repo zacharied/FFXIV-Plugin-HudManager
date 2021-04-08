@@ -84,23 +84,23 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     continue;
                 }
 
-                var maxSettingWidth = 0f;
-
                 void DrawSettingName(string name) {
-                    maxSettingWidth = Math.Max(maxSettingWidth, ImGui.CalcTextSize(name).X);
                     ImGui.TextUnformatted(name);
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
                 }
 
-                ImGui.Columns(3);
-                ImGui.SetColumnWidth(0, ImGui.CalcTextSize("Enabled").X + ImGui.GetStyle().ItemSpacing.X * 2);
+                const ImGuiTableFlags flags = ImGuiTableFlags.BordersInner
+                                              | ImGuiTableFlags.PadOuterX
+                                              | ImGuiTableFlags.SizingFixedFit
+                                              | ImGuiTableFlags.RowBg;
+                if (!ImGui.BeginTable($"uimanager-element-table-{kind}", 3, flags)) {
+                    continue;
+                }
 
-                ImGui.TextUnformatted("Enabled");
-                ImGui.NextColumn();
-
-                DrawSettingName("Setting");
-
-                ImGui.TextUnformatted("Control");
+                ImGui.TableSetupColumn("Enabled");
+                ImGui.TableSetupColumn("Setting");
+                ImGui.TableSetupColumn("Control", ImGuiTableColumnFlags.WidthStretch);
+                ImGui.TableHeadersRow();
 
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.GetStyle().ItemSpacing.X * 6);
                 if (ImGuiExt.IconButton(FontAwesomeIcon.Search, $"uimanager-preview-element-{kind}")) {
@@ -120,10 +120,12 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 ImGuiExt.HoverTooltip("Remove this element from this layout");
 
-                ImGui.Separator();
+                ImGui.TableNextRow();
 
-                void DrawEnabledCheckbox(ElementKind kind, ElementComponent component, ref bool update) {
-                    ImGui.NextColumn();
+                void DrawEnabledCheckbox(ElementKind kind, ElementComponent component, ref bool update, bool nextCol = true) {
+                    if (nextCol) {
+                        ImGui.TableNextColumn();
+                    }
 
                     var enabled = element[component];
                     if (ImGui.Checkbox($"###{component}-enabled-{kind}", ref enabled)) {
@@ -133,11 +135,13 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                         update = true;
                     }
 
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
                 }
 
+                ImGui.TableSetColumnIndex(0);
+
                 if (!kind.IsJobGauge()) {
-                    DrawEnabledCheckbox(element.Id, ElementComponent.Visibility, ref update);
+                    DrawEnabledCheckbox(element.Id, ElementComponent.Visibility, ref update, false);
                     DrawSettingName("Visibility");
 
                     var keyboard = element[VisibilityFlags.Keyboard];
@@ -152,10 +156,12 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                         element[VisibilityFlags.Gamepad] = gamepad;
                         update = true;
                     }
+
+                    ImGui.TableNextRow();
+                    ImGui.TableSetColumnIndex(0);
                 }
 
-                ImGui.NextColumn();
-                ImGui.NextColumn();
+                ImGui.TableNextColumn();
 
                 DrawSettingName("Measured from");
 
@@ -175,6 +181,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                 }
 
                 ImGui.PopItemWidth();
+                ImGui.TableNextRow();
 
                 DrawEnabledCheckbox(element.Id, ElementComponent.X, ref update);
                 DrawSettingName("X");
@@ -191,6 +198,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
 
                     DrawEnabledCheckbox(element.Id, ElementComponent.Y, ref update);
                     DrawSettingName("Y");
@@ -220,6 +228,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
 
                     DrawEnabledCheckbox(element.Id, ElementComponent.Y, ref update);
                     DrawSettingName("Y");
@@ -236,6 +245,8 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                     ImGui.PopItemWidth();
                 }
+
+                ImGui.TableNextRow();
 
                 DrawEnabledCheckbox(element.Id, ElementComponent.Scale, ref update);
                 DrawSettingName("Scale");
@@ -256,6 +267,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                 }
 
                 ImGui.PopItemWidth();
+                ImGui.TableNextRow();
 
                 if (!kind.IsJobGauge()) {
                     DrawEnabledCheckbox(element.Id, ElementComponent.Opacity, ref update);
@@ -269,13 +281,14 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
                 }
 
                 if (kind == ElementKind.TargetBar) {
                     var targetBarOpts = new TargetBarOptions(element.Options);
 
-                    ImGui.NextColumn();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     DrawSettingName("Display target information independently");
 
                     ImGui.PushItemWidth(-1);
@@ -286,13 +299,14 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
                 }
 
                 if (kind == ElementKind.StatusEffects) {
                     var statusOpts = new StatusOptions(element.Options);
 
-                    ImGui.NextColumn();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     DrawSettingName("Style");
 
                     ImGui.PushItemWidth(-1);
@@ -310,13 +324,14 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
                 }
 
                 if (kind == ElementKind.StatusInfoEnhancements || kind == ElementKind.StatusInfoEnfeeblements || kind == ElementKind.StatusInfoOther) {
                     var statusOpts = new StatusInfoOptions(kind, element.Options);
 
-                    ImGui.NextColumn();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     DrawSettingName("Layout");
 
                     ImGui.PushItemWidth(-1);
@@ -334,9 +349,10 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
 
-                    ImGui.NextColumn();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     DrawSettingName("Alignment");
 
                     ImGui.PushItemWidth(-1);
@@ -354,9 +370,10 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
 
-                    ImGui.NextColumn();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     DrawSettingName("Focusable by gamepad");
 
                     ImGui.PushItemWidth(-1);
@@ -373,8 +390,8 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     var hotbarOpts = new HotbarOptions(element);
 
                     if (kind != ElementKind.PetHotbar) {
-                        ImGui.NextColumn();
-                        ImGui.NextColumn();
+                        ImGui.TableNextColumn();
+                        ImGui.TableNextColumn();
                         DrawSettingName("Hotbar number");
 
                         ImGui.PushItemWidth(-1);
@@ -385,12 +402,12 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                         }
 
                         ImGui.PopItemWidth();
+                        ImGui.TableNextRow();
                     }
 
-                    ImGui.NextColumn();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     DrawSettingName("Hotbar layout");
-
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo($"##hotbar-layout-{kind}", hotbarOpts.Layout.Name())) {
@@ -407,13 +424,14 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
                 }
 
                 if (kind.IsJobGauge()) {
                     var gaugeOpts = new GaugeOptions(element.Options);
 
-                    ImGui.NextColumn();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
+                    ImGui.TableNextColumn();
                     DrawSettingName("Simple");
 
                     ImGui.PushItemWidth(-1);
@@ -424,11 +442,10 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     }
 
                     ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
                 }
 
-                ImGui.SetColumnWidth(1, maxSettingWidth + ImGui.GetStyle().ItemSpacing.X * 2);
-
-                ImGui.Columns();
+                ImGui.EndTable();
             }
 
             foreach (var remove in toRemove) {

@@ -72,31 +72,32 @@ namespace HUD_Manager.Ui {
                 return;
             }
 
-            ImGui.Columns(4);
+            const ImGuiTableFlags flags = ImGuiTableFlags.Borders
+                                          & ~ImGuiTableFlags.BordersOuterV
+                                          | ImGuiTableFlags.PadOuterX
+                                          | ImGuiTableFlags.RowBg;
+            if (!ImGui.BeginTable("uimanager-swaps-table", 4, flags)) {
+                return;
+            }
 
             var conditions = new List<HudConditionMatch>(this.Plugin.Config.HudConditionMatches);
             if (this._editingConditionIndex == conditions.Count) {
                 conditions.Add(new HudConditionMatch());
             }
 
-            ImGui.TextUnformatted("Job");
-            ImGui.NextColumn();
-
-            ImGui.TextUnformatted("State");
-            ImGui.NextColumn();
-
-            ImGui.TextUnformatted("Layout");
-            ImGui.NextColumn();
-
-            ImGui.TextUnformatted("Options");
-            ImGui.NextColumn();
-
-            ImGui.Separator();
+            ImGui.TableSetupColumn("Job");
+            ImGui.TableSetupColumn("State");
+            ImGui.TableSetupColumn("Layout");
+            ImGui.TableSetupColumn("Options");
+            ImGui.TableHeadersRow();
 
             var addCondition = false;
             var actionedItemIndex = -1;
             var action = 0; // 0 for delete, otherwise move.
             foreach (var item in conditions.Select((cond, i) => new {cond, i})) {
+                ImGui.TableNextRow();
+                ImGui.TableSetColumnIndex(0);
+
                 if (this._editingConditionIndex == item.i) {
                     this._editingCondition ??= new HudConditionMatch();
                     ImGui.PushItemWidth(-1);
@@ -115,7 +116,7 @@ namespace HUD_Manager.Ui {
                     }
 
                     ImGui.PopItemWidth();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo("##condition-edit-status", this._editingCondition.Status?.Name() ?? "Any")) {
@@ -133,7 +134,7 @@ namespace HUD_Manager.Ui {
                     }
 
                     ImGui.PopItemWidth();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
 
                     ImGui.PushItemWidth(-1);
                     var comboPreview = this._editingCondition.LayoutId == Guid.Empty ? string.Empty : this.Plugin.Config.Layouts[this._editingCondition.LayoutId].Name;
@@ -148,7 +149,7 @@ namespace HUD_Manager.Ui {
                     }
 
                     ImGui.PopItemWidth();
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
 
                     if (this._editingCondition.LayoutId != Guid.Empty) {
                         if (ImGuiExt.IconButton(FontAwesomeIcon.Check, "condition-edit")) {
@@ -168,14 +169,14 @@ namespace HUD_Manager.Ui {
                     }
                 } else {
                     ImGui.TextUnformatted(item.cond.ClassJob ?? string.Empty);
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
 
                     ImGui.TextUnformatted(item.cond.Status?.Name() ?? string.Empty);
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
 
                     this.Plugin.Config.Layouts.TryGetValue(item.cond.LayoutId, out var condLayout);
                     ImGui.TextUnformatted(condLayout?.Name ?? string.Empty);
-                    ImGui.NextColumn();
+                    ImGui.TableNextColumn();
 
                     if (ImGuiExt.IconButton(FontAwesomeIcon.PencilAlt, $"{item.i}")) {
                         this._editingConditionIndex = item.i;
@@ -199,13 +200,9 @@ namespace HUD_Manager.Ui {
                         action = 1;
                     }
                 }
-
-                ImGui.NextColumn();
             }
 
-            ImGui.Columns(1);
-
-            ImGui.Separator();
+            ImGui.EndTable();
 
             ImGui.EndChild();
 

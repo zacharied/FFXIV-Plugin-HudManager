@@ -4,7 +4,7 @@
 
         public bool ShowIndependently {
             get => this._options[0] == 1;
-            set => this._options[0] = value ? 1 : 0;
+            set => this._options[0] = value ? (byte) 1 : (byte) 0;
         }
 
         public TargetBarOptions(byte[] options) {
