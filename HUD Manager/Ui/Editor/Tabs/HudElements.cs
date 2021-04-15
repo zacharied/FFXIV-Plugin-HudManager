@@ -84,7 +84,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     continue;
                 }
 
-                void DrawSettingName(string name) {
+                static void DrawSettingName(string name) {
                     ImGui.TextUnformatted(name);
                     ImGui.TableNextColumn();
                 }
@@ -327,7 +327,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     ImGui.TableNextRow();
                 }
 
-                if (kind == ElementKind.StatusInfoEnhancements || kind == ElementKind.StatusInfoEnfeeblements || kind == ElementKind.StatusInfoOther) {
+                if (kind is ElementKind.StatusInfoEnhancements or ElementKind.StatusInfoEnfeeblements or ElementKind.StatusInfoOther) {
                     var statusOpts = new StatusInfoOptions(kind, element.Options);
 
                     ImGui.TableNextColumn();

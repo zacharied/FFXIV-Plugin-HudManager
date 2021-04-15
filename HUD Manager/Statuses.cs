@@ -18,15 +18,24 @@ namespace HUD_Manager {
         private ClassJob? _job;
 
         internal static byte GetStatus(Actor actor) {
-            return Marshal.ReadByte(actor.Address + 0x1980);
+            // Updated: 5.5
+            // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
+            const int offset = 0x19A0;
+            return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetOnlineStatus(Actor actor) {
-            return Marshal.ReadByte(actor.Address + 0x195F);
+            // Updated: 5.5
+            // E8 ?? ?? ?? ?? 48 85 C0 75 54
+            const int offset = 0x197F;
+            return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetBardThing(Actor actor) {
-            return Marshal.ReadByte(actor.Address + 0x195C);
+            // Updated: 5.5
+            // E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 0F B6 43 50
+            const int offset = 0x197C;
+            return Marshal.ReadByte(actor.Address + offset);
         }
 
         public Statuses(Plugin plugin) {
