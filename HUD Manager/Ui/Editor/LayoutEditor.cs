@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Interface;
+using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
@@ -51,15 +52,19 @@ namespace HUD_Manager.Ui.Editor {
                 goto EndTabItem;
             }
 
-            unsafe
+            try
             {
-                var charConfig = (AtkUnitBase*)this.Plugin.GameGui.GetAddonByName("ConfigCharacter", 1);
-                
-                if (charConfig != null && charConfig->IsVisible)
+                var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);
+                if (charConfig.IsVisible)
                 {
                     ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
                     goto EndTabItem;
                 }
+            }
+            catch (InvalidOperationException e)
+            {
+                PluginLog.Error(e, "Failed to get handle to ConfigCharacter addon");
+                goto EndTabItem;
             }
 
             var update = false;
