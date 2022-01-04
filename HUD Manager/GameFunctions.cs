@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -22,9 +24,9 @@ namespace HUD_Manager {
         public GameFunctions(Plugin plugin) {
             this.Plugin = plugin;
 
-            var setPositionPtr = this.Plugin.Interface.TargetModuleScanner.ScanText("4C 8B 89 ?? ?? ?? ?? 41 0F BF C0");
-            var setAlphaPtr = this.Plugin.Interface.TargetModuleScanner.ScanText("F6 81 ?? ?? ?? ?? ?? 88 91 ?? ?? ?? ??");
-            var updatePositionPtr = this.Plugin.Interface.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ?? 33 D2 48 8B 01 FF 90 ?? ?? ?? ??");
+            var setPositionPtr = this.Plugin.SigScanner.ScanText("4C 8B 89 ?? ?? ?? ?? 41 0F BF C0");
+            var setAlphaPtr = this.Plugin.SigScanner.ScanText("F6 81 ?? ?? ?? ?? ?? 88 91 ?? ?? ?? ??");
+            var updatePositionPtr = this.Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 8B 8B ?? ?? ?? ?? 33 D2 48 8B 01 FF 90 ?? ?? ?? ??");
             // var baseUiPtr = this.Plugin.Interface.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 0F BF D5");
 
             this._setPosition = Marshal.GetDelegateForFunctionPointer<SetPositionDelegate>(setPositionPtr);
@@ -33,50 +35,44 @@ namespace HUD_Manager {
         }
 
         public void SetAddonPosition(string uiName, short x, short y) {
-            var addon = this.Plugin.Interface.Framework.Gui.GetAddonByName(uiName, 1);
-            if (addon == null) {
+            var addon = this.Plugin.GameGui.GetAddonByName(uiName, 1);
+            if (addon == IntPtr.Zero) {
                 return;
             }
 
-            var baseUi = this.Plugin.Interface.Framework.Gui.GetBaseUIObject();
+            var baseUi = this.Plugin.GameGui.GetUIModule();
             var manager = Marshal.ReadIntPtr(baseUi + 0x20);
 
             this._updateAddonPosition(
                 manager,
-                addon.Address,
+                addon,
                 1
             );
-            this._setPosition(addon.Address, x, y);
+            this._setPosition(addon, x, y);
             this._updateAddonPosition(
                 manager,
-                addon.Address,
+                addon,
                 0
             );
         }
 
         public Vector2<short>? GetAddonPosition(string uiName) {
-            var addon = this.Plugin.Interface.Framework.Gui.GetAddonByName(uiName, 1);
-            if (addon == null) {
-                return null;
-            }
-
             try {
-                var x = addon.X;
-                var y = addon.Y;
-
-                return new Vector2<short>(x, y);
-            } catch (KeyNotFoundException) {
+                var addon = this.Plugin.GameGui.GetAtkUnitByName(uiName, 1);
+                return new Vector2<short>(addon.X, addon.Y);
+            } catch (InvalidOperationException) {
+                PluginLog.Warning($"Attempt to access position of invalid addon '{uiName}'");
                 return null;
             }
         }
 
         public void SetAddonAlpha(string name, byte alpha) {
-            var addon = this.Plugin.Interface.Framework.Gui.GetAddonByName(name, 1);
-            if (addon == null) {
+            var addon = this.Plugin.GameGui.GetAddonByName(name, 1);
+            if (addon == IntPtr.Zero) {
                 return;
             }
 
-            this._setAlpha(addon.Address, alpha);
+            this._setAlpha(addon, alpha);
         }
     }
 }

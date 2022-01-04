@@ -11,18 +11,18 @@ namespace HUD_Manager {
         public Commands(Plugin plugin) {
             this.Plugin = plugin;
 
-            this.Plugin.Interface.CommandManager.AddHandler("/hudman", new CommandInfo(this.OnCommand) {
+            this.Plugin.CommandManager.AddHandler("/hudman", new CommandInfo(this.OnCommand) {
                 HelpMessage = "Open the HUD Manager settings or swap to layout name",
             });
         }
 
         public void Dispose() {
-            this.Plugin.Interface.CommandManager.RemoveHandler("/hudman");
+            this.Plugin.CommandManager.RemoveHandler("/hudman");
         }
 
         private void OnCommand(string command, string args) {
             if (string.IsNullOrWhiteSpace(args)) {
-                this.Plugin.Ui.OpenConfig(true);
+                this.Plugin.Ui.OpenConfig();
                 return;
             }
 

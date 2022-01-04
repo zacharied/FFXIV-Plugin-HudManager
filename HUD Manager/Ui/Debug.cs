@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using HUD_Manager.Structs;
 using ImGuiNET;
@@ -25,40 +26,40 @@ namespace HUD_Manager.Ui {
 
             if (ImGui.Button("1")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
-                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             }
 
             ImGui.SameLine();
 
             if (ImGui.Button("2")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Two);
-                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             }
 
             ImGui.SameLine();
 
             if (ImGui.Button("3")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Three);
-                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             }
 
             ImGui.SameLine();
 
             if (ImGui.Button("4")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Four);
-                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             }
 
             ImGui.SameLine();
 
             if (ImGui.Button("Default")) {
                 var ptr = this.Plugin.Hud.GetDefaultLayoutPointer();
-                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             }
 
             if (ImGui.Button("File pointer 0")) {
                 var ptr = this.Plugin.Hud.GetFilePointer(0);
-                this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             }
 
             if (ImGui.Button("Save layout")) {
@@ -80,13 +81,13 @@ namespace HUD_Manager.Ui {
                     }
 
                     PluginLog.Log(currElem.id.ToString());
-                    this.Plugin.Interface.Framework.Gui.Chat.Print(currElem.id.ToString());
+                    this.Plugin.ChatGui.Print(currElem.id.ToString());
                 }
             }
 
             if (ImGui.Button("Print current slot")) {
                 var slot = this.Plugin.Hud.GetActiveHudSlot();
-                this.Plugin.Interface.Framework.Gui.Chat.Print($"{slot}");
+                this.Plugin.ChatGui.Print($"{slot}");
             }
 
             ImGui.Separator();
@@ -130,13 +131,13 @@ namespace HUD_Manager.Ui {
             //     }
             //
             //     if (ImGui.Button("Print addon address")) {
-            //         var ptr = this.Plugin.Interface.Framework.Gui.GetAddonByName("FreeCompany", 1).Address;
-            //         this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+            //         var ptr = this.Plugin.GameGui.GetAddonByName("FreeCompany", 1).Address;
+            //         this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             //     }
             //
             //     if (ImGui.Button("Print base UI object address")) {
-            //         var ptr = this.Plugin.Interface.Framework.Gui.GetBaseUIObject();
-            //         this.Plugin.Interface.Framework.Gui.Chat.Print($"{ptr.ToInt64():x}");
+            //         var ptr = this.Plugin.GameGui.GetBaseUIObject();
+            //         this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             //     }
             //
             //     ImGui.Separator();

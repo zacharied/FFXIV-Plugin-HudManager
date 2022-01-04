@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.ClientState.Actors.Types;
-using Dalamud.Plugin;
+using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Objects.Types;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
+
+using Condition = Dalamud.Game.ClientState.Conditions.Condition;
 
 // TODO: Zone swaps?
 
@@ -17,21 +18,21 @@ namespace HUD_Manager {
         private readonly Dictionary<Status, bool> _condition = new();
         private ClassJob? _job;
 
-        internal static byte GetStatus(Actor actor) {
+        internal static byte GetStatus(GameObject actor) {
             // Updated: 5.5
             // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
             const int offset = 0x19A0;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
-        internal static byte GetOnlineStatus(Actor actor) {
+        internal static byte GetOnlineStatus(GameObject actor) {
             // Updated: 5.5
             // E8 ?? ?? ?? ?? 48 85 C0 75 54
             const int offset = 0x197F;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
-        internal static byte GetBardThing(Actor actor) {
+        internal static byte GetBardThing(GameObject actor) {
             // Updated: 5.5
             // E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 0F B6 43 50
             const int offset = 0x197C;
@@ -42,14 +43,14 @@ namespace HUD_Manager {
             this.Plugin = plugin;
         }
 
-        public bool Update(PlayerCharacter? player) {
+        public bool Update(Character? player) {
             if (player == null) {
                 return false;
             }
 
             var anyChanged = false;
 
-            var currentJob = this.Plugin.Interface.Data.GetExcelSheet<ClassJob>().GetRow(player.ClassJob.Id);
+            var currentJob = this.Plugin.DataManager.GetExcelSheet<ClassJob>()!.GetRow(player.ClassJob.Id);
             if (this._job != null && this._job != currentJob) {
                 anyChanged = true;
             }
@@ -58,7 +59,7 @@ namespace HUD_Manager {
 
             foreach (Status status in Enum.GetValues(typeof(Status))) {
                 var old = this._condition.ContainsKey(status) && this._condition[status];
-                this._condition[status] = status.Active(player, this.Plugin.Interface);
+                this._condition[status] = status.Active(player, this.Plugin.Condition);
                 anyChanged |= old != this._condition[status];
             }
 
@@ -66,14 +67,14 @@ namespace HUD_Manager {
         }
 
         private Guid CalculateCurrentHud() {
-            var player = this.Plugin.Interface.ClientState.LocalPlayer;
+            var player = this.Plugin.ClientState.LocalPlayer;
             if (player == null) {
                 return Guid.Empty;
             }
 
             foreach (var match in this.Plugin.Config.HudConditionMatches) {
                 if ((!match.Status.HasValue || this._condition[match.Status.Value]) &&
-                    (match.ClassJob == null || this._job?.Abbreviation == match.ClassJob)) {
+                    (match.ClassJob == null || this._job?.Abbreviation.ToString() == match.ClassJob)) {
                     return match.LayoutId;
                 }
             }
@@ -81,7 +82,7 @@ namespace HUD_Manager {
             return Guid.Empty;
         }
 
-        public void SetHudLayout(PlayerCharacter? player, bool update = false) {
+        public void SetHudLayout(Character? player, bool update = false) {
             if (update && player != null) {
                 this.Update(player);
             }
@@ -149,14 +150,14 @@ namespace HUD_Manager {
             throw new ApplicationException($"No name was set up for {status}");
         }
 
-        public static bool Active(this Status status, PlayerCharacter player, DalamudPluginInterface pi) {
+        public static bool Active(this Status status, Character player, Condition systemCondition) {
             if (player == null) {
                 throw new ArgumentNullException(nameof(player), "PlayerCharacter cannot be null");
             }
 
             if (status > 0) {
                 var flag = (ConditionFlag) status;
-                return pi.ClientState.Condition[flag];
+                return systemCondition[flag];
             }
 
             switch (status) {

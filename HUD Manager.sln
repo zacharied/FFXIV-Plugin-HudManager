@@ -1,20 +1,26 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30320.27
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HUD Manager", "HUD Manager\HUD Manager.csproj", "{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HUD Manager", "HUD Manager\HUD Manager.csproj", "{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Debug|x64.ActiveCfg = Debug|x64
+		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Debug|x64.Build.0 = Debug|x64
 		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Release|x64.ActiveCfg = Release|x64
+		{CBF13A29-A5A4-4FA2-8A4F-CFBB5FB83F90}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

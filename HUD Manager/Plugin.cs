@@ -1,4 +1,11 @@
 ﻿using System;
+using Dalamud.Data;
+using Dalamud.Game;
+using Dalamud.Game.ClientState;
+using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.Command;
+using Dalamud.Game.Gui;
+using Dalamud.IoC;
 using Dalamud.Plugin;
 using HUD_Manager.Configuration;
 using HUD_Manager.Ui;
@@ -10,21 +17,46 @@ namespace HUD_Manager {
     public class Plugin : IDalamudPlugin {
         public string Name => "HUD Manager";
 
+        public DalamudPluginInterface Interface { get; init; }
+        public CommandManager CommandManager { get; init; }
+        public DataManager DataManager { get; init; }
+        public ClientState ClientState { get; init; }
+        public Condition Condition { get; init; }
+        public Framework Framework { get; init; }
+        public SigScanner SigScanner { get; init; }
+        public GameGui GameGui { get; init; }
+        public ChatGui ChatGui { get; init; }
+
         private Swapper Swapper { get; set; } = null!;
         private Commands Commands { get; set; } = null!;
-        public DalamudPluginInterface Interface { get; private set; } = null!;
+
         public Interface Ui { get; private set; } = null!;
         public Hud Hud { get; private set; } = null!;
         public Statuses Statuses { get; private set; } = null!;
-        public GameFunctions GameFunctions { get; private set; } = null!;
         public Config Config { get; private set; } = null!;
         public HelpFile Help { get; private set; } = null!;
+        public GameFunctions GameFunctions { get; init; }
 
-        public void Initialize(DalamudPluginInterface pluginInterface) {
+        public Plugin(
+            [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
+            [RequiredVersion("1.0")] CommandManager commandManager,
+            [RequiredVersion("1.0")] DataManager dataManager,
+            [RequiredVersion("1.0")] ClientState clientState,
+            [RequiredVersion("1.0")] Condition condition,
+            [RequiredVersion("1.0")] Framework framework,
+            [RequiredVersion("1.0")] SigScanner sigScanner,
+            [RequiredVersion("1.0")] GameGui gameGui,
+            [RequiredVersion("1.0")] ChatGui chatGui)
+        {
             this.Interface = pluginInterface;
-
-            // it's time to do a murder
-            _ = new HudSwapMurderer(this);
+            this.CommandManager = commandManager;
+            this.DataManager = dataManager;
+            this.ClientState = clientState;
+            this.Condition = condition;
+            this.Framework = framework;
+            this.SigScanner = sigScanner;
+            this.GameGui = gameGui;
+            this.ChatGui = chatGui;
 
             this.Config = Migrator.LoadConfig(this);
             this.Config.Initialize(this.Interface);
@@ -42,14 +74,17 @@ namespace HUD_Manager {
             this.Swapper = new Swapper(this);
             this.Commands = new Commands(this);
 
-            if (!this.Config.FirstRun) {
+            if (!this.Config.FirstRun)
+            {
                 return;
             }
 
             this.Config.FirstRun = false;
-            if (this.Config.Layouts.Count == 0) {
-                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                    this.Hud.ImportSlot($"Auto-import {(int) slot + 1}", slot, false);
+            if (this.Config.Layouts.Count == 0)
+            {
+                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot)))
+                {
+                    this.Hud.ImportSlot($"Auto-import {(int)slot + 1}", slot, false);
                 }
             }
 

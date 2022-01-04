@@ -44,9 +44,9 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
             if (ImGui.BeginPopup(Popups.AddElement)) {
                 var kinds = ElementKindExt.All()
-                    .OrderBy(el => el.LocalisedName(this.Plugin.Interface.Data));
+                    .OrderBy(el => el.LocalisedName(this.Plugin.DataManager));
                 foreach (var kind in kinds) {
-                    if (!ImGui.Selectable($"{kind.LocalisedName(this.Plugin.Interface.Data)}##{kind}")) {
+                    if (!ImGui.Selectable($"{kind.LocalisedName(this.Plugin.DataManager)}##{kind}")) {
                         continue;
                     }
 
@@ -73,7 +73,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
             var sortedElements = layout.Elements
                 .Where(entry => !ElementKindExt.Immutable.Contains(entry.Key))
-                .Select(entry => Tuple.Create(entry.Key, entry.Value, entry.Key.LocalisedName(this.Plugin.Interface.Data)))
+                .Select(entry => Tuple.Create(entry.Key, entry.Value, entry.Key.LocalisedName(this.Plugin.DataManager)))
                 .OrderBy(tuple => tuple.Item3);
             foreach (var (kind, element, name) in sortedElements) {
                 if (this.Search != null && !name.ContainsIgnoreCase(this.Search)) {

@@ -1,49 +1,60 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <TargetFramework>net48</TargetFramework>
+        <TargetFramework>net50-windows</TargetFramework>
         <Version>2.0.0.10</Version>
         <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
+        <Platforms>AnyCPU;x64</Platforms>
     </PropertyGroup>
-    <ItemGroup>
+
+	<PropertyGroup>
+		<DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev</DalamudLibPath>
+	</PropertyGroup>
+
+	<ItemGroup>
         <Reference Include="Dalamud">
-            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Dalamud.dll</HintPath>
+            <HintPath>$(DalamudLibPath)\Dalamud.dll</HintPath>
             <Private>False</Private>
         </Reference>
+		<Reference Include="FFXIVClientStructs">
+			<HintPath>$(DalamudLibPath)\FFXIVClientStructs.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
         <Reference Include="ImGui.NET">
-            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGui.NET.dll</HintPath>
+            <HintPath>$(DalamudLibPath)\ImGui.NET.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ImGuiScene">
-            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\ImGuiScene.dll</HintPath>
+            <HintPath>$(DalamudLibPath)\ImGuiScene.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Lumina">
-            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.dll</HintPath>
+            <HintPath>$(DalamudLibPath)\Lumina.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Lumina.Excel">
-            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Lumina.Excel.dll</HintPath>
+            <HintPath>$(DalamudLibPath)\Lumina.Excel.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="Newtonsoft.Json">
-            <HintPath>$(AppData)\XIVLauncher\addon\Hooks\dev\Newtonsoft.Json.dll</HintPath>
+            <HintPath>$(DalamudLibPath)\Newtonsoft.Json.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
+	
     <ItemGroup>
-        <PackageReference Include="Costura.Fody" Version="5.1.0" PrivateAssets="all"/>
-        <PackageReference Include="DalamudPackager" Version="1.2.1"/>
+        <PackageReference Include="Costura.Fody" Version="5.1.0" PrivateAssets="all" />
+        <PackageReference Include="DalamudPackager" Version="2.1.2" />
         <PackageReference Include="Fody" Version="6.5.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Resourcer.Fody" Version="1.8.0" PrivateAssets="all"/>
-        <PackageReference Include="YamlDotNet" Version="11.0.1"/>
+        <PackageReference Include="Resourcer.Fody" Version="1.8.0" PrivateAssets="all" />
+        <PackageReference Include="YamlDotNet" Version="11.0.1" />
     </ItemGroup>
     <ItemGroup>
-        <EmbeddedResource Include="help.yaml"/>
+        <EmbeddedResource Include="help.yaml" />
     </ItemGroup>
 </Project>

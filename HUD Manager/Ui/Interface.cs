@@ -33,21 +33,17 @@ namespace HUD_Manager.Ui {
             this.Debug = new Debug(plugin);
             #endif
 
-            this.Plugin.Interface.UiBuilder.OnBuildUi += this.Draw;
-            this.Plugin.Interface.UiBuilder.OnOpenConfigUi += this.OpenConfig;
+            this.Plugin.Interface.UiBuilder.Draw += this.Draw;
+            this.Plugin.Interface.UiBuilder.OpenConfigUi += this.OpenConfig;
         }
 
         public void Dispose() {
-            this.Plugin.Interface.UiBuilder.OnOpenConfigUi -= this.OpenConfig;
-            this.Plugin.Interface.UiBuilder.OnBuildUi -= this.Draw;
+            this.Plugin.Interface.UiBuilder.OpenConfigUi -= this.OpenConfig;
+            this.Plugin.Interface.UiBuilder.Draw -= this.Draw;
         }
 
-        internal void OpenConfig(bool toggle = false) {
-            if (toggle) {
-                this.SettingsVisible = !this.SettingsVisible;
-            } else {
-                this.SettingsVisible = true;
-            }
+        internal void OpenConfig() {
+            this.SettingsVisible = true;
         }
 
         private void OpenConfig(object sender, EventArgs e) {

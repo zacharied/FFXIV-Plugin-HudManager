@@ -49,7 +49,7 @@ namespace HUD_Manager.Ui.Editor {
                     continue;
                 }
 
-                ImGui.TextUnformatted(element.Id.LocalisedName(this.Plugin.Interface.Data));
+                ImGui.TextUnformatted(element.Id.LocalisedName(this.Plugin.DataManager));
 
                 // determine if the window has moved and update if it has
                 var newPos = ImGuiExt.ConvertImGuiToGame(element, ImGui.GetWindowPos());

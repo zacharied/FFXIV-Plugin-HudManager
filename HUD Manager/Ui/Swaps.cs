@@ -28,7 +28,7 @@ namespace HUD_Manager.Ui {
                 this.Plugin.Config.SwapsEnabled = enabled;
                 this.Plugin.Config.Save();
 
-                this.Plugin.Statuses.SetHudLayout(this.Plugin.Interface.ClientState.LocalPlayer, true);
+                this.Plugin.Statuses.SetHudLayout(this.Plugin.ClientState.LocalPlayer, true);
             }
 
             ImGui.TextUnformatted("Note: Disable swaps when editing your HUD.");
@@ -106,7 +106,7 @@ namespace HUD_Manager.Ui {
                             this._editingCondition.ClassJob = null;
                         }
 
-                        foreach (var job in this.Plugin.Interface.Data.GetExcelSheet<ClassJob>().Skip(1)) {
+                        foreach (var job in this.Plugin.DataManager.GetExcelSheet<ClassJob>().Skip(1)) {
                             if (ImGui.Selectable($"{job.Abbreviation}##condition-edit-job")) {
                                 this._editingCondition.ClassJob = job.Abbreviation;
                             }
@@ -247,7 +247,7 @@ namespace HUD_Manager.Ui {
                 return;
             }
 
-            var player = this.Plugin.Interface.ClientState.LocalPlayer;
+            var player = this.Plugin.ClientState.LocalPlayer;
             if (player == null || !this.Plugin.Config.SwapsEnabled) {
                 return;
             }

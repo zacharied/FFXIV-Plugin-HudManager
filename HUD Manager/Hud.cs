@@ -30,8 +30,8 @@ namespace HUD_Manager {
 
         public Hud(Plugin plugin) {
             this.Plugin = plugin;
-            var getFilePointerPtr = this.Plugin.Interface.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 48 85 C0 74 14 83 7B 44 00");
-            var setHudLayoutPtr = this.Plugin.Interface.TargetModuleScanner.ScanText("E8 ?? ?? ?? ?? 33 C0 EB 15");
+            var getFilePointerPtr = this.Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 85 C0 74 14 83 7B 44 00");
+            var setHudLayoutPtr = this.Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 C0 EB 15");
             if (getFilePointerPtr != IntPtr.Zero) {
                 this._getFilePointer = Marshal.GetDelegateForFunctionPointer<GetFilePointerDelegate>(getFilePointerPtr);
             }

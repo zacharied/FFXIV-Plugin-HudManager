@@ -1,4 +1,5 @@
 ﻿using System;
+using Dalamud.Game;
 using Dalamud.Game.Internal;
 
 namespace HUD_Manager {
@@ -8,11 +9,11 @@ namespace HUD_Manager {
         public Swapper(Plugin plugin) {
             this.Plugin = plugin;
 
-            this.Plugin.Interface.Framework.OnUpdateEvent += this.OnFrameworkUpdate;
+            this.Plugin.Framework.Update += this.OnFrameworkUpdate;
         }
 
         public void Dispose() {
-            this.Plugin.Interface.Framework.OnUpdateEvent -= this.OnFrameworkUpdate;
+            this.Plugin.Framework.Update -= this.OnFrameworkUpdate;
         }
 
         public void OnFrameworkUpdate(Framework framework) {
@@ -20,7 +21,7 @@ namespace HUD_Manager {
                 return;
             }
 
-            var player = this.Plugin.Interface.ClientState.LocalPlayer;
+            var player = this.Plugin.ClientState.LocalPlayer;
             if (player == null) {
                 return;
             }

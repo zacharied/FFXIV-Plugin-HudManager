@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using HUD_Manager.Structs;
 using Newtonsoft.Json;
