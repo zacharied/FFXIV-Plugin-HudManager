@@ -41,6 +41,8 @@ namespace HUD_Manager.Ui.Editor {
                 return;
             }
 
+            var update = false;
+
             if (this.Plugin.Config.SwapsEnabled) {
                 ImGui.TextUnformatted("Cannot edit layouts while swaps are enabled.");
 
@@ -65,8 +67,6 @@ namespace HUD_Manager.Ui.Editor {
             {   
                 // ConfigCharacter is not visible.
             }
-
-            var update = false;
 
             this.Previews.Draw(ref update);
 
@@ -221,6 +221,11 @@ namespace HUD_Manager.Ui.Editor {
 
             EndTabItem:
             ImGui.EndTabItem();
+
+            if (update)
+            {
+                this.Plugin.Config.Save();
+            }
         }
 
         private void SetUpAddLayoutPopup() {

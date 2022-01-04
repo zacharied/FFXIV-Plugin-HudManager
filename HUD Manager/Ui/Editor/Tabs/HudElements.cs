@@ -54,6 +54,8 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     var element = currentLayout.elements.FirstOrDefault(el => el.id == kind);
                     this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Elements[kind] = new Element(element);
 
+                    update = true;
+
                     ImGui.CloseCurrentPopup();
                 }
 
@@ -116,6 +118,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
                 if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}")) {
                     toRemove.Add(kind);
+                    update = true;
                 }
 
                 ImGuiExt.HoverTooltip("Remove this element from this layout");
