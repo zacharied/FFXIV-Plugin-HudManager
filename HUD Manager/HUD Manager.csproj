@@ -52,8 +52,15 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Resourcer.Fody" Version="1.8.0" PrivateAssets="all" />
-        <PackageReference Include="YamlDotNet" Version="11.0.1" />
+        <PackageReference Include="YamlDotNet" Version="11.0.1" GeneratePathProperty="true" />
     </ItemGroup>
+
+	<ItemGroup>
+		<None Include="$(PkgYamlDotNet)\lib\net45\YamlDotNet.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	
     <ItemGroup>
         <EmbeddedResource Include="help.yaml" />
     </ItemGroup>
