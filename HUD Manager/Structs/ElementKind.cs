@@ -55,6 +55,10 @@ namespace HUD_Manager.Structs {
         BalanceGauge = 4010433280, // RDM
         TranceGauge = 976301837, // SMN
         AetherflowGaugeSmn = 1005798714, // SMN
+        AddersgallGauge = 269645438, // SGE
+        EukrasiaGauge = 298851401, // SGE
+        SoulGauge = 2732176992, // RPR
+        DeathGauge = 2736512087, // RPR
         ItemHelp = 1120659295,
         ActionHelp = 1180822218,
         Gil = 1125522082,
@@ -186,6 +190,10 @@ namespace HUD_Manager.Structs {
                 ElementKind.NewGamePlusGuide => 83,
                 ElementKind.CompressedAether => 84,
                 ElementKind.OceanFishingVoyageMissions => 85,
+                ElementKind.SoulGauge => 87,
+                ElementKind.DeathGauge => 88,
+                ElementKind.EukrasiaGauge => 89,
+                ElementKind.AddersgallGauge => 90,
                 _ => null,
             };
 
@@ -234,6 +242,10 @@ namespace HUD_Manager.Structs {
                 case ElementKind.SongGauge:
                 case ElementKind.StepGauge:
                 case ElementKind.TranceGauge:
+                case ElementKind.AddersgallGauge:
+                case ElementKind.EukrasiaGauge:
+                case ElementKind.SoulGauge:
+                case ElementKind.DeathGauge:
                     return true;
                 default:
                     return false;
