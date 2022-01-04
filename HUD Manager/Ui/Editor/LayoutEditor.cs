@@ -61,10 +61,9 @@ namespace HUD_Manager.Ui.Editor {
                     goto EndTabItem;
                 }
             }
-            catch (InvalidOperationException e)
-            {
-                PluginLog.Error(e, "Failed to get handle to ConfigCharacter addon");
-                goto EndTabItem;
+            catch (InvalidOperationException)
+            {   
+                // ConfigCharacter is not visible.
             }
 
             var update = false;
