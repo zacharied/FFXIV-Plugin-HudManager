@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 namespace HUD_Manager.Structs {
     [StructLayout(LayoutKind.Sequential)]
     public struct Layout {
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 81)]
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 92)]
         public RawElement[] elements;
 
         public Dictionary<ElementKind, Element> ToDictionary() {

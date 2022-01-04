@@ -19,9 +19,9 @@ namespace HUD_Manager {
         private ClassJob? _job;
 
         internal static byte GetStatus(GameObject actor) {
-            // Updated: 5.5
+            // Updated: 6.0
             // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
-            const int offset = 0x19A0;
+            const int offset = 0x19DF;
             return Marshal.ReadByte(actor.Address + offset);
         }
 

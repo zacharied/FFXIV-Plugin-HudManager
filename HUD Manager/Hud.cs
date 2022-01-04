@@ -9,15 +9,15 @@ using HUD_Manager.Tree;
 
 namespace HUD_Manager {
     public class Hud {
-        // Updated 5.45
-        public const int InMemoryLayoutElements = 81;
+        // Updated 6.0
+        public const int InMemoryLayoutElements = 92;
 
         // Updated 5.45
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
         private const int LayoutSize = InMemoryLayoutElements * 36;
 
-        // Updated 5.4
-        private const int SlotOffset = 0x59e8;
+        // Updated 6.0
+        private const int SlotOffset = 0x6018;
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
 
