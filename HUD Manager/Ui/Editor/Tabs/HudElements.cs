@@ -259,10 +259,10 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                 DrawSettingName("Scale");
 
                 ImGui.PushItemWidth(-1);
-                var currentScale = $"{element.Scale * 100}%";
+                var currentScale = $"{Math.Floor(element.Scale * 100)}%";
                 if (ImGui.BeginCombo($"##scale-{kind}", currentScale)) {
                     foreach (var scale in ScaleOptions) {
-                        if (!ImGui.Selectable($"{scale * 100}%", Math.Abs(scale - element.Scale) < float.Epsilon)) {
+                        if (!ImGui.Selectable($"{Math.Floor(scale * 100)}%", Math.Abs(scale - element.Scale) < float.Epsilon)) {
                             continue;
                         }
 
