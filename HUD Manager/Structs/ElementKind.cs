@@ -252,6 +252,60 @@ namespace HUD_Manager.Structs {
             }
         }
 
+        public static ClassJob? ClassJob(this ElementKind kind, DataManager data)
+        {
+            switch (kind)
+            {
+                case ElementKind.AetherflowGaugeSch:
+                case ElementKind.FaerieGauge:
+                    return Util.FindClassJobByAbbreviation("SCH", data);
+                case ElementKind.AetherflowGaugeSmn:
+                case ElementKind.TranceGauge:
+                    return Util.FindClassJobByAbbreviation("SMN", data);
+                case ElementKind.ArcanaGauge:
+                    return Util.FindClassJobByAbbreviation("AST", data);
+                case ElementKind.BalanceGauge:
+                    return Util.FindClassJobByAbbreviation("RDM", data);
+                case ElementKind.BeastGauge:
+                    return Util.FindClassJobByAbbreviation("WAR", data);
+                case ElementKind.BloodGauge:
+                case ElementKind.DarksideGauge:
+                    return Util.FindClassJobByAbbreviation("DRK", data);
+                case ElementKind.ChakraGauge:
+                    return Util.FindClassJobByAbbreviation("MNK", data);
+                case ElementKind.DragonGauge:
+                    return Util.FindClassJobByAbbreviation("DRG", data);
+                case ElementKind.ElementalGauge:
+                    return Util.FindClassJobByAbbreviation("BLM", data);
+                case ElementKind.FourfoldFeathers:
+                case ElementKind.StepGauge:
+                    return Util.FindClassJobByAbbreviation("DNC", data);
+                case ElementKind.HealingGauge:
+                    return Util.FindClassJobByAbbreviation("WHM", data);
+                case ElementKind.HeatGauge:
+                    return Util.FindClassJobByAbbreviation("MCH", data);
+                case ElementKind.HutonGauge:
+                case ElementKind.NinkiGauge:
+                    return Util.FindClassJobByAbbreviation("NIN", data);
+                case ElementKind.KenkiGauge:
+                case ElementKind.SenGauge:
+                    return Util.FindClassJobByAbbreviation("SAM", data);
+                case ElementKind.OathGauge:
+                    return Util.FindClassJobByAbbreviation("PLD", data);
+                case ElementKind.PowderGauge:
+                    return Util.FindClassJobByAbbreviation("GNB", data);
+                case ElementKind.SongGauge:
+                    return Util.FindClassJobByAbbreviation("BRD", data);
+                case ElementKind.AddersgallGauge:
+                case ElementKind.EukrasiaGauge:
+                    return Util.FindClassJobByAbbreviation("SGE", data);
+                case ElementKind.SoulGauge:
+                case ElementKind.DeathGauge:
+                    return Util.FindClassJobByAbbreviation("RPR", data);
+            }
+            return null;
+        }
+
         public static bool IsHotbar(this ElementKind kind) {
             switch (kind) {
                 case ElementKind.Hotbar1:

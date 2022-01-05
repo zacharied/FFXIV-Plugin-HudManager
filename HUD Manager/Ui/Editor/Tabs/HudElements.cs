@@ -46,7 +46,11 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                 var kinds = ElementKindExt.All()
                     .OrderBy(el => el.LocalisedName(this.Plugin.DataManager));
                 foreach (var kind in kinds) {
-                    if (!ImGui.Selectable($"{kind.LocalisedName(this.Plugin.DataManager)}##{kind}")) {
+                    var elementClassJob = kind.ClassJob(this.Plugin.DataManager);
+                    var isForbiddenElement = elementClassJob != null && !Util.HasUnlockedClass(this.Plugin, elementClassJob);
+                    bool _selected = false;
+                    if (!ImGui.Selectable($"{kind.LocalisedName(this.Plugin.DataManager)}##{kind}", ref _selected,
+                            isForbiddenElement ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None)) {
                         continue;
                     }
 
