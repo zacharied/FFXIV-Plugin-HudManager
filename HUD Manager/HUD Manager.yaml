@@ -1,10 +1,10 @@
-﻿author: ascclemens
+﻿author: necoz (prev. ascclemens)
 name: HUD Manager
 description: |-
-  A plugin to manage your HUD.
+  Take total control over your HUD.
 
   - Save infinite HUD layouts
   - Swap between HUD layouts based on conditions
   - Edit HUD elements precisely without /hudlayout
   - Export and import layouts
-repo_url: https://git.sr.ht/~jkcclemens/HUDManager
+repo_url: https://github.com/zacharied/FFXIV-Plugin-HudManager
