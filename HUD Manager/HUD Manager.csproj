@@ -7,6 +7,9 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
         <Platforms>AnyCPU;x64</Platforms>
+		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<OutputPath>$(AppData)\XIVLauncher\devPlugins\HUDManager\</OutputPath>
     </PropertyGroup>
 
 	<PropertyGroup>
