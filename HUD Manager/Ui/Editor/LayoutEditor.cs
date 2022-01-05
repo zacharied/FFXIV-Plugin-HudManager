@@ -78,8 +78,11 @@ namespace HUD_Manager.Ui.Editor {
             var selectedName = selected?.Name ?? "<none>";
 
             if (ImGui.BeginCombo("##edit-layout", selectedName)) {
+                bool layoutChanged = false;
+
                 if (ImGui.Selectable("<none>")) {
                     this.Ui.SelectedLayout = Guid.Empty;
+                    layoutChanged = true;
                 }
 
                 foreach (var node in nodes) {
@@ -91,7 +94,14 @@ namespace HUD_Manager.Ui.Editor {
 
                         this.Ui.SelectedLayout = child.Id;
                         update = true;
+                        layoutChanged = true;
                     }
+                }
+
+                if (layoutChanged)
+                {
+                    // Kill all previews so they don't fuck up the new layout.
+                    Previews.Clear();
                 }
 
                 ImGui.EndCombo();

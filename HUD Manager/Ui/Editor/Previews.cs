@@ -62,5 +62,11 @@ namespace HUD_Manager.Ui.Editor {
                 ImGui.End();
             }
         }
+
+        public void Clear()
+        {
+            Elements.Clear();
+            Update.Clear();
+        }
     }
 }
