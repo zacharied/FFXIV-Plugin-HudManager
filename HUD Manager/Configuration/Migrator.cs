@@ -149,6 +149,14 @@ namespace HUD_Manager.Configuration {
                 goto CheckVersion;
             }
 
+            // For v2.1.1 we changed the plugin's internal name to HUDManager.
+            var oldManagerPath = PluginConfig("HUD Manager");
+            if (File.Exists(oldManagerPath))
+            {
+                text = File.ReadAllText(oldManagerPath);
+                goto CheckVersion;
+            }
+
             var hudSwapPath = PluginConfig("HudSwap");
 
             if (File.Exists(hudSwapPath)) {

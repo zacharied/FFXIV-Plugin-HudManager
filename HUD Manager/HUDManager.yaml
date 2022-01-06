@@ -1,5 +1,6 @@
 ﻿author: necoz (prev. ascclemens)
 name: HUD Manager
+internal_name: HUDManager
 description: |-
   Take total control over your HUD.
 
