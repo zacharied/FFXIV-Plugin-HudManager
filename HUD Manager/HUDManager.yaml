@@ -9,3 +9,4 @@ description: |-
   - Edit HUD elements precisely without /hudlayout
   - Export and import layouts
 repo_url: https://github.com/zacharied/FFXIV-Plugin-HudManager
+dalamud_api_level: 5
