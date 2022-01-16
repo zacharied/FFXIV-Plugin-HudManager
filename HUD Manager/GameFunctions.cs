@@ -57,13 +57,12 @@ namespace HUD_Manager {
         }
 
         public Vector2<short>? GetAddonPosition(string uiName) {
-            try {
-                var addon = this.Plugin.GameGui.GetAtkUnitByName(uiName, 1);
-                return new Vector2<short>(addon.X, addon.Y);
-            } catch (InvalidOperationException) {
-                PluginLog.Warning($"Attempt to access position of invalid addon '{uiName}'");
-                return null;
+            var addon = this.Plugin.GameGui.GetAtkUnitByName(uiName, 1);
+            if (addon == null) { 
+                return null; 
             }
+
+            return new Vector2<short>(addon.Value.X, addon.Value.Y);
         }
 
         public void SetAddonAlpha(string name, byte alpha) {

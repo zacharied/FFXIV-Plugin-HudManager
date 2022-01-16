@@ -25,7 +25,11 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 foreach (var window in WindowKindExt.All) {
                     var addon = this.Plugin.GameGui.GetAtkUnitByName(window, 1);
-                    var flags = addon.IsVisible == true && !layout.Windows.ContainsKey(window)
+                    if (addon == null) {
+                        continue;
+                    }
+
+                    var flags = addon.Value.IsVisible == true && !layout.Windows.ContainsKey(window)
                         ? ImGuiSelectableFlags.None
                         : ImGuiSelectableFlags.Disabled;
 

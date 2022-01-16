@@ -54,20 +54,12 @@ namespace HUD_Manager.Ui.Editor {
                 goto EndTabItem;
             }
 
-            try
-            {
-                var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);
-                if (charConfig.IsVisible)
-                {
+            var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);
+            if (charConfig != null) {
                     ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
                     goto EndTabItem;
-                }
             }
-            catch (InvalidOperationException)
-            {   
-                // ConfigCharacter is not visible.
-            }
-
+            
             this.Previews.Draw(ref update);
 
             ImGui.TextUnformatted("Layout");
