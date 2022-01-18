@@ -1,9 +1,12 @@
 ﻿using Dalamud.Data;
 using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Lumina.Excel.GeneratedSheets;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace HUD_Manager {
     public static class Util {
@@ -27,6 +30,18 @@ namespace HUD_Manager {
                 var player = FFXIVClientStructs.FFXIV.Client.Game.UI.UIState.Instance()->PlayerState;
                 return player.ClassJobLevelArray[classJob.ExpArrayIndex] > 0;
             }
+        }
+
+        public static bool PetHotbarActive()
+        {
+            // Updated 6.05
+            var offset = 0xFCB0;
+
+            IntPtr hotbarsAddress;
+            unsafe {
+                hotbarsAddress = (IntPtr)Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
+            }
+            return (Marshal.ReadByte(hotbarsAddress + offset) & 1) == 0;
         }
     }
 }

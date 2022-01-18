@@ -18,7 +18,7 @@ namespace HUD_Manager {
         private readonly Dictionary<Status, bool> _condition = new();
         private ClassJob? _job;
 
-        internal static byte GetStatus(GameObject actor) {
+        public static byte GetStatus(GameObject actor) {
             // Updated: 6.0
             // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
             const int offset = 0x19DF;
@@ -26,9 +26,9 @@ namespace HUD_Manager {
         }
 
         internal static byte GetOnlineStatus(GameObject actor) {
-            // Updated: 5.5
+            // Updated: 6.05
             // E8 ?? ?? ?? ?? 48 85 C0 75 54
-            const int offset = 0x197F;
+            const int offset = 0x19C2;
             return Marshal.ReadByte(actor.Address + offset);
         }
 

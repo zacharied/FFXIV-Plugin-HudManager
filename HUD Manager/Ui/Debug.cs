@@ -3,6 +3,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Dalamud.Logging;
 using Dalamud.Plugin;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using HUD_Manager.Structs;
 using ImGuiNET;
 
@@ -90,6 +91,18 @@ namespace HUD_Manager.Ui {
                 this.Plugin.ChatGui.Print($"{slot}");
             }
 
+            if (ImGui.Button("Print player status address"))
+            {
+                this.Plugin.ChatGui.Print($"{this.Plugin.ClientState.LocalPlayer:x}");
+            }
+
+            if (ImGui.Button("Print Config"))
+            {
+                unsafe
+                {
+                    this.Plugin.ChatGui.Print($"{(IntPtr)Framework.Instance()->SystemConfig.CommonSystemConfig.ConfigBase.ConfigEntry:x}");
+                }
+            }
             ImGui.Separator();
 
             // var layoutPtr = this.Plugin.Hud.GetDefaultLayoutPointer() + 8;

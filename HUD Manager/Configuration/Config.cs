@@ -17,6 +17,8 @@ namespace HUD_Manager.Configuration {
 
         public bool SwapsEnabled { get; set; }
 
+        public bool PreventSwapsWhilePetHotbarActive { get; set; } = true;
+
         public HudSlot StagingSlot { get; set; } = HudSlot.Four;
 
         public PositioningMode PositioningMode { get; set; } = PositioningMode.Percentage;

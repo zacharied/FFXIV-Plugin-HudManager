@@ -31,7 +31,13 @@ namespace HUD_Manager.Ui {
                 this.Plugin.Statuses.SetHudLayout(this.Plugin.ClientState.LocalPlayer, true);
             }
 
-            ImGui.TextUnformatted("Note: Disable swaps when editing your HUD.");
+            var preventSwapsDuringPetHobar = this.Plugin.Config.PreventSwapsWhilePetHotbarActive;
+            if (ImGui.Checkbox("Prevent swapping while pet hotbar is active", ref preventSwapsDuringPetHobar)) {
+                this.Plugin.Config.PreventSwapsWhilePetHotbarActive = preventSwapsDuringPetHobar;
+                this.Plugin.Config.Save();
+            }
+            ImGui.SameLine();
+            ImGuiExt.HelpMarker("When the pet hotbar is active (such as when piloting a vehicle, controlling another character, transformed via Pomander of Lust/Rage, etc.), changing the HUD will cause the game to reset Hotbar 1 to its original actions. It is recommended to enable this setting.");
 
             ImGui.Spacing();
             var staging = ((int) this.Plugin.Config.StagingSlot + 1).ToString();
