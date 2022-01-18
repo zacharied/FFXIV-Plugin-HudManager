@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Logging;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -12,11 +13,13 @@ using Condition = Dalamud.Game.ClientState.Conditions.Condition;
 // TODO: Zone swaps?
 
 namespace HUD_Manager {
-    public class Statuses {
+    public class Statuses : IDisposable {
         private Plugin Plugin { get; }
 
         private readonly Dictionary<Status, bool> _condition = new();
         private ClassJob? _job;
+
+        public bool InPvpZone { get; private set; } = false;
 
         public static byte GetStatus(GameObject actor) {
             // Updated: 6.0
@@ -41,6 +44,12 @@ namespace HUD_Manager {
 
         public Statuses(Plugin plugin) {
             this.Plugin = plugin;
+
+            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange;
+        }
+        public void Dispose()
+        {
+            this.Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
         }
 
         public bool Update(Character? player) {
@@ -59,11 +68,21 @@ namespace HUD_Manager {
 
             foreach (Status status in Enum.GetValues(typeof(Status))) {
                 var old = this._condition.ContainsKey(status) && this._condition[status];
-                this._condition[status] = status.Active(player, this.Plugin.Condition);
+                this._condition[status] = status.Active(this.Plugin, player);
                 anyChanged |= old != this._condition[status];
             }
 
             return anyChanged;
+        }
+
+        private void OnTerritoryChange(object? sender, ushort tid)
+        {
+            var territory = this.Plugin.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(tid);
+            if (territory == null) {
+                PluginLog.Warning("Unable to get territory data for current zone");
+                return;
+            }
+            this.InPvpZone = territory.IsPvpZone;
         }
 
         private Guid CalculateCurrentHud() {
@@ -124,6 +143,7 @@ namespace HUD_Manager {
         Fishing = ConditionFlag.Fishing,
         Roleplaying = -2,
         PlayingMusic = -3,
+        InPvp = -4
     }
 
     public static class StatusExtensions {
@@ -145,19 +165,21 @@ namespace HUD_Manager {
                     return "Roleplaying";
                 case Status.PlayingMusic:
                     return "Playing music";
+                case Status.InPvp:
+                    return "In PvP";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
         }
 
-        public static bool Active(this Status status, Character player, Condition systemCondition) {
+        public static bool Active(this Status status, Plugin plugin, Character player) {
             if (player == null) {
                 throw new ArgumentNullException(nameof(player), "PlayerCharacter cannot be null");
             }
 
             if (status > 0) {
                 var flag = (ConditionFlag) status;
-                return systemCondition[flag];
+                return plugin.Condition[flag];
             }
 
             switch (status) {
@@ -167,6 +189,8 @@ namespace HUD_Manager {
                     return Statuses.GetOnlineStatus(player) == 22;
                 case Status.PlayingMusic:
                     return Statuses.GetBardThing(player) == 16;
+                case Status.InPvp:
+                    return plugin.Statuses.InPvpZone;
             }
 
             return false;
