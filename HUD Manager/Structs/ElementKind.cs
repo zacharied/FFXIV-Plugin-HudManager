@@ -10,6 +10,7 @@ namespace HUD_Manager.Structs {
         FocusTargetBar = 3264409695,
         StatusInfoEnfeeblements = 511728259,
         StatusInfoEnhancements = 524431540,
+        StatusInfoConditionalEnhancements = 486837997,
         StatusInfoOther = 482796762,
         TargetInfoHp = 3172107127,
         TargetInfoProgressBar = 3411321583,
