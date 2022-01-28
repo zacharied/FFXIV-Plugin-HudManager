@@ -20,6 +20,7 @@ namespace HUD_Manager.Structs.Options {
         NormalLeftJustified2 = 21,
         NormalLeftJustified3 = 31,
         ThreeGroups = 0,
+        FourGroups = 2,
     }
 
     public static class StatusStyleExt {
@@ -30,6 +31,7 @@ namespace HUD_Manager.Structs.Options {
                 StatusStyle.NormalLeftJustified2 => "Normal (left-justified 2)",
                 StatusStyle.NormalLeftJustified3 => "Normal (left-justified 3)",
                 StatusStyle.ThreeGroups => "Split into three groups",
+                StatusStyle.FourGroups => "Split into four groups",
                 _ => style.ToString(),
             };
         }

@@ -191,6 +191,7 @@ namespace HUD_Manager.Structs {
                 ElementKind.NewGamePlusGuide => 83,
                 ElementKind.CompressedAether => 84,
                 ElementKind.OceanFishingVoyageMissions => 85,
+                ElementKind.StatusInfoConditionalEnhancements => 86,
                 ElementKind.SoulGauge => 87,
                 ElementKind.DeathGauge => 88,
                 ElementKind.EukrasiaGauge => 89,
