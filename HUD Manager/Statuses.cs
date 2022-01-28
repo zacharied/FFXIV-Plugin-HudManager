@@ -143,7 +143,8 @@ namespace HUD_Manager {
         Fishing = ConditionFlag.Fishing,
         Roleplaying = -2,
         PlayingMusic = -3,
-        InPvp = -4
+        InPvp = -4,
+        InDialogue = -5
     }
 
     public static class StatusExtensions {
@@ -167,6 +168,8 @@ namespace HUD_Manager {
                     return "Playing music";
                 case Status.InPvp:
                     return "In PvP";
+                case Status.InDialogue:
+                    return "In dialogue";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
@@ -191,6 +194,10 @@ namespace HUD_Manager {
                     return Statuses.GetBardThing(player) == 16;
                 case Status.InPvp:
                     return plugin.Statuses.InPvpZone;
+                case Status.InDialogue:
+                    return plugin.Condition[ConditionFlag.OccupiedInEvent]
+                        | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
+                        | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
             }
 
             return false;
