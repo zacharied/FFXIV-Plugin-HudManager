@@ -34,14 +34,16 @@ namespace HUD_Manager {
 
         public static bool PetHotbarActive()
         {
-            // Updated 6.05
-            var offset = 0xFCB0;
+            // Updated 6.08
+            var offsetDismount = 0x10650;
+            var offsetFirstSlot = 0xFCB0;
 
             IntPtr hotbarsAddress;
             unsafe {
                 hotbarsAddress = (IntPtr)Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
             }
-            return (Marshal.ReadByte(hotbarsAddress + offset) & 1) == 0;
+            return (Marshal.ReadByte(hotbarsAddress + offsetDismount) & 1) == 0 
+                || (Marshal.ReadByte(hotbarsAddress + offsetFirstSlot) & 1) == 0;
         }
     }
 }
