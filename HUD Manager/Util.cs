@@ -31,19 +31,5 @@ namespace HUD_Manager {
                 return player.ClassJobLevelArray[classJob.ExpArrayIndex] > 0;
             }
         }
-
-        public static bool PetHotbarActive()
-        {
-            // Updated 6.08
-            var offsetDismount = 0x10650;
-            var offsetFirstSlot = 0xFCB0;
-
-            IntPtr hotbarsAddress;
-            unsafe {
-                hotbarsAddress = (IntPtr)Framework.Instance()->GetUiModule()->GetRaptureHotbarModule();
-            }
-            return (Marshal.ReadByte(hotbarsAddress + offsetDismount) & 1) == 0 
-                || (Marshal.ReadByte(hotbarsAddress + offsetFirstSlot) & 1) == 0;
-        }
     }
 }

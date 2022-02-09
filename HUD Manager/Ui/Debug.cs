@@ -105,13 +105,6 @@ namespace HUD_Manager.Ui {
             }
             ImGui.Separator();
 
-            if (ImGui.Button("Print hotbar address")) { 
-                unsafe {
-                    this.Plugin.ChatGui.Print($"{(IntPtr)Framework.Instance()->GetUiModule()->GetRaptureHotbarModule():x}");
-                }
-            }
-            ImGui.Separator();
-
             // var layoutPtr = this.Plugin.Hud.GetDefaultLayoutPointer() + 8;
             //
             // for (var i = 0; i < 291; i++) {

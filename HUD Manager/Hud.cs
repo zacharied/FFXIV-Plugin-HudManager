@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Dalamud.Hooking;
+using Dalamud.Logging;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
 
 namespace HUD_Manager {
-    public class Hud {
+    public class Hud : IDisposable {
         // Updated 6.0
         public const int InMemoryLayoutElements = 92;
 
@@ -25,11 +27,13 @@ namespace HUD_Manager {
 
         private readonly GetFilePointerDelegate? _getFilePointer;
         private readonly SetHudLayoutDelegate? _setHudLayout;
+        private Hook<SetHudLayoutDelegate> _setHudLayoutHook;
 
         private Plugin Plugin { get; }
 
         public Hud(Plugin plugin) {
             this.Plugin = plugin;
+
             var getFilePointerPtr = this.Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 85 C0 74 14 83 7B 44 00");
             var setHudLayoutPtr = this.Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 C0 EB 15");
             if (getFilePointerPtr != IntPtr.Zero) {
@@ -39,6 +43,10 @@ namespace HUD_Manager {
             if (setHudLayoutPtr != IntPtr.Zero) {
                 this._setHudLayout = Marshal.GetDelegateForFunctionPointer<SetHudLayoutDelegate>(setHudLayoutPtr);
             }
+
+            // Set up the hook to refresh the pet hotbar when HUD is changed.
+            this._setHudLayoutHook = new Hook<SetHudLayoutDelegate>(setHudLayoutPtr, this.SetHudLayoutDetour);
+            this._setHudLayoutHook.Enable();
         }
 
         public IntPtr GetFilePointer(byte index) {
@@ -240,6 +248,19 @@ namespace HUD_Manager {
             if (save) {
                 this.Plugin.Config.Save();
             }
+        }
+
+        private uint SetHudLayoutDetour(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1)
+        {
+            var res = this._setHudLayoutHook.Original(filePtr, hudLayout, unk0, unk1);
+            this.Plugin.PetHotbar.ResetPetHotbar();
+            return res;
+        }
+
+        public void Dispose()
+        {
+            this._setHudLayoutHook.Disable();
+            this._setHudLayoutHook.Dispose();
         }
     }
 

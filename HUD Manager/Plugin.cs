@@ -36,6 +36,7 @@ namespace HUD_Manager {
         public Config Config { get; private set; } = null!;
         public HelpFile Help { get; private set; } = null!;
         public GameFunctions GameFunctions { get; init; }
+        public PetHotbar PetHotbar { get;  init; }
 
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -73,6 +74,7 @@ namespace HUD_Manager {
             this.GameFunctions = new GameFunctions(this);
             this.Swapper = new Swapper(this);
             this.Commands = new Commands(this);
+            this.PetHotbar = new PetHotbar(this);
 
             if (!this.Config.FirstRun)
             {
@@ -96,6 +98,8 @@ namespace HUD_Manager {
             this.Ui.Dispose();
             this.Swapper.Dispose();
             this.Statuses.Dispose();
+            this.PetHotbar.Dispose();
+            this.Hud.Dispose();
         }
     }
 }
