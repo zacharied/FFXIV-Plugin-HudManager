@@ -1,4 +1,6 @@
-﻿using System;
+﻿using HUD_Manager.Configuration;
+using System;
+using System.Collections.Generic;
 
 namespace HUD_Manager.Structs {
     [Serializable]

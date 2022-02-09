@@ -147,7 +147,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 ImGui.TableSetColumnIndex(0);
 
-                if (!kind.IsJobGauge()) {
+                //if (!kind.IsJobGauge()) {
                     DrawEnabledCheckbox(element.Id, ElementComponent.Visibility, ref update, false);
                     DrawSettingName("Visibility");
 
@@ -166,7 +166,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
-                }
+                //}
 
                 ImGui.TableNextColumn();
 

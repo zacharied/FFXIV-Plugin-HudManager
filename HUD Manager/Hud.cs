@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Dalamud.Hooking;
 using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
@@ -230,6 +231,24 @@ namespace HUD_Manager {
             }
 
             this.WriteLayout(slot, effective.Elements);
+
+            // Apply visibility parameters to job gauges, which don't work like other UI components.
+            foreach (var element in effective.Elements.Where(e => e.Key.IsJobGauge())) {
+                if (element.Value[ElementComponent.Visibility]) {
+                    var unitName = element.Key.GetJobGaugeAtkName(Plugin.DataManager);
+                    unsafe {
+                        var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName, 1);
+                        if (unit != null) {
+                            if ((element.Value.Visibility & VisibilityFlags.Keyboard) > 0) {
+                                if (unit->UldManager.NodeListCount == 0)
+                                    unit->UldManager.UpdateDrawNodeList();
+                            } else {
+                                unit->UldManager.NodeListCount = 0;
+                            }
+                        }
+                    }
+                }
+            }
 
             foreach (var window in effective.Windows) {
                 this.Plugin.GameFunctions.SetAddonPosition(window.Key, window.Value.Position.X, window.Value.Position.Y);

@@ -94,6 +94,8 @@ namespace HUD_Manager.Structs {
     }
 
     public static class ElementKindExt {
+        private static readonly Dictionary<ClassJob, List<ElementKind>> barsPerJob = new Dictionary<ClassJob, List<ElementKind>> { };
+
         public static readonly ElementKind[] Immutable = {
             // cannot be moved with the current method the plugin is using
             ElementKind.OceanFishingVoyageMissions,
@@ -325,6 +327,30 @@ namespace HUD_Manager.Structs {
                 default:
                     return false;
             }
+        }
+
+        public static string? GetJobGaugeAtkName(this ElementKind kind, DataManager data)
+        {
+            if (barsPerJob.Count == 0) {
+                foreach (ElementKind e in Enum.GetValues(typeof(ElementKind))) {
+                    if (!e.IsJobGauge())
+                        continue;
+
+                    var j = e.ClassJob(data);
+                    if (!barsPerJob.ContainsKey(j)) {
+                        barsPerJob[j] = new List<ElementKind>();
+                    }
+                    barsPerJob[j].Add(e);
+                }
+            }
+
+            if (!kind.IsJobGauge())
+                return null;
+
+            var job = kind.ClassJob(data);
+            var index = barsPerJob[job].IndexOf(kind);
+
+            return $"JobHud{job.Abbreviation.RawString.ToUpper()}{index}";
         }
     }
 }
