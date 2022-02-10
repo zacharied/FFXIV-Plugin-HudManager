@@ -6,7 +6,8 @@ description: |-
 
   - Save infinite HUD layouts
   - Swap between HUD layouts based on conditions
-  - Edit HUD elements precisely without /hudlayout
-  - Export and import layouts
+  - Make child layouts that only affect desired HUD elements
+  - Change visibility of job gauges
+  - Export and import layouts from text
 repo_url: https://github.com/zacharied/FFXIV-Plugin-HudManager
 dalamud_api_level: 5
