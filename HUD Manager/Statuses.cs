@@ -188,7 +188,7 @@ namespace HUD_Manager {
                 case Status.Roleplaying:
                     return "Roleplaying";
                 case Status.PlayingMusic:
-                    return "Playing music";
+                    return "Performing music";
                 case Status.InPvp:
                     return "In PvP";
                 case Status.InDialogue:
