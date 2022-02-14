@@ -103,7 +103,12 @@ namespace HUD_Manager.Ui {
                     this.Plugin.ChatGui.Print($"{(IntPtr)Framework.Instance()->SystemConfig.CommonSystemConfig.ConfigBase.ConfigEntry:x}");
                 }
             }
-            ImGui.Separator();
+
+            if (ImGui.Button("FATE Status")) {
+                PluginLog.Log($"{this.Plugin.Statuses.IsInFate(this.Plugin.ClientState.LocalPlayer)}");
+                PluginLog.Log($"{this.Plugin.Statuses.IsLevelSynced(this.Plugin.ClientState.LocalPlayer)}");
+
+            }
 
             // var layoutPtr = this.Plugin.Hud.GetDefaultLayoutPointer() + 8;
             //

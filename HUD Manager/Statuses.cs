@@ -4,6 +4,8 @@ using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game.Fate;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -118,6 +120,22 @@ namespace HUD_Manager {
             this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId);
             this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
+
+        public bool IsInFate(Character player)
+        {
+            unsafe {
+                var fateManager = *FateManager.Instance();
+                return (fateManager.FateJoined & 1) == 1;
+            }
+        }
+
+        public bool IsLevelSynced(Character player)
+        {
+            unsafe {
+                var uiPlayerState = UIState.Instance()->PlayerState;
+                return (uiPlayerState.IsLevelSynced & 1) > 0;
+            }
+        }
     }
 
     public class HudConditionMatch {
@@ -141,10 +159,13 @@ namespace HUD_Manager {
         Crafting = ConditionFlag.Crafting,
         Gathering = ConditionFlag.Gathering,
         Fishing = ConditionFlag.Fishing,
+        Mounted = ConditionFlag.Mounted,
         Roleplaying = -2,
         PlayingMusic = -3,
         InPvp = -4,
-        InDialogue = -5
+        InDialogue = -5,
+        InFate = -6,
+        InFateLevelSynced = -7,
     }
 
     public static class StatusExtensions {
@@ -162,6 +183,8 @@ namespace HUD_Manager {
                     return "Gathering";
                 case Status.Fishing:
                     return "Fishing";
+                case Status.Mounted:
+                    return "Mounted";
                 case Status.Roleplaying:
                     return "Roleplaying";
                 case Status.PlayingMusic:
@@ -170,6 +193,10 @@ namespace HUD_Manager {
                     return "In PvP";
                 case Status.InDialogue:
                     return "In dialogue";
+                case Status.InFate:
+                    return "In FATE area";
+                case Status.InFateLevelSynced:
+                    return "Level-synced for FATE";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
@@ -198,6 +225,10 @@ namespace HUD_Manager {
                     return plugin.Condition[ConditionFlag.OccupiedInEvent]
                         | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
                         | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
+                case Status.InFate:
+                    return plugin.Statuses.IsInFate(player);
+                case Status.InFateLevelSynced:
+                    return plugin.Statuses.IsInFate(player) && plugin.Statuses.IsLevelSynced(player);
             }
 
             return false;
