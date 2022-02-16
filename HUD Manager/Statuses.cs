@@ -136,6 +136,35 @@ namespace HUD_Manager {
                 return (uiPlayerState.IsLevelSynced & 1) > 0;
             }
         }
+
+        public bool IsInSanctuary()
+        {
+            var expBar = Plugin.GameGui.GetAtkUnitByName("_Exp", 1);
+            if (expBar == null) {
+                PluginLog.Warning("Unable to find EXP bar element");
+                return false;
+            }
+
+            const int expBarAtkMoonIconIndex = 3;
+            unsafe {
+                // TODO Find a real memory address where this is stored instead of descending into UI elements LMAO
+                int i = 0;
+                var node = expBar.Value.RootNode;
+
+                if (node->ChildCount < expBarAtkMoonIconIndex) {
+                    PluginLog.Warning("Not enough child nodes in EXP bar element");
+                    return false;
+                }
+
+                node = node->ChildNode;
+                while (i < expBarAtkMoonIconIndex) {
+                    node = node->PrevSiblingNode;
+                    i++;
+                }
+
+                return node->IsVisible;
+            }
+        }
     }
 
     public class HudConditionMatch {
@@ -166,6 +195,7 @@ namespace HUD_Manager {
         InDialogue = -5,
         InFate = -6,
         InFateLevelSynced = -7,
+        InSanctuary = -8,
     }
 
     public static class StatusExtensions {
@@ -197,6 +227,8 @@ namespace HUD_Manager {
                     return "In FATE area";
                 case Status.InFateLevelSynced:
                     return "Level-synced for FATE";
+                case Status.InSanctuary:
+                    return "In a sanctuary";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
@@ -229,6 +261,8 @@ namespace HUD_Manager {
                     return plugin.Statuses.IsInFate(player);
                 case Status.InFateLevelSynced:
                     return plugin.Statuses.IsInFate(player) && plugin.Statuses.IsLevelSynced(player);
+                case Status.InSanctuary:
+                    return plugin.Statuses.IsInSanctuary();
             }
 
             return false;
