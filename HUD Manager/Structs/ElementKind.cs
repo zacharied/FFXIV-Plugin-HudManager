@@ -348,9 +348,14 @@ namespace HUD_Manager.Structs {
                 return null;
 
             var job = kind.ClassJob(data);
-            var index = barsPerJob[job].IndexOf(kind);
+            var index = (barsPerJob[job].IndexOf(kind)
+                + (AtkElementReverseOrderedJobs.Contains(job.Abbreviation.ToString().ToUpper()) ? 1 : 0))
+                % 2;
 
             return $"JobHud{job.Abbreviation.RawString.ToUpper()}{index}";
         }
+
+        // TODO Solution that works with more than 2 job gauges (idk though)
+        private static readonly string[] AtkElementReverseOrderedJobs = { "NIN" };
     }
 }
