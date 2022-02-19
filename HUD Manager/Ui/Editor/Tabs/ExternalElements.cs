@@ -27,7 +27,7 @@ namespace HUDManager.Ui.Editor.Tabs
             ImGui.SameLine();
             ImGui.Text("Browsingway");
             ImGui.SameLine();
-            ImGuiExt.HelpMarker("Install the Browsingway plugin before use. You can set up changes to Browsingway overlays using this menu. Note that these changes will only be reflected when triggered via a Swap.");
+            ImGuiExt.HelpMarker("Install the Browsingway plugin before use. You can set up changes to Browsingway overlays using this menu.");
 
             if (!ImGui.BeginChild("uimanager-overlay-edit", new Vector2(0, 0), true)) {
                 return;
