@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
+using HUDManager.Structs.External;
 
 namespace HUD_Manager {
     public class Hud : IDisposable {
@@ -180,6 +181,7 @@ namespace HUD_Manager {
 
             var elements = new Dictionary<ElementKind, Element>();
             var windows = new Dictionary<string, Window>();
+            var bwOverlays = new List<BrowsingwayOverlay>();
 
             // get the ancestors and their elements for this node
             foreach (var ancestor in node.Ancestors().Reverse()) {
@@ -199,6 +201,20 @@ namespace HUD_Manager {
                     }
 
                     windows[window.Key].UpdateEnabled(window.Value);
+                }
+
+                foreach (var overlay in ancestor.Value.BrowsingwayOverlays) {
+                    if (!bwOverlays.Exists(o => o.CommandName == overlay.CommandName)) {
+                        bwOverlays.Add(overlay.Clone());
+                        continue;
+                    }
+
+                    var findOverlay = bwOverlays.Find(o => o.CommandName == overlay.CommandName);
+                    if (findOverlay is null) {
+                        PluginLog.Error("Unable to find overlay during ancestor search");
+                        continue;
+                    }
+                    findOverlay.UpdateEnabled(overlay);
                 }
             }
 
@@ -221,7 +237,21 @@ namespace HUD_Manager {
                 windows[window.Key].UpdateEnabled(window.Value);
             }
 
-            return new SavedLayout($"Effective {id}", elements, windows, Guid.Empty);
+            foreach (var overlay in node.Value.BrowsingwayOverlays) {
+                if (!bwOverlays.Exists(o => o.CommandName == overlay.CommandName)) {
+                    bwOverlays.Add(overlay.Clone());
+                    continue;
+                }
+
+                var findOverlay = bwOverlays.Find(o => o.CommandName == overlay.CommandName);
+                if (findOverlay is null) {
+                    PluginLog.Error("Unable to find overlay during ancestor search");
+                    continue;
+                }
+                findOverlay.UpdateEnabled(overlay);
+            }
+
+            return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, Guid.Empty);
         }
 
         public void WriteEffectiveLayout(HudSlot slot, Guid id) {
@@ -252,6 +282,10 @@ namespace HUD_Manager {
 
             foreach (var window in effective.Windows) {
                 this.Plugin.GameFunctions.SetAddonPosition(window.Key, window.Value.Position.X, window.Value.Position.Y);
+            }
+
+            foreach (var overlay in effective.BrowsingwayOverlays) {
+                overlay.ApplyOverlay(Plugin);
             }
         }
 

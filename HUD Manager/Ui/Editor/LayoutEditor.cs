@@ -9,6 +9,7 @@ using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
 using HUD_Manager.Ui.Editor.Tabs;
+using HUDManager.Ui.Editor.Tabs;
 using ImGuiNET;
 using Newtonsoft.Json;
 
@@ -19,6 +20,7 @@ namespace HUD_Manager.Ui.Editor {
         internal Previews Previews { get; }
         private HudElements HudElements { get; }
         private Windows Windows { get; }
+        private ExternalElements ExternalElements { get; }
 
         private string? RenameLayoutName { get; set; }
         private string? NewLayoutName { get; set; }
@@ -34,6 +36,7 @@ namespace HUD_Manager.Ui.Editor {
             this.Previews = new Previews(plugin, ui);
             this.HudElements = new HudElements(plugin, ui, this);
             this.Windows = new Windows(plugin);
+            this.ExternalElements = new ExternalElements(plugin);
         }
 
         internal void Draw() {
@@ -214,6 +217,12 @@ namespace HUD_Manager.Ui.Editor {
 
                 if (ImGui.BeginTabItem("Windows")) {
                     this.Windows.Draw(layout);
+
+                    ImGui.EndTabItem();
+                }
+
+                if (ImGui.BeginTabItem("External Elements")) {
+                    this.ExternalElements.Draw(layout, ref update);
 
                     ImGui.EndTabItem();
                 }
