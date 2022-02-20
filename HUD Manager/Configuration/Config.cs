@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using Dalamud.Configuration;
 using Dalamud.Plugin;
+using HUDManager.Configuration;
+using Newtonsoft.Json;
 
 namespace HUD_Manager.Configuration {
     [Serializable]
@@ -28,6 +30,8 @@ namespace HUD_Manager.Configuration {
         public Dictionary<Guid, SavedLayout> Layouts { get; } = new();
 
         public List<HudConditionMatch> HudConditionMatches { get; } = new();
+
+        public List<CustomCondition> CustomConditions { get; } = new();
 
         public void Initialize(DalamudPluginInterface pluginInterface) {
             this.Interface = pluginInterface;

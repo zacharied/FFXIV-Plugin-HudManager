@@ -1,27 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using Dalamud.Game.ClientState.Conditions;
+﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using HUDManager.Configuration;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-
-using Condition = Dalamud.Game.ClientState.Conditions.Condition;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 // TODO: Zone swaps?
 
-namespace HUD_Manager {
+namespace HUD_Manager
+{
     public class Statuses : IDisposable {
         private Plugin Plugin { get; }
 
-        private readonly Dictionary<Status, bool> _condition = new();
-        private ClassJob? _job;
+        public readonly Dictionary<Status, bool> Condition = new();
+        public ClassJob? Job { get; private set; }
 
-        public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout;
+        public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, new());
+
+        public Dictionary<CustomCondition, bool> CustomConditionStatus { get; } = new();
+        public bool CustomConditionStatusUpdated { get; set; } = false;
 
         public bool InPvpZone { get; private set; } = false;
 
@@ -49,6 +52,10 @@ namespace HUD_Manager {
         public Statuses(Plugin plugin) {
             this.Plugin = plugin;
 
+            foreach (var cond in this.Plugin.Config.CustomConditions) {
+                CustomConditionStatus[cond] = false;
+            }
+
             this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange;
         }
         public void Dispose()
@@ -64,16 +71,16 @@ namespace HUD_Manager {
             var anyChanged = false;
 
             var currentJob = this.Plugin.DataManager.GetExcelSheet<ClassJob>()!.GetRow(player.ClassJob.Id);
-            if (this._job != null && this._job != currentJob) {
+            if (this.Job != null && this.Job != currentJob) {
                 anyChanged = true;
             }
 
-            this._job = currentJob;
+            this.Job = currentJob;
 
             foreach (Status status in Enum.GetValues(typeof(Status))) {
-                var old = this._condition.ContainsKey(status) && this._condition[status];
-                this._condition[status] = status.Active(this.Plugin, player);
-                anyChanged |= old != this._condition[status];
+                var old = this.Condition.ContainsKey(status) && this.Condition[status];
+                this.Condition[status] = status.Active(this.Plugin, player);
+                anyChanged |= old != this.Condition[status];
             }
 
             return anyChanged;
@@ -100,8 +107,7 @@ namespace HUD_Manager {
             }
 
             foreach (var match in this.Plugin.Config.HudConditionMatches) {
-                if ((!match.Status.HasValue || this._condition[match.Status.Value]) &&
-                    (match.ClassJob == null || this._job?.Abbreviation.ToString() == match.ClassJob)) {
+                if (match.IsActivated(Plugin)) {
                     if (match.IsLayer && Plugin.Config.AdvancedSwapMode) {
                         layers.Add(match);
                         continue;
@@ -188,15 +194,22 @@ namespace HUD_Manager {
 
         [JsonConverter(typeof(StringEnumConverter))]
         public Status? Status { get; set; }
+        public CustomCondition? CustomCondition { get; set; }
 
         public Guid LayoutId { get; set; }
 
         public bool IsLayer { get; set; } = false;
 
-        public void Deconstruct(out Guid layoutId, out bool isLayer)
+        public bool IsActivated(Plugin plugin)
         {
-            layoutId = LayoutId;
-            isLayer = IsLayer;
+            bool statusMet = !this.Status.HasValue || plugin.Statuses.Condition[this.Status.Value];
+            bool customConditionMet = this.CustomCondition is not null 
+                ? (plugin.Statuses.CustomConditionStatus.ContainsKey(this.CustomCondition)
+                ? plugin.Statuses.CustomConditionStatus[this.CustomCondition]
+                : false) : true;
+            bool jobMet = this.ClassJob == null || plugin.Statuses.Job?.Abbreviation.ToString() == this.ClassJob;
+
+            return statusMet && customConditionMet && jobMet;
         }
     }
 

@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using Dalamud.Game;
-using Dalamud.Game.Internal;
+﻿using Dalamud.Game;
+using System;
 
-namespace HUD_Manager {
+namespace HUD_Manager
+{
     public class Swapper : IDisposable {
         private Plugin Plugin { get; }
 
@@ -27,10 +26,11 @@ namespace HUD_Manager {
                 return;
             }
 
-            var updated = this.Plugin.Statuses.Update(player);
+            var updated = this.Plugin.Statuses.Update(player) || this.Plugin.Statuses.CustomConditionStatusUpdated;
 
             if (updated) {
                 this.Plugin.Statuses.SetHudLayout(null);
+                this.Plugin.Statuses.CustomConditionStatusUpdated = false;
             }
         }
     }

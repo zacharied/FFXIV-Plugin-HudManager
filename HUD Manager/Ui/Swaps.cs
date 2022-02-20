@@ -1,12 +1,14 @@
-﻿using System;
+﻿using Dalamud.Interface;
+using HUDManager.Configuration;
+using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using Dalamud.Interface;
-using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
 
-namespace HUD_Manager.Ui {
+namespace HUD_Manager.Ui
+{
     public class Swaps {
         private Plugin Plugin { get; }
 
@@ -56,8 +58,7 @@ namespace HUD_Manager.Ui {
             } else {
                 ImGui.TextWrapped("Add swap conditions below.\nThe conditions are checked from top to bottom.\nThe first condition that is satisfied will be the layout that is used.");
                 if (Plugin.Config.AdvancedSwapMode) {
-                    ImGui.TextWrapped("Setting a row to \"layer\" mode will cause it to be applied on top of the first non-layer condition."
-                        + "\nThis allows for modifying speicfic elements of the HUD conditionally without disturbing the normal swapping behavior.");
+                    ImGui.TextWrapped("Setting a row to \"layer\" mode will cause it to be applied on top of the first non-layer condition.");
                 }
                 ImGui.Separator();
                 this.DrawConditionsTable();
@@ -73,6 +74,8 @@ namespace HUD_Manager.Ui {
             if (!ImGui.BeginChild("##conditions-table", new Vector2(-1, height))) {
                 return;
             }
+
+            var update = false;
 
             const ImGuiTableFlags flags = ImGuiTableFlags.Borders
                                           & ~ImGuiTableFlags.BordersOuterV
@@ -110,14 +113,15 @@ namespace HUD_Manager.Ui {
                 // Layered checkbox can just always be there, i guess
                 if (advancedMode) {
                     bool applyLayer = item.cond.IsLayer;
-                    if (ImGui.Checkbox(string.Empty, ref applyLayer)) {
+                    if (ImGui.Checkbox($"##condition-layered-{item.i}", ref applyLayer)) {
                         item.cond.IsLayer = applyLayer;
-                        // this func doesn't use an "update" var, just wing it for now
-                        Plugin.Config.Save();
+                        update = true;
                     }
 
                     ImGui.TableNextColumn();
                 }
+
+                var statusDisplayName = item.cond.Status?.Name() ?? item.cond.CustomCondition?.Name;
 
                 if (this._editingConditionIndex == item.i) {
                     // Editing in progress
@@ -141,14 +145,22 @@ namespace HUD_Manager.Ui {
                     ImGui.TableNextColumn();
 
                     ImGui.PushItemWidth(-1);
-                    if (ImGui.BeginCombo("##condition-edit-status", this._editingCondition.Status?.Name() ?? "Any")) {
+                    if (ImGui.BeginCombo("##condition-edit-status", statusDisplayName ?? "Any")) {
                         if (ImGui.Selectable("Any##condition-edit-status")) {
                             this._editingCondition.Status = null;
                         }
 
                         foreach (Status status in Enum.GetValues(typeof(Status))) {
                             if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
+                                this._editingCondition.CustomCondition = null;
                                 this._editingCondition.Status = status;
+                            }
+                        }
+
+                        foreach (var cond in Plugin.Config.CustomConditions) {
+                            if (ImGui.Selectable($"{cond.Name}##condition-edit-status")) {
+                                this._editingCondition.CustomCondition = cond;
+                                this._editingCondition.Status = null;
                             }
                         }
 
@@ -195,7 +207,7 @@ namespace HUD_Manager.Ui {
                     ImGui.TextUnformatted(item.cond.ClassJob ?? string.Empty);
                     ImGui.TableNextColumn();
 
-                    ImGui.TextUnformatted(item.cond.Status?.Name() ?? string.Empty);
+                    ImGui.TextUnformatted(statusDisplayName ?? string.Empty);
                     ImGui.TableNextColumn();
 
                     this.Plugin.Config.Layouts.TryGetValue(item.cond.LayoutId, out var condLayout);
@@ -249,17 +261,24 @@ namespace HUD_Manager.Ui {
 
             ImGui.SameLine();
 
-            var recalculate = false;
+            if (ImGuiExt.IconButton(FontAwesomeIcon.Adjust, "customconditions")) {
+                _customConditionsWindowOpen = true;
+            }
+
+            if (_customConditionsWindowOpen)
+                CustomConditionsWindow();
+
+            ImGui.SameLine();
+
 
             if (ImGui.Checkbox("Advanced mode##swap-advanced-check", ref advancedMode)) {
                 Plugin.Config.AdvancedSwapMode = advancedMode;
                 Plugin.Config.Save();
-                recalculate = true;
+                update = true;
             }
 
-
             if (addCondition) {
-                recalculate = true;
+                update = true;
                 if (this._editingConditionIndex == this.Plugin.Config.HudConditionMatches.Count && this._editingCondition != null) {
                     this.Plugin.Config.HudConditionMatches.Add(this._editingCondition);
                 } else if (this._editingCondition != null) {
@@ -272,7 +291,7 @@ namespace HUD_Manager.Ui {
             }
 
             if (actionedItemIndex >= 0) {
-                recalculate = true;
+                update = true;
                 if (action == 0) {
                     this.Plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
                 } else {
@@ -287,7 +306,7 @@ namespace HUD_Manager.Ui {
                 this.Plugin.Config.Save();
             }
 
-            if (!recalculate) {
+            if (!update) {
                 return;
             }
 
@@ -298,6 +317,72 @@ namespace HUD_Manager.Ui {
 
             this.Plugin.Statuses.Update(player);
             this.Plugin.Statuses.SetHudLayout(null);
+        }
+
+        private bool _customConditionsWindowOpen = false;
+        private int _customConditionSelectedIndex = -1;
+        private int _customConditionEditIndex = -1;
+        private string _customConditionEditBuf = string.Empty;
+        private void CustomConditionsWindow()
+        {
+            bool update = false;
+
+            ImGui.SetNextWindowSize(new Vector2(400, 500));
+            if (!ImGui.Begin("Custom Conditions", ref _customConditionsWindowOpen, ImGuiWindowFlags.AlwaysAutoResize)) {
+                ImGui.End();
+                return;
+            }
+
+            ImGui.TextWrapped("Create named flags that can be toggled via macro.\nSee the command help for more information.");
+            ImGuiExt.HelpMarker("Some example commands:\n\t/hudman condition Condition1 true\n\t/hudman condition Condition3 toggle");
+
+            var items = Plugin.Config.CustomConditions.Select(c => c.Name).ToArray();
+            ImGui.BeginListBox("##custom-condition-listbox", new Vector2(-1, -1 - ImGui.GetTextLineHeight() * 2));
+            foreach (var (cond, i) in Plugin.Config.CustomConditions.Select((item, i) => (item, i))) {
+                if (i == _customConditionEditIndex) {
+                    if (ImGui.InputText($"##custom-condition-name-{i}", ref _customConditionEditBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.CharsNoBlank)
+                        || ImGui.IsItemDeactivatedAfterEdit()) {
+                        cond.Name = _customConditionEditBuf;
+                        _customConditionEditIndex = -1;
+                        update = true;
+                    }
+                } else {
+                    if (ImGui.Selectable($"{cond.Name}##custom-condition-{i}", _customConditionSelectedIndex == i)) {
+                        _customConditionSelectedIndex = i;
+                    }
+                }
+            }
+            ImGui.EndListBox();
+
+            if (ImGuiExt.IconButton(FontAwesomeIcon.Plus)) {
+                int i = 1;
+                while (Plugin.Config.CustomConditions.Exists(c => c.Name == $"Condition{i}"))
+                    i++;
+
+                Plugin.Config.CustomConditions.Add(new CustomCondition($"Condition{i}"));
+
+                update = true;
+            }
+
+            ImGui.SameLine();
+
+            if (ImGuiExt.IconButton(FontAwesomeIcon.Edit) && _customConditionSelectedIndex >= 0) {
+                _customConditionEditIndex = _customConditionSelectedIndex;
+            }
+
+            ImGui.SameLine();
+
+            if (ImGuiExt.IconButton(FontAwesomeIcon.Trash) && _customConditionSelectedIndex >= 0 && _customConditionSelectedIndex < items.Length) {
+                Plugin.Config.CustomConditions.RemoveAt(_customConditionSelectedIndex);
+                _customConditionSelectedIndex = -1;
+                update = true;
+            }
+
+            ImGui.End();
+
+            if (update) {
+                Plugin.Config.Save();
+            }
         }
     }
 }

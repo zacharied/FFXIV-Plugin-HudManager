@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Dalamud.Game.Command;
+using HUD_Manager.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Game.Command;
-using HUD_Manager.Configuration;
 
-namespace HUD_Manager {
+namespace HUD_Manager
+{
     public class Commands : IDisposable {
         private Plugin Plugin { get; }
 
@@ -12,7 +13,10 @@ namespace HUD_Manager {
             this.Plugin = plugin;
 
             this.Plugin.CommandManager.AddHandler("/hudman", new CommandInfo(this.OnCommand) {
-                HelpMessage = "Open the HUD Manager settings or swap to layout name",
+                HelpMessage = "Open the HUD Manager settings or swap to layout name"
+                            + "\n\t/hudman → open config window"
+                            + "\n\t/hudman swap <layout> → switch to a layout"
+                            + "\n\t/hudman condition <condition> true|false|toggle → modify a custom condition"
             });
         }
 
@@ -26,13 +30,56 @@ namespace HUD_Manager {
                 return;
             }
 
-            var entry = this.Plugin.Config.Layouts.FirstOrDefault(e => e.Value.Name == args);
-            if (entry.Equals(default(KeyValuePair<Guid, SavedLayout>))) {
-                return;
-            }
+            var argsList = args.Split(' ');
 
-            this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, entry.Key);
-            this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
+            if (argsList[0] == "swap") {
+                if (argsList.Length != 2) {
+                    Plugin.ChatGui.PrintError("invalid arguments");
+                    return;
+                }
+
+                var entry = this.Plugin.Config.Layouts.FirstOrDefault(e => e.Value.Name == argsList[1]);
+                if (entry.Equals(default(KeyValuePair<Guid, SavedLayout>))) {
+                    return;
+                }
+
+                this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, entry.Key);
+                this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
+            } else if (argsList[0] == "condition") {
+                if (argsList.Length != 3) {
+                    Plugin.ChatGui.PrintError("invalid argument count");
+                    return;
+                }
+
+                if (!Plugin.Config.CustomConditions.Exists(c => c.Name == argsList[1])) {
+                    Plugin.ChatGui.PrintError("invalid condition");
+                    return;
+                }
+
+                var cond = Plugin.Config.CustomConditions.Find(c => c.Name == argsList[1]);
+
+                bool? val = null;
+                if (argsList[2] == "true" || argsList[2] == "on") {
+                    val = true;
+                } else if (argsList[2] == "false" || argsList[2] == "off") {
+                    val = false;
+                } else if (argsList[2] == "toggle") {
+                    if (!Plugin.Statuses.CustomConditionStatus.ContainsKey(cond)) {
+                        // Default value for toggling a condition we haven't registered.
+                        val = true;
+                    } else {
+                        val = !Plugin.Statuses.CustomConditionStatus[cond];
+                    }
+                }
+
+                if (!val.HasValue) {
+                    Plugin.ChatGui.PrintError("invalid setting");
+                    return;
+                }
+
+                Plugin.Statuses.CustomConditionStatus[cond] = val.Value;
+                Plugin.Statuses.CustomConditionStatusUpdated = true;
+            }
         }
     }
 }
