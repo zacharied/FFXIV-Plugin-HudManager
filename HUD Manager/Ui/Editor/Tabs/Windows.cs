@@ -1,20 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using ImGuiNET;
+using System;
+using System.Collections.Generic;
+using System.Numerics;
 
-namespace HUD_Manager.Ui.Editor.Tabs {
-    public class Windows {
+namespace HUD_Manager.Ui.Editor.Tabs
+{
+    public class Windows
+    {
         private Plugin Plugin { get; }
 
-        public Windows(Plugin plugin) {
+        public Windows(Plugin plugin)
+        {
             this.Plugin = plugin;
         }
 
-        internal void Draw(SavedLayout layout) {
+        internal void Draw(SavedLayout layout)
+        {
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "uimanager-add-window")) {
                 ImGui.OpenPopup(Popups.AddWindow);
             }
@@ -59,7 +63,8 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 var maxSettingWidth = ImGui.CalcTextSize("Setting").X;
 
-                void DrawSettingName(string name) {
+                void DrawSettingName(string name)
+                {
                     maxSettingWidth = Math.Max(maxSettingWidth, ImGui.CalcTextSize(name).X);
                     ImGui.TextUnformatted(name);
                     ImGui.NextColumn();
@@ -82,7 +87,8 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 ImGui.Separator();
 
-                void DrawEnabledCheckbox(string kind, WindowComponent component) {
+                void DrawEnabledCheckbox(string kind, WindowComponent component)
+                {
                     ImGui.NextColumn();
 
                     var enabled = entry.Value[component];
@@ -100,9 +106,9 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 DrawSettingName("X");
 
-                var x = (int) pos.X;
+                var x = (int)pos.X;
                 if (ImGui.InputInt($"##uimanager-x-window-{entry.Key}", ref x)) {
-                    pos.X = (short) x;
+                    pos.X = (short)x;
                     this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
                 }
 
@@ -110,9 +116,9 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 DrawSettingName("Y");
 
-                var y = (int) pos.Y;
+                var y = (int)pos.Y;
                 if (ImGui.InputInt($"##uimanager-y-window-{entry.Key}", ref y)) {
-                    pos.Y = (short) y;
+                    pos.Y = (short)y;
                     this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
                 }
 

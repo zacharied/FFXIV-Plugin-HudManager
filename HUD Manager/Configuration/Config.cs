@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using Dalamud.Configuration;
+﻿using Dalamud.Configuration;
 using Dalamud.Plugin;
 using HUDManager.Configuration;
-using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 
-namespace HUD_Manager.Configuration {
+namespace HUD_Manager.Configuration
+{
     [Serializable]
-    public class Config : IPluginConfiguration {
+    public class Config : IPluginConfiguration
+    {
         public const int LatestVersion = 5;
 
         public int Version { get; set; } = LatestVersion;
@@ -33,11 +34,13 @@ namespace HUD_Manager.Configuration {
 
         public List<CustomCondition> CustomConditions { get; } = new();
 
-        public void Initialize(DalamudPluginInterface pluginInterface) {
+        public void Initialize(DalamudPluginInterface pluginInterface)
+        {
             this.Interface = pluginInterface;
         }
 
-        public void Save() {
+        public void Save()
+        {
             this.Interface.SavePluginConfig(this);
         }
     }

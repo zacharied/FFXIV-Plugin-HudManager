@@ -16,10 +16,11 @@ namespace HUDManager.Ui.Editor.Tabs
 
         public ExternalElements(Plugin plugin)
         {
-            this.plugin = plugin; 
+            this.plugin = plugin;
         }
 
-        internal void Draw(SavedLayout layout, ref bool update) {
+        internal void Draw(SavedLayout layout, ref bool update)
+        {
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "uimanager-add-browsingway")) {
                 layout.BrowsingwayOverlays.Add(new BrowsingwayOverlay());
             }

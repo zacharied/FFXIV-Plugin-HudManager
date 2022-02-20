@@ -15,7 +15,8 @@ using System.Runtime.InteropServices;
 
 namespace HUD_Manager
 {
-    public class Statuses : IDisposable {
+    public class Statuses : IDisposable
+    {
         private Plugin Plugin { get; }
 
         public readonly Dictionary<Status, bool> Condition = new();
@@ -28,28 +29,32 @@ namespace HUD_Manager
 
         public bool InPvpZone { get; private set; } = false;
 
-        public static byte GetStatus(GameObject actor) {
+        public static byte GetStatus(GameObject actor)
+        {
             // Updated: 6.0
             // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
             const int offset = 0x19DF;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
-        internal static byte GetOnlineStatus(GameObject actor) {
+        internal static byte GetOnlineStatus(GameObject actor)
+        {
             // Updated: 6.05
             // E8 ?? ?? ?? ?? 48 85 C0 75 54
             const int offset = 0x19C2;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
-        internal static byte GetBardThing(GameObject actor) {
+        internal static byte GetBardThing(GameObject actor)
+        {
             // Updated: 5.5
             // E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 0F B6 43 50
             const int offset = 0x197C;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
-        public Statuses(Plugin plugin) {
+        public Statuses(Plugin plugin)
+        {
             this.Plugin = plugin;
 
             foreach (var cond in this.Plugin.Config.CustomConditions) {
@@ -63,7 +68,8 @@ namespace HUD_Manager
             this.Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
         }
 
-        public bool Update(Character? player) {
+        public bool Update(Character? player)
+        {
             if (player == null) {
                 return false;
             }
@@ -99,7 +105,8 @@ namespace HUD_Manager
         /// <summary>
         /// Get the current layout data according to the conditions that match the game state.
         /// </summary>
-        private (HudConditionMatch? layoutId, List<HudConditionMatch> layers) CalculateResultantLayout() {
+        private (HudConditionMatch? layoutId, List<HudConditionMatch> layers) CalculateResultantLayout()
+        {
             List<HudConditionMatch> layers = new();
             var player = this.Plugin.ClientState.LocalPlayer;
             if (player == null) {
@@ -121,7 +128,8 @@ namespace HUD_Manager
             return (null, layers);
         }
 
-        public void SetHudLayout(Character? player, bool update = false) {
+        public void SetHudLayout(Character? player, bool update = false)
+        {
             if (update && player != null) {
                 this.Update(player);
             }
@@ -185,7 +193,8 @@ namespace HUD_Manager
         }
     }
 
-    public class HudConditionMatch {
+    public class HudConditionMatch
+    {
         /// <summary>
         /// Values stored here should be the abbreviation of the class/job name (all caps).
         /// We do this because using <see cref="ClassJob"/> results in circular dependency errors when serializing.
@@ -203,7 +212,7 @@ namespace HUD_Manager
         public bool IsActivated(Plugin plugin)
         {
             bool statusMet = !this.Status.HasValue || plugin.Statuses.Condition[this.Status.Value];
-            bool customConditionMet = this.CustomCondition is not null 
+            bool customConditionMet = this.CustomCondition is not null
                 ? (plugin.Statuses.CustomConditionStatus.ContainsKey(this.CustomCondition)
                 ? plugin.Statuses.CustomConditionStatus[this.CustomCondition]
                 : false) : true;
@@ -214,7 +223,8 @@ namespace HUD_Manager
     }
 
     // Note: Changing the names of these is a breaking change
-    public enum Status {
+    public enum Status
+    {
         InCombat = ConditionFlag.InCombat,
         WeaponDrawn = -1,
         InInstance = ConditionFlag.BoundByDuty,
@@ -231,8 +241,10 @@ namespace HUD_Manager
         InSanctuary = -8,
     }
 
-    public static class StatusExtensions {
-        public static string Name(this Status status) {
+    public static class StatusExtensions
+    {
+        public static string Name(this Status status)
+        {
             switch (status) {
                 case Status.InCombat:
                     return "In combat";
@@ -267,13 +279,14 @@ namespace HUD_Manager
             throw new ApplicationException($"No name was set up for {status}");
         }
 
-        public static bool Active(this Status status, Plugin plugin, Character player) {
+        public static bool Active(this Status status, Plugin plugin, Character player)
+        {
             if (player == null) {
                 throw new ArgumentNullException(nameof(player), "PlayerCharacter cannot be null");
             }
 
             if (status > 0) {
-                var flag = (ConditionFlag) status;
+                var flag = (ConditionFlag)status;
                 return plugin.Condition[flag];
             }
 

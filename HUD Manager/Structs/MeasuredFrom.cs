@@ -1,7 +1,9 @@
 ﻿using System;
 
-namespace HUD_Manager.Structs {
-    public enum MeasuredFrom : byte {
+namespace HUD_Manager.Structs
+{
+    public enum MeasuredFrom : byte
+    {
         TopLeft = 0,
         TopMiddle = 1,
         TopRight = 2,
@@ -13,9 +15,12 @@ namespace HUD_Manager.Structs {
         BottomRight = 8,
     }
 
-    public static class MeasureFromExt {
-        public static string Name(this MeasuredFrom measuredFrom) {
-            return measuredFrom switch {
+    public static class MeasureFromExt
+    {
+        public static string Name(this MeasuredFrom measuredFrom)
+        {
+            return measuredFrom switch
+            {
                 MeasuredFrom.TopLeft => "Top left",
                 MeasuredFrom.TopMiddle => "Top middle",
                 MeasuredFrom.TopRight => "Top right",
@@ -29,8 +34,10 @@ namespace HUD_Manager.Structs {
             };
         }
 
-        public static Tuple<MeasuredX, MeasuredY> ToParts(this MeasuredFrom measured) {
-            return measured switch {
+        public static Tuple<MeasuredX, MeasuredY> ToParts(this MeasuredFrom measured)
+        {
+            return measured switch
+            {
                 MeasuredFrom.TopLeft => Tuple.Create(MeasuredX.Left, MeasuredY.Top),
                 MeasuredFrom.TopMiddle => Tuple.Create(MeasuredX.Middle, MeasuredY.Top),
                 MeasuredFrom.TopRight => Tuple.Create(MeasuredX.Right, MeasuredY.Top),
@@ -45,13 +52,15 @@ namespace HUD_Manager.Structs {
         }
     }
 
-    public enum MeasuredX {
+    public enum MeasuredX
+    {
         Left,
         Middle,
         Right,
     }
 
-    public enum MeasuredY {
+    public enum MeasuredY
+    {
         Top,
         Middle,
         Bottom,

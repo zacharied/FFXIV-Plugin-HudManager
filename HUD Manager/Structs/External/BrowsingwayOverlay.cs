@@ -1,17 +1,13 @@
-﻿using Dalamud.Logging;
-using HUD_Manager;
+﻿using HUD_Manager;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HUDManager.Structs.External
 {
     [Serializable]
     public class BrowsingwayOverlay
     {
-        public const BrowsingwayOverlayComponent AllEnabled = 
+        public const BrowsingwayOverlayComponent AllEnabled =
             BrowsingwayOverlayComponent.Hidden
             | BrowsingwayOverlayComponent.Locked
             | BrowsingwayOverlayComponent.Typethrough

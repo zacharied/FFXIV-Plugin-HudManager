@@ -1,11 +1,6 @@
 ﻿using Dalamud.Game.Gui;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HUD_Manager
 {
@@ -19,13 +14,11 @@ namespace HUD_Manager
         public static AtkUnitBase? GetAtkUnitByName(this GameGui gameGui, string name, int index)
         {
             var addon = gameGui.GetAddonByName(name, index);
-            if (addon == IntPtr.Zero)
-            {
+            if (addon == IntPtr.Zero) {
                 return null;
             }
 
-            unsafe
-            {
+            unsafe {
                 return *(AtkUnitBase*)addon;
             }
         }

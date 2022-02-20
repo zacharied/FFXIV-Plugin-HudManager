@@ -3,20 +3,24 @@ using System;
 
 namespace HUD_Manager
 {
-    public class Swapper : IDisposable {
+    public class Swapper : IDisposable
+    {
         private Plugin Plugin { get; }
 
-        public Swapper(Plugin plugin) {
+        public Swapper(Plugin plugin)
+        {
             this.Plugin = plugin;
 
             this.Plugin.Framework.Update += this.OnFrameworkUpdate;
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
             this.Plugin.Framework.Update -= this.OnFrameworkUpdate;
         }
 
-        public void OnFrameworkUpdate(Framework framework) {
+        public void OnFrameworkUpdate(Framework framework)
+        {
             if (!this.Plugin.Config.SwapsEnabled || !this.Plugin.Config.UnderstandsRisks) {
                 return;
             }

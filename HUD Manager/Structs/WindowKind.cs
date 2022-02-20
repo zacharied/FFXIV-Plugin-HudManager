@@ -1,9 +1,12 @@
-﻿namespace HUD_Manager.Structs {
-    public enum WindowKind : uint {
+﻿namespace HUD_Manager.Structs
+{
+    public enum WindowKind : uint
+    {
         FreeCompany = 3769291431,
     }
 
-    public static class WindowKindExt {
+    public static class WindowKindExt
+    {
         public static readonly string[] All = {
             "AreaMap",
             "ChatLog",

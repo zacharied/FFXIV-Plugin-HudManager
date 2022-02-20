@@ -1,17 +1,15 @@
 ﻿using Dalamud.Data;
-using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using Lumina.Excel.GeneratedSheets;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.InteropServices;
 
-namespace HUD_Manager {
-    public static class Util {
+namespace HUD_Manager
+{
+    public static class Util
+    {
 
-        public static bool ContainsIgnoreCase(this string haystack, string needle) {
+        public static bool ContainsIgnoreCase(this string haystack, string needle)
+        {
             return CultureInfo.InvariantCulture.CompareInfo.IndexOf(haystack, needle, CompareOptions.IgnoreCase) >= 0;
         }
 
@@ -25,8 +23,7 @@ namespace HUD_Manager {
         public static bool HasUnlockedClass(Plugin plugin, ClassJob classJob)
         {
             var classJobCount = plugin.DataManager.GetExcelSheet<ClassJob>()!.RowCount;
-            unsafe
-            {
+            unsafe {
                 var player = FFXIVClientStructs.FFXIV.Client.Game.UI.UIState.Instance()->PlayerState;
                 return player.ClassJobLevelArray[classJob.ExpArrayIndex] > 0;
             }

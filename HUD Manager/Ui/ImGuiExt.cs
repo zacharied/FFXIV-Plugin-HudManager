@@ -1,12 +1,15 @@
-﻿using System;
-using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using HUD_Manager.Structs;
 using ImGuiNET;
+using System;
+using System.Numerics;
 
-namespace HUD_Manager.Ui {
-    public static class ImGuiExt {
-        public static void HoverTooltip(string text) {
+namespace HUD_Manager.Ui
+{
+    public static class ImGuiExt
+    {
+        public static void HoverTooltip(string text)
+        {
             if (!ImGui.IsItemHovered()) {
                 return;
             }
@@ -16,7 +19,8 @@ namespace HUD_Manager.Ui {
             ImGui.EndTooltip();
         }
 
-        public static void HelpMarker(string text) {
+        public static void HelpMarker(string text)
+        {
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
             ImGui.PopFont();
@@ -32,7 +36,8 @@ namespace HUD_Manager.Ui {
             ImGui.EndTooltip();
         }
 
-        public static bool IconButton(FontAwesomeIcon icon, string? id = null) {
+        public static bool IconButton(FontAwesomeIcon icon, string? id = null)
+        {
             ImGui.PushFont(UiBuilder.IconFont);
 
             var text = icon.ToIconString();
@@ -47,7 +52,8 @@ namespace HUD_Manager.Ui {
             return result;
         }
 
-        public static bool IconCheckbox(FontAwesomeIcon icon, ref bool value, string? id = null) {
+        public static bool IconCheckbox(FontAwesomeIcon icon, ref bool value, string? id = null)
+        {
             ImGui.PushFont(UiBuilder.IconFont);
 
             var text = icon.ToIconString();
@@ -71,35 +77,38 @@ namespace HUD_Manager.Ui {
             ImGui.Text(text);
         }
 
-        public static Tuple<Vector2, Vector2> ConvertGameToImGui(Element element) {
+        public static Tuple<Vector2, Vector2> ConvertGameToImGui(Element element)
+        {
             // get X & Y coords from the element, which are percentages (0 - 100)
             var percentagePos = new Vector2(element.X, element.Y);
 
             // get size in pixels
             var size = new Vector2(element.Width, element.Height);
             // scale size according to the element's scale
-            size.X = (float) Math.Round(size.X * element.Scale);
-            size.Y = (float) Math.Round(size.Y * element.Scale);
+            size.X = (float)Math.Round(size.X * element.Scale);
+            size.Y = (float)Math.Round(size.Y * element.Scale);
 
             // convert the percentages into pixels
             var screen = ImGui.GetIO().DisplaySize;
             var pixelPos = new Vector2(
-                (float) Math.Round(percentagePos.X * screen.X / 100),
-                (float) Math.Round(percentagePos.Y * screen.Y / 100)
+                (float)Math.Round(percentagePos.X * screen.X / 100),
+                (float)Math.Round(percentagePos.Y * screen.Y / 100)
             );
 
             // split the measured from into x and y parts
             var (xMeasure, yMeasure) = element.MeasuredFrom.ToParts();
 
             // determine subtraction values to make the coords point to the top left
-            var subX = xMeasure switch {
+            var subX = xMeasure switch
+            {
                 MeasuredX.Left => 0,
                 MeasuredX.Middle => size.X / 2,
                 MeasuredX.Right => size.X,
                 _ => throw new ArgumentOutOfRangeException(),
             };
 
-            var subY = yMeasure switch {
+            var subY = yMeasure switch
+            {
                 MeasuredY.Top => 0,
                 MeasuredY.Middle => size.Y / 2,
                 MeasuredY.Bottom => size.Y,
@@ -111,34 +120,37 @@ namespace HUD_Manager.Ui {
             pixelPos.Y -= subY;
 
             // round the coords
-            pixelPos.X = (float) Math.Round(pixelPos.X);
-            pixelPos.Y = (float) Math.Round(pixelPos.Y);
+            pixelPos.X = (float)Math.Round(pixelPos.X);
+            pixelPos.Y = (float)Math.Round(pixelPos.Y);
 
             return Tuple.Create(pixelPos, size);
         }
 
-        public static Vector2 ConvertImGuiToGame(Element element, Vector2 im) {
+        public static Vector2 ConvertImGuiToGame(Element element, Vector2 im)
+        {
             // get the coordinates in pixels
             var pos = new Vector2(im.X, im.Y);
 
             // get the size of the element
             var size = new Vector2(element.Width, element.Height);
             // scale the size of the element
-            size.X = (float) Math.Round(size.X * element.Scale);
-            size.Y = (float) Math.Round(size.Y * element.Scale);
+            size.X = (float)Math.Round(size.X * element.Scale);
+            size.Y = (float)Math.Round(size.Y * element.Scale);
 
             // split the measured from into x and y parts
             var (xMeasure, yMeasure) = element.MeasuredFrom.ToParts();
 
             // determine how much to add to convert top left coords into the element's system
-            var addX = xMeasure switch {
+            var addX = xMeasure switch
+            {
                 MeasuredX.Left => 0,
                 MeasuredX.Middle => size.X / 2,
                 MeasuredX.Right => size.X,
                 _ => throw new ArgumentOutOfRangeException(),
             };
 
-            var addY = yMeasure switch {
+            var addY = yMeasure switch
+            {
                 MeasuredY.Top => 0,
                 MeasuredY.Middle => size.Y / 2,
                 MeasuredY.Bottom => size.Y,

@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Dalamud.Data;
+﻿using Dalamud.Data;
 using HUD_Manager.Lumina;
 using Lumina.Excel.GeneratedSheets;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace HUD_Manager.Structs {
-    public enum ElementKind : uint {
+namespace HUD_Manager.Structs
+{
+    public enum ElementKind : uint
+    {
         FocusTargetBar = 3264409695,
         StatusInfoEnfeeblements = 511728259,
         StatusInfoEnhancements = 524431540,
@@ -93,7 +95,8 @@ namespace HUD_Manager.Structs {
         Timers = 2578885979,
     }
 
-    public static class ElementKindExt {
+    public static class ElementKindExt
+    {
         private static readonly Dictionary<ClassJob, List<ElementKind>> barsPerJob = new Dictionary<ClassJob, List<ElementKind>> { };
 
         public static readonly ElementKind[] Immutable = {
@@ -108,8 +111,10 @@ namespace HUD_Manager.Structs {
             .Cast<ElementKind>()
             .Where(kind => !Immutable.Contains(kind));
 
-        public static string LocalisedName(this ElementKind kind, DataManager data) {
-            uint? id = kind switch {
+        public static string LocalisedName(this ElementKind kind, DataManager data)
+        {
+            uint? id = kind switch
+            {
                 ElementKind.Hotbar1 => 0,
                 ElementKind.Hotbar2 => 1,
                 ElementKind.Hotbar3 => 2,
@@ -207,7 +212,8 @@ namespace HUD_Manager.Structs {
 
             var name = data.GetExcelSheet<HudSheet>().GetRow(id.Value).Name;
 
-            uint? jobId = kind switch {
+            uint? jobId = kind switch
+            {
                 ElementKind.AetherflowGaugeSmn => 27,
                 ElementKind.AetherflowGaugeSch => 28,
                 _ => null,
@@ -221,7 +227,8 @@ namespace HUD_Manager.Structs {
             return name;
         }
 
-        public static bool IsJobGauge(this ElementKind kind) {
+        public static bool IsJobGauge(this ElementKind kind)
+        {
             switch (kind) {
                 case ElementKind.AetherflowGaugeSch:
                 case ElementKind.AetherflowGaugeSmn:
@@ -258,8 +265,7 @@ namespace HUD_Manager.Structs {
 
         public static ClassJob? ClassJob(this ElementKind kind, DataManager data)
         {
-            switch (kind)
-            {
+            switch (kind) {
                 case ElementKind.AetherflowGaugeSch:
                 case ElementKind.FaerieGauge:
                     return Util.FindClassJobByAbbreviation("SCH", data);
@@ -310,7 +316,8 @@ namespace HUD_Manager.Structs {
             return null;
         }
 
-        public static bool IsHotbar(this ElementKind kind) {
+        public static bool IsHotbar(this ElementKind kind)
+        {
             switch (kind) {
                 case ElementKind.Hotbar1:
                 case ElementKind.Hotbar2:

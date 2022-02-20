@@ -1,20 +1,25 @@
 ﻿using System;
 
-namespace HUD_Manager.Structs.Options {
-    public class StatusOptions {
+namespace HUD_Manager.Structs.Options
+{
+    public class StatusOptions
+    {
         private readonly byte[] _options;
 
-        public StatusStyle Style {
-            get => (StatusStyle) this._options[0];
-            set => this._options[0] = (byte) value;
+        public StatusStyle Style
+        {
+            get => (StatusStyle)this._options[0];
+            set => this._options[0] = (byte)value;
         }
 
-        public StatusOptions(byte[] options) {
+        public StatusOptions(byte[] options)
+        {
             this._options = options;
         }
     }
 
-    public enum StatusStyle : byte {
+    public enum StatusStyle : byte
+    {
         Normal = 1,
         NormalLeftJustified1 = 11,
         NormalLeftJustified2 = 21,
@@ -23,9 +28,12 @@ namespace HUD_Manager.Structs.Options {
         FourGroups = 2,
     }
 
-    public static class StatusStyleExt {
-        public static string Name(this StatusStyle style) {
-            return style switch {
+    public static class StatusStyleExt
+    {
+        public static string Name(this StatusStyle style)
+        {
+            return style switch
+            {
                 StatusStyle.Normal => "Normal",
                 StatusStyle.NormalLeftJustified1 => "Normal (left-justified 1)",
                 StatusStyle.NormalLeftJustified2 => "Normal (left-justified 2)",
@@ -37,34 +45,41 @@ namespace HUD_Manager.Structs.Options {
         }
     }
 
-    public class StatusInfoOptions {
+    public class StatusInfoOptions
+    {
         private const int GamepadBit = 1 << 4;
 
         private readonly ElementKind _kind;
         private readonly byte[] _options;
 
-        public StatusLayout Layout {
+        public StatusLayout Layout
+        {
             get => this.ExtractStyle().Item1;
             set => this._options[0] = this.ComputeStyle(value, this.Alignment, this.Gamepad);
         }
 
-        public StatusAlignment Alignment {
+        public StatusAlignment Alignment
+        {
             get => this.ExtractStyle().Item2;
             set => this._options[0] = this.ComputeStyle(this.Layout, value, this.Gamepad);
         }
 
-        public StatusGamepad Gamepad {
+        public StatusGamepad Gamepad
+        {
             get => this.ExtractStyle().Item3;
             set => this._options[0] = this.ComputeStyle(this.Layout, this.Alignment, value);
         }
 
-        public StatusInfoOptions(ElementKind kind, byte[] options) {
+        public StatusInfoOptions(ElementKind kind, byte[] options)
+        {
             this._kind = kind;
             this._options = options;
         }
 
-        private byte ComputeStyle(StatusLayout layout, StatusAlignment alignment, StatusGamepad gamepad) {
-            byte result = layout switch {
+        private byte ComputeStyle(StatusLayout layout, StatusAlignment alignment, StatusGamepad gamepad)
+        {
+            byte result = layout switch
+            {
                 StatusLayout.TenByTwo => 0,
                 StatusLayout.TwentyByOne => 1,
                 StatusLayout.SevenByThree => 2,
@@ -87,7 +102,8 @@ namespace HUD_Manager.Structs.Options {
             return result;
         }
 
-        private Tuple<StatusLayout, StatusAlignment, StatusGamepad> ExtractStyle() {
+        private Tuple<StatusLayout, StatusAlignment, StatusGamepad> ExtractStyle()
+        {
             var gamepadBitSet = (this._options[0] & GamepadBit) > 0;
             var gamepad = this._kind == ElementKind.StatusInfoOther
                 ? gamepadBitSet
@@ -100,7 +116,8 @@ namespace HUD_Manager.Structs.Options {
 
             var alignment = basic < 4 ? StatusAlignment.LeftJustified : StatusAlignment.RightJustified;
 
-            var layout = (basic % 4) switch {
+            var layout = (basic % 4) switch
+            {
                 0 => StatusLayout.TenByTwo,
                 1 => StatusLayout.TwentyByOne,
                 2 => StatusLayout.SevenByThree,
@@ -112,16 +129,20 @@ namespace HUD_Manager.Structs.Options {
         }
     }
 
-    public enum StatusLayout {
+    public enum StatusLayout
+    {
         TwentyByOne,
         TenByTwo,
         SevenByThree,
         FiveByFour,
     }
 
-    public static class StatusLayoutExt {
-        public static string Name(this StatusLayout layout) {
-            return layout switch {
+    public static class StatusLayoutExt
+    {
+        public static string Name(this StatusLayout layout)
+        {
+            return layout switch
+            {
                 StatusLayout.TwentyByOne => "20x1",
                 StatusLayout.TenByTwo => "10x2",
                 StatusLayout.SevenByThree => "7x3",
@@ -131,14 +152,18 @@ namespace HUD_Manager.Structs.Options {
         }
     }
 
-    public enum StatusAlignment {
+    public enum StatusAlignment
+    {
         LeftJustified,
         RightJustified,
     }
 
-    public static class StatusAlignmentExt {
-        public static string Name(this StatusAlignment alignment) {
-            return alignment switch {
+    public static class StatusAlignmentExt
+    {
+        public static string Name(this StatusAlignment alignment)
+        {
+            return alignment switch
+            {
                 StatusAlignment.LeftJustified => "Left-justified",
                 StatusAlignment.RightJustified => "Right-justified",
                 _ => alignment.ToString(),
@@ -146,7 +171,8 @@ namespace HUD_Manager.Structs.Options {
         }
     }
 
-    public enum StatusGamepad {
+    public enum StatusGamepad
+    {
         Focusable,
         NonFocusable,
     }

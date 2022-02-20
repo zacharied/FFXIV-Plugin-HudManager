@@ -1,15 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Interface;
+﻿using Dalamud.Interface;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Structs.Options;
 using ImGuiNET;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 
-namespace HUD_Manager.Ui.Editor.Tabs {
-    public class HudElements {
+namespace HUD_Manager.Ui.Editor.Tabs
+{
+    public class HudElements
+    {
         private static readonly float[] ScaleOptions = {
             2.0f,
             1.8f,
@@ -29,13 +31,15 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
         private string? Search { get; set; }
 
-        public HudElements(Plugin plugin, Interface ui, LayoutEditor editor) {
+        public HudElements(Plugin plugin, Interface ui, LayoutEditor editor)
+        {
             this.Plugin = plugin;
             this.Ui = ui;
             this.Editor = editor;
         }
 
-        internal void Draw(SavedLayout layout, ref bool update) {
+        internal void Draw(SavedLayout layout, ref bool update)
+        {
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "uimanager-add-hud-element")) {
                 ImGui.OpenPopup(Popups.AddElement);
             }
@@ -90,7 +94,8 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     continue;
                 }
 
-                static void DrawSettingName(string name) {
+                static void DrawSettingName(string name)
+                {
                     ImGui.TextUnformatted(name);
                     ImGui.TableNextColumn();
                 }
@@ -129,7 +134,8 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                 ImGui.TableNextRow();
 
-                void DrawEnabledCheckbox(ElementKind kind, ElementComponent component, ref bool update, bool nextCol = true) {
+                void DrawEnabledCheckbox(ElementKind kind, ElementComponent component, ref bool update, bool nextCol = true)
+                {
                     if (nextCol) {
                         ImGui.TableNextColumn();
                     }
@@ -148,24 +154,24 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                 ImGui.TableSetColumnIndex(0);
 
                 //if (!kind.IsJobGauge()) {
-                    DrawEnabledCheckbox(element.Id, ElementComponent.Visibility, ref update, false);
-                    DrawSettingName("Visibility");
+                DrawEnabledCheckbox(element.Id, ElementComponent.Visibility, ref update, false);
+                DrawSettingName("Visibility");
 
-                    var keyboard = element[VisibilityFlags.Keyboard];
-                    if (ImGuiExt.IconCheckbox(FontAwesomeIcon.Keyboard, ref keyboard, $"{kind}")) {
-                        element[VisibilityFlags.Keyboard] = keyboard;
-                        update = true;
-                    }
+                var keyboard = element[VisibilityFlags.Keyboard];
+                if (ImGuiExt.IconCheckbox(FontAwesomeIcon.Keyboard, ref keyboard, $"{kind}")) {
+                    element[VisibilityFlags.Keyboard] = keyboard;
+                    update = true;
+                }
 
-                    ImGui.SameLine();
-                    var gamepad = element[VisibilityFlags.Gamepad];
-                    if (ImGuiExt.IconCheckbox(FontAwesomeIcon.Gamepad, ref gamepad, $"{kind}")) {
-                        element[VisibilityFlags.Gamepad] = gamepad;
-                        update = true;
-                    }
+                ImGui.SameLine();
+                var gamepad = element[VisibilityFlags.Gamepad];
+                if (ImGuiExt.IconCheckbox(FontAwesomeIcon.Gamepad, ref gamepad, $"{kind}")) {
+                    element[VisibilityFlags.Gamepad] = gamepad;
+                    update = true;
+                }
 
-                    ImGui.TableNextRow();
-                    ImGui.TableSetColumnIndex(0);
+                ImGui.TableNextRow();
+                ImGui.TableSetColumnIndex(0);
                 //}
 
                 ImGui.TableNextColumn();
@@ -175,7 +181,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                 ImGui.PushItemWidth(-1);
                 var measuredFrom = element.MeasuredFrom;
                 if (ImGui.BeginCombo($"##measured-from-{kind}", measuredFrom.Name())) {
-                    foreach (var measured in (MeasuredFrom[]) Enum.GetValues(typeof(MeasuredFrom))) {
+                    foreach (var measured in (MeasuredFrom[])Enum.GetValues(typeof(MeasuredFrom))) {
                         if (!ImGui.Selectable($"{measured.Name()}##{kind}", measuredFrom == measured)) {
                             continue;
                         }
@@ -225,7 +231,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     var screen = ImGui.GetIO().DisplaySize;
 
                     ImGui.PushItemWidth(-1);
-                    var x = (int) Math.Round(element.X * screen.X / 100);
+                    var x = (int)Math.Round(element.X * screen.X / 100);
                     if (ImGui.InputInt($"##x-{kind}", ref x)) {
                         element.X = x / screen.X * 100;
                         update = true;
@@ -241,7 +247,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     DrawSettingName("Y");
 
                     ImGui.PushItemWidth(-1);
-                    var y = (int) Math.Round(element.Y * screen.Y / 100);
+                    var y = (int)Math.Round(element.Y * screen.Y / 100);
                     if (ImGui.InputInt($"##y-{kind}", ref y)) {
                         element.Y = y / screen.Y * 100;
                         update = true;
@@ -281,9 +287,9 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                     DrawSettingName("Opacity");
 
                     ImGui.PushItemWidth(-1);
-                    var opacity = (int) element.Opacity;
+                    var opacity = (int)element.Opacity;
                     if (ImGui.DragInt($"##opacity-{kind}", ref opacity, 1, 1, 255)) {
-                        element.Opacity = (byte) opacity;
+                        element.Opacity = (byte)opacity;
                         update = true;
                     }
 
@@ -318,7 +324,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo($"##style-{kind}", statusOpts.Style.Name())) {
-                        foreach (var style in (StatusStyle[]) Enum.GetValues(typeof(StatusStyle))) {
+                        foreach (var style in (StatusStyle[])Enum.GetValues(typeof(StatusStyle))) {
                             if (!ImGui.Selectable($"{style.Name()}##{kind}", style == statusOpts.Style)) {
                                 continue;
                             }
@@ -343,7 +349,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo($"##layout-{kind}", statusOpts.Layout.Name())) {
-                        foreach (var sLayout in (StatusLayout[]) Enum.GetValues(typeof(StatusLayout))) {
+                        foreach (var sLayout in (StatusLayout[])Enum.GetValues(typeof(StatusLayout))) {
                             if (!ImGui.Selectable($"{sLayout.Name()}##{kind}", sLayout == statusOpts.Layout)) {
                                 continue;
                             }
@@ -364,7 +370,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo($"##alignment-{kind}", statusOpts.Alignment.Name())) {
-                        foreach (var alignment in (StatusAlignment[]) Enum.GetValues(typeof(StatusAlignment))) {
+                        foreach (var alignment in (StatusAlignment[])Enum.GetValues(typeof(StatusAlignment))) {
                             if (!ImGui.Selectable($"{alignment.Name()}##{kind}", alignment == statusOpts.Alignment)) {
                                 continue;
                             }
@@ -404,7 +410,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
                         ImGui.PushItemWidth(-1);
                         var hotbarIndex = hotbarOpts.Index + 1;
                         if (ImGui.InputInt($"##hotbar-number-{kind}", ref hotbarIndex)) {
-                            hotbarOpts.Index = (byte) Math.Max(0, Math.Min(9, hotbarIndex - 1));
+                            hotbarOpts.Index = (byte)Math.Max(0, Math.Min(9, hotbarIndex - 1));
                             update = true;
                         }
 
@@ -418,7 +424,7 @@ namespace HUD_Manager.Ui.Editor.Tabs {
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo($"##hotbar-layout-{kind}", hotbarOpts.Layout.Name())) {
-                        foreach (var hotbarLayout in (HotbarLayout[]) Enum.GetValues(typeof(HotbarLayout))) {
+                        foreach (var hotbarLayout in (HotbarLayout[])Enum.GetValues(typeof(HotbarLayout))) {
                             if (!ImGui.Selectable($"{hotbarLayout.Name()}##{kind}", hotbarLayout == hotbarOpts.Layout)) {
                                 continue;
                             }

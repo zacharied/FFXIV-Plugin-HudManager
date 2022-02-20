@@ -1,27 +1,32 @@
-﻿using System;
+﻿using HUD_Manager.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using HUD_Manager.Configuration;
 
-namespace HUD_Manager.Tree {
-    public class Node<T> {
+namespace HUD_Manager.Tree
+{
+    public class Node<T>
+    {
         public Guid Id { get; }
         public Node<T>? Parent { get; set; }
         public T Value { get; set; }
         public List<Node<T>> Children { get; } = new();
 
-        public Node(Node<T>? parent, Guid id, T value) {
+        public Node(Node<T>? parent, Guid id, T value)
+        {
             this.Id = id;
             this.Parent = parent;
             this.Value = value;
         }
 
-        private Node(Guid id) {
+        private Node(Guid id)
+        {
             this.Id = id;
             this.Value = default!;
         }
 
-        public Node<T>? Find(Guid id) {
+        public Node<T>? Find(Guid id)
+        {
             if (this.Id == id) {
                 return this;
             }
@@ -36,7 +41,8 @@ namespace HUD_Manager.Tree {
             return null;
         }
 
-        public IEnumerable<Node<T>> Ancestors() {
+        public IEnumerable<Node<T>> Ancestors()
+        {
             var parent = this.Parent;
 
             while (parent != null) {
@@ -45,7 +51,8 @@ namespace HUD_Manager.Tree {
             }
         }
 
-        public IEnumerable<Node<T>> Traverse() {
+        public IEnumerable<Node<T>> Traverse()
+        {
             var stack = new Stack<Node<T>>();
             stack.Push(this);
             while (stack.Any()) {
@@ -57,9 +64,10 @@ namespace HUD_Manager.Tree {
             }
         }
 
-        public IEnumerable<Tuple<Node<T>, uint>> TraverseWithDepth() {
+        public IEnumerable<Tuple<Node<T>, uint>> TraverseWithDepth()
+        {
             var stack = new Stack<Tuple<Node<T>, uint>>();
-            stack.Push(Tuple.Create(this, (uint) 0));
+            stack.Push(Tuple.Create(this, (uint)0));
             while (stack.Any()) {
                 var next = stack.Pop();
                 yield return next;
@@ -69,7 +77,8 @@ namespace HUD_Manager.Tree {
             }
         }
 
-        public static List<Node<SavedLayout>> BuildTree(Dictionary<Guid, SavedLayout> layouts) {
+        public static List<Node<SavedLayout>> BuildTree(Dictionary<Guid, SavedLayout> layouts)
+        {
             var lookup = new Dictionary<Guid, Node<SavedLayout>>();
             var rootNodes = new List<Node<SavedLayout>>();
 
@@ -99,8 +108,10 @@ namespace HUD_Manager.Tree {
         }
     }
 
-    public static class NodeExt {
-        public static Node<T>? Find<T>(this IEnumerable<Node<T>> nodes, Guid id) {
+    public static class NodeExt
+    {
+        public static Node<T>? Find<T>(this IEnumerable<Node<T>> nodes, Guid id)
+        {
             foreach (var node in nodes) {
                 var found = node.Find(id);
 

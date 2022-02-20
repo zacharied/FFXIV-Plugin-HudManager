@@ -1,56 +1,64 @@
-﻿using System;
-using System.Numerics;
-using HUD_Manager.Ui.Editor;
+﻿using HUD_Manager.Ui.Editor;
 using ImGuiNET;
+using System;
+using System.Numerics;
 
-namespace HUD_Manager.Ui {
-    public class Interface : IDisposable {
+namespace HUD_Manager.Ui
+{
+    public class Interface : IDisposable
+    {
         private Plugin Plugin { get; }
 
         private LayoutEditor LayoutEditor { get; }
         private Swaps Swaps { get; }
         private Help Help { get; }
-        #if DEBUG
+#if DEBUG
         private Debug Debug { get; }
-        #endif
+#endif
 
         internal Guid SelectedLayout { get; set; } = Guid.Empty;
 
         private bool _settingsVisible;
 
-        private bool SettingsVisible {
+        private bool SettingsVisible
+        {
             get => this._settingsVisible;
             set => this._settingsVisible = value;
         }
 
-        public Interface(Plugin plugin) {
+        public Interface(Plugin plugin)
+        {
             this.Plugin = plugin;
 
             this.LayoutEditor = new LayoutEditor(plugin, this);
             this.Swaps = new Swaps(plugin);
             this.Help = new Help(plugin);
-            #if DEBUG
+#if DEBUG
             this.Debug = new Debug(plugin);
-            #endif
+#endif
 
             this.Plugin.Interface.UiBuilder.Draw += this.Draw;
             this.Plugin.Interface.UiBuilder.OpenConfigUi += this.OpenConfig;
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
             this.Plugin.Interface.UiBuilder.OpenConfigUi -= this.OpenConfig;
             this.Plugin.Interface.UiBuilder.Draw -= this.Draw;
         }
 
-        internal void OpenConfig() {
+        internal void OpenConfig()
+        {
             this.SettingsVisible = true;
         }
 
-        private void OpenConfig(object sender, EventArgs e) {
+        private void OpenConfig(object sender, EventArgs e)
+        {
             this.OpenConfig();
         }
 
-        private void Draw() {
+        private void Draw()
+        {
             if (!this.SettingsVisible) {
                 return;
             }
@@ -100,9 +108,9 @@ namespace HUD_Manager.Ui {
 
                 this.Help.Draw();
 
-                #if DEBUG
+#if DEBUG
                 this.Debug.Draw();
-                #endif
+#endif
 
                 ImGui.EndTabBar();
             }

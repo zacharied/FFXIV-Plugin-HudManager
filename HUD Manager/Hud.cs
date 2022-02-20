@@ -1,18 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using Dalamud.Hooking;
+﻿using Dalamud.Hooking;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
 using HUDManager.Structs.External;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 
-namespace HUD_Manager {
-    public class Hud : IDisposable {
+namespace HUD_Manager
+{
+    public class Hud : IDisposable
+    {
         // Updated 6.0
         public const int InMemoryLayoutElements = 92;
 
@@ -33,7 +35,8 @@ namespace HUD_Manager {
 
         private Plugin Plugin { get; }
 
-        public Hud(Plugin plugin) {
+        public Hud(Plugin plugin)
+        {
             this.Plugin = plugin;
 
             var getFilePointerPtr = this.Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 85 C0 74 14 83 7B 44 00");
@@ -51,16 +54,19 @@ namespace HUD_Manager {
             this._setHudLayoutHook.Enable();
         }
 
-        public IntPtr GetFilePointer(byte index) {
+        public IntPtr GetFilePointer(byte index)
+        {
             return this._getFilePointer?.Invoke(index) ?? IntPtr.Zero;
         }
 
-        public void SaveAddonData() {
+        public void SaveAddonData()
+        {
             var saveMarker = this.GetFilePointer(0) + 0x3E;
             Marshal.WriteByte(saveMarker, 1);
         }
 
-        public void SelectSlot(HudSlot slot, bool force = false) {
+        public void SelectSlot(HudSlot slot, bool force = false)
+        {
             if (this._setHudLayout == null) {
                 return;
             }
@@ -72,12 +78,12 @@ namespace HUD_Manager {
             }
 
             unsafe {
-                var currentSlotPtr = (uint*) (this.GetDataPointer() + SlotOffset);
+                var currentSlotPtr = (uint*)(this.GetDataPointer() + SlotOffset);
                 // read the current slot
                 var currentSlot = *currentSlotPtr;
                 // if the current slot is the slot we want to change to, we can force a reload by
                 // telling the game it's on a different slot and swapping back to the desired slot
-                if (currentSlot == (uint) slot) {
+                if (currentSlot == (uint)slot) {
                     var backupSlot = currentSlot;
                     if (backupSlot < 3) {
                         backupSlot += 1;
@@ -86,57 +92,64 @@ namespace HUD_Manager {
                     }
 
                     // back up this different slot
-                    var backup = this.ReadLayout((HudSlot) backupSlot);
+                    var backup = this.ReadLayout((HudSlot)backupSlot);
                     // change the current slot in memory
                     *currentSlotPtr = backupSlot;
 
                     // ask the game to change slot to our desired slot
                     // for some reason, this overwrites the current slot, so this is why we back up
-                    this._setHudLayout.Invoke(file, (uint) slot, 0, 1);
+                    this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
                     // restore the backup
-                    this.WriteLayout((HudSlot) backupSlot, backup, false);
+                    this.WriteLayout((HudSlot)backupSlot, backup, false);
                     return;
                 }
             }
 
-            Return:
-            this._setHudLayout.Invoke(file, (uint) slot, 0, 1);
+        Return:
+            this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
         }
 
-        private IntPtr GetDataPointer() {
+        private IntPtr GetDataPointer()
+        {
             var dataPtr = this.GetFilePointer(0) + 0x50;
             return Marshal.ReadIntPtr(dataPtr);
         }
 
-        internal IntPtr GetDefaultLayoutPointer() {
+        internal IntPtr GetDefaultLayoutPointer()
+        {
             return this.GetDataPointer() + 0x1c4;
         }
 
-        internal IntPtr GetLayoutPointer(HudSlot slot) {
-            var slotNum = (int) slot;
+        internal IntPtr GetLayoutPointer(HudSlot slot)
+        {
+            var slotNum = (int)slot;
             return this.GetDataPointer() + 0x2c58 + slotNum * LayoutSize;
         }
 
-        public HudSlot GetActiveHudSlot() {
+        public HudSlot GetActiveHudSlot()
+        {
             var slotVal = Marshal.ReadInt32(this.GetDataPointer() + SlotOffset);
 
             if (!Enum.IsDefined(typeof(HudSlot), slotVal)) {
                 throw new IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
             }
 
-            return (HudSlot) slotVal;
+            return (HudSlot)slotVal;
         }
 
-        public Layout ReadLayout(HudSlot slot) {
+        public Layout ReadLayout(HudSlot slot)
+        {
             var slotPtr = this.GetLayoutPointer(slot);
             return Marshal.PtrToStructure<Layout>(slotPtr);
         }
 
-        private void WriteLayout(HudSlot slot, Layout layout, bool reloadIfNecessary = true) {
+        private void WriteLayout(HudSlot slot, Layout layout, bool reloadIfNecessary = true)
+        {
             this.WriteLayout(slot, layout.ToDictionary(), reloadIfNecessary);
         }
 
-        private void WriteLayout(HudSlot slot, IReadOnlyDictionary<ElementKind, Element> dict, bool reloadIfNecessary = true) {
+        private void WriteLayout(HudSlot slot, IReadOnlyDictionary<ElementKind, Element> dict, bool reloadIfNecessary = true)
+        {
             var slotPtr = this.GetLayoutPointer(slot);
 
             // update existing elements with saved data instead of wholesale overwriting
@@ -171,7 +184,8 @@ namespace HUD_Manager {
             }
         }
 
-        private SavedLayout? GetEffectiveLayout(Guid id, List<Guid>? layers = null) {
+        private SavedLayout? GetEffectiveLayout(Guid id, List<Guid>? layers = null)
+        {
             // find the node for this id
             var nodes = Node<SavedLayout>.BuildTree(this.Plugin.Config.Layouts);
             var node = nodes.Find(id);
@@ -242,7 +256,8 @@ namespace HUD_Manager {
             return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, Guid.Empty);
         }
 
-        public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null) {
+        public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null)
+        {
             var effective = this.GetEffectiveLayout(id, layers);
             if (effective == null) {
                 return;
@@ -277,11 +292,13 @@ namespace HUD_Manager {
             }
         }
 
-        internal void ImportSlot(string name, HudSlot slot, bool save = true) {
+        internal void ImportSlot(string name, HudSlot slot, bool save = true)
+        {
             this.Import(name, this.Plugin.Hud.ReadLayout(slot), save);
         }
 
-        private void Import(string name, Layout layout, bool save = true) {
+        private void Import(string name, Layout layout, bool save = true)
+        {
             var guid = this.Plugin.Config.Layouts.FirstOrDefault(kv => kv.Value.Name == name).Key;
             guid = guid != default ? guid : Guid.NewGuid();
 
@@ -305,18 +322,21 @@ namespace HUD_Manager {
         }
     }
 
-    public enum HudSlot {
+    public enum HudSlot
+    {
         One = 0,
         Two = 1,
         Three = 2,
         Four = 3,
     }
 
-    public class Vector2<T> {
+    public class Vector2<T>
+    {
         public T X { get; set; }
         public T Y { get; set; }
 
-        public Vector2(T x, T y) {
+        public Vector2(T x, T y)
+        {
             this.X = x;
             this.Y = y;
         }

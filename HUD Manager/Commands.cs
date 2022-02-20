@@ -6,13 +6,16 @@ using System.Linq;
 
 namespace HUD_Manager
 {
-    public class Commands : IDisposable {
+    public class Commands : IDisposable
+    {
         private Plugin Plugin { get; }
 
-        public Commands(Plugin plugin) {
+        public Commands(Plugin plugin)
+        {
             this.Plugin = plugin;
 
-            this.Plugin.CommandManager.AddHandler("/hudman", new CommandInfo(this.OnCommand) {
+            this.Plugin.CommandManager.AddHandler("/hudman", new CommandInfo(this.OnCommand)
+            {
                 HelpMessage = "Open the HUD Manager settings or swap to layout name"
                             + "\n\t/hudman → open config window"
                             + "\n\t/hudman swap <layout> → switch to a layout"
@@ -20,11 +23,13 @@ namespace HUD_Manager
             });
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
             this.Plugin.CommandManager.RemoveHandler("/hudman");
         }
 
-        private void OnCommand(string command, string args) {
+        private void OnCommand(string command, string args)
+        {
             if (string.IsNullOrWhiteSpace(args)) {
                 this.Plugin.Ui.OpenConfig();
                 return;

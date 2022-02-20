@@ -1,10 +1,10 @@
-﻿using HUD_Manager.Configuration;
-using System;
-using System.Collections.Generic;
+﻿using System;
 
-namespace HUD_Manager.Structs {
+namespace HUD_Manager.Structs
+{
     [Serializable]
-    public class Element {
+    public class Element
+    {
         public const ElementComponent AllEnabled = ElementComponent.X
                                                    | ElementComponent.Y
                                                    | ElementComponent.Scale
@@ -38,9 +38,11 @@ namespace HUD_Manager.Structs {
 
         public byte[] Unknown8 { get; set; }
 
-        public bool this[VisibilityFlags flags] {
+        public bool this[VisibilityFlags flags]
+        {
             get => (this.Visibility & flags) > 0;
-            set {
+            set
+            {
                 if (value) {
                     this.Visibility |= flags;
                 } else {
@@ -49,9 +51,11 @@ namespace HUD_Manager.Structs {
             }
         }
 
-        public bool this[ElementComponent component] {
+        public bool this[ElementComponent component]
+        {
             get => (this.Enabled & component) > 0;
-            set {
+            set
+            {
                 if (value) {
                     this.Enabled |= component;
                 } else {
@@ -60,12 +64,14 @@ namespace HUD_Manager.Structs {
             }
         }
 
-        #pragma warning disable 8618
-        private Element() {
+#pragma warning disable 8618
+        private Element()
+        {
         }
-        #pragma warning restore 8618
+#pragma warning restore 8618
 
-        public Element(RawElement raw) {
+        public Element(RawElement raw)
+        {
             this.Id = raw.id;
             this.X = raw.x;
             this.Y = raw.y;
@@ -80,25 +86,28 @@ namespace HUD_Manager.Structs {
             this.Unknown8 = raw.unknown8;
         }
 
-        public Element Clone() {
-            return new() {
+        public Element Clone()
+        {
+            return new()
+            {
                 Enabled = this.Enabled,
                 Id = this.Id,
                 X = this.X,
                 Y = this.Y,
                 Scale = this.Scale,
-                Options = (byte[]) this.Options.Clone(),
+                Options = (byte[])this.Options.Clone(),
                 Width = this.Width,
                 Height = this.Height,
                 MeasuredFrom = this.MeasuredFrom,
                 Visibility = this.Visibility,
                 Unknown6 = this.Unknown6,
                 Opacity = this.Opacity,
-                Unknown8 = (byte[]) this.Unknown8.Clone(),
+                Unknown8 = (byte[])this.Unknown8.Clone(),
             };
         }
 
-        public void UpdateEnabled(Element other) {
+        public void UpdateEnabled(Element other)
+        {
             if (other[ElementComponent.X]) {
                 this.X = other.X;
             }
@@ -132,7 +141,8 @@ namespace HUD_Manager.Structs {
     }
 
     [Flags]
-    public enum ElementComponent : uint {
+    public enum ElementComponent : uint
+    {
         X = 1 << 0,
         Y = 1 << 1,
         Scale = 1 << 2,

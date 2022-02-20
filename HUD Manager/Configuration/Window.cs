@@ -1,18 +1,22 @@
-﻿using System;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
+using System;
 
-namespace HUD_Manager.Configuration {
+namespace HUD_Manager.Configuration
+{
     [Serializable]
-    public class Window {
+    public class Window
+    {
         public const WindowComponent AllEnabled = WindowComponent.X | WindowComponent.Y;
 
         public WindowComponent Enabled { get; set; } = WindowComponent.X | WindowComponent.Y;
 
         public Vector2<short> Position { get; set; }
 
-        public bool this[WindowComponent component] {
+        public bool this[WindowComponent component]
+        {
             get => (this.Enabled & component) > 0;
-            set {
+            set
+            {
                 if (value) {
                     this.Enabled |= component;
                 } else {
@@ -22,20 +26,24 @@ namespace HUD_Manager.Configuration {
         }
 
         [JsonConstructor]
-        public Window(WindowComponent enabled, Vector2<short> position) {
+        public Window(WindowComponent enabled, Vector2<short> position)
+        {
             this.Enabled = enabled;
             this.Position = position;
         }
 
-        public Window(Vector2<short> position) {
+        public Window(Vector2<short> position)
+        {
             this.Position = position;
         }
 
-        public Window Clone() {
+        public Window Clone()
+        {
             return new Window(this.Enabled, new Vector2<short>(this.Position.X, this.Position.Y));
         }
 
-        public void UpdateEnabled(Window other) {
+        public void UpdateEnabled(Window other)
+        {
             if (other[WindowComponent.X]) {
                 this.Position.X = other.Position.X;
             }
@@ -47,7 +55,8 @@ namespace HUD_Manager.Configuration {
     }
 
     [Flags]
-    public enum WindowComponent {
+    public enum WindowComponent
+    {
         X = 1 << 0,
         Y = 1 << 1,
     }

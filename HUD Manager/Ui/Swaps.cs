@@ -9,18 +9,21 @@ using System.Numerics;
 
 namespace HUD_Manager.Ui
 {
-    public class Swaps {
+    public class Swaps
+    {
         private Plugin Plugin { get; }
 
         private int _editingConditionIndex = -1;
         private HudConditionMatch? _editingCondition;
         private bool _scrollToAdd;
 
-        public Swaps(Plugin plugin) {
+        public Swaps(Plugin plugin)
+        {
             this.Plugin = plugin;
         }
 
-        internal void Draw() {
+        internal void Draw()
+        {
             if (!ImGui.BeginTabItem("Swaps")) {
                 return;
             }
@@ -34,10 +37,10 @@ namespace HUD_Manager.Ui
             }
 
             ImGui.Spacing();
-            var staging = ((int) this.Plugin.Config.StagingSlot + 1).ToString();
+            var staging = ((int)this.Plugin.Config.StagingSlot + 1).ToString();
             if (ImGui.BeginCombo("Staging slot", staging)) {
                 foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                    if (!ImGui.Selectable(((int) slot + 1).ToString())) {
+                    if (!ImGui.Selectable(((int)slot + 1).ToString())) {
                         continue;
                     }
 
@@ -67,7 +70,8 @@ namespace HUD_Manager.Ui
             ImGui.EndTabItem();
         }
 
-        private void DrawConditionsTable() {
+        private void DrawConditionsTable()
+        {
             ImGui.PushFont(UiBuilder.IconFont);
             var height = ImGui.GetContentRegionAvail().Y - ImGui.CalcTextSize(FontAwesomeIcon.Plus.ToIconString()).Y - ImGui.GetStyle().ItemSpacing.Y - ImGui.GetStyle().ItemInnerSpacing.Y * 2;
             ImGui.PopFont();
@@ -106,7 +110,7 @@ namespace HUD_Manager.Ui
             var addCondition = false;
             var actionedItemIndex = -1;
             var action = 0; // 0 for delete, otherwise move.
-            foreach (var item in conditions.Select((cond, i) => new {cond, i})) {
+            foreach (var item in conditions.Select((cond, i) => new { cond, i })) {
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
 

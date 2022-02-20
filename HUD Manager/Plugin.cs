@@ -1,5 +1,4 @@
-﻿using System;
-using Dalamud.Data;
+﻿using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Conditions;
@@ -10,11 +9,14 @@ using Dalamud.Plugin;
 using HUD_Manager.Configuration;
 using HUD_Manager.Ui;
 using Resourcer;
+using System;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace HUD_Manager {
-    public class Plugin : IDalamudPlugin {
+namespace HUD_Manager
+{
+    public class Plugin : IDalamudPlugin
+    {
         public string Name => "HUD Manager";
 
         public DalamudPluginInterface Interface { get; init; }
@@ -36,7 +38,7 @@ namespace HUD_Manager {
         public Config Config { get; private set; } = null!;
         public HelpFile Help { get; private set; } = null!;
         public GameFunctions GameFunctions { get; init; }
-        public PetHotbar PetHotbar { get;  init; }
+        public PetHotbar PetHotbar { get; init; }
 
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -76,16 +78,13 @@ namespace HUD_Manager {
             this.Commands = new Commands(this);
             this.PetHotbar = new PetHotbar(this);
 
-            if (!this.Config.FirstRun)
-            {
+            if (!this.Config.FirstRun) {
                 return;
             }
 
             this.Config.FirstRun = false;
-            if (this.Config.Layouts.Count == 0)
-            {
-                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot)))
-                {
+            if (this.Config.Layouts.Count == 0) {
+                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
                     this.Hud.ImportSlot($"Auto-import {(int)slot + 1}", slot, false);
                 }
             }
@@ -93,7 +92,8 @@ namespace HUD_Manager {
             this.Config.Save();
         }
 
-        public void Dispose() {
+        public void Dispose()
+        {
             this.Commands.Dispose();
             this.Ui.Dispose();
             this.Swapper.Dispose();

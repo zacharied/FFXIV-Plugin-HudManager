@@ -1,24 +1,27 @@
-﻿using System;
-using System.Linq;
-using System.Runtime.InteropServices;
-using Dalamud.Logging;
-using Dalamud.Plugin;
+﻿using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using HUD_Manager.Structs;
 using ImGuiNET;
+using System;
+using System.Linq;
+using System.Runtime.InteropServices;
 
-namespace HUD_Manager.Ui {
-    #if DEBUG
-    public class Debug {
+namespace HUD_Manager.Ui
+{
+#if DEBUG
+    public class Debug
+    {
         private Plugin Plugin { get; }
 
         private Layout? PreviousLayout { get; set; }
 
-        public Debug(Plugin plugin) {
+        public Debug(Plugin plugin)
+        {
             this.Plugin = plugin;
         }
 
-        internal void Draw() {
+        internal void Draw()
+        {
             if (!ImGui.BeginTabItem("Debug")) {
                 return;
             }
@@ -91,15 +94,12 @@ namespace HUD_Manager.Ui {
                 this.Plugin.ChatGui.Print($"{slot}");
             }
 
-            if (ImGui.Button("Print player status address"))
-            {
+            if (ImGui.Button("Print player status address")) {
                 this.Plugin.ChatGui.Print($"{this.Plugin.ClientState.LocalPlayer:x}");
             }
 
-            if (ImGui.Button("Print Config"))
-            {
-                unsafe
-                {
+            if (ImGui.Button("Print Config")) {
+                unsafe {
                     this.Plugin.ChatGui.Print($"{(IntPtr)Framework.Instance()->SystemConfig.CommonSystemConfig.ConfigBase.ConfigEntry:x}");
                 }
             }
@@ -164,5 +164,5 @@ namespace HUD_Manager.Ui {
             ImGui.EndTabItem();
         }
     }
-    #endif
+#endif
 }

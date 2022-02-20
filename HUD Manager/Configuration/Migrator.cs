@@ -1,19 +1,22 @@
-﻿using System;
+﻿using Dalamud.Logging;
+using HUD_Manager.Structs;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using Dalamud.Logging;
-using Dalamud.Plugin;
-using HUD_Manager.Structs;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
-namespace HUD_Manager.Configuration {
-    public static class Migrator {
-        private static Config Migrate(ConfigV1 old) {
-            var config = new Config {
+namespace HUD_Manager.Configuration
+{
+    public static class Migrator
+    {
+        private static Config Migrate(ConfigV1 old)
+        {
+            var config = new Config
+            {
                 FirstRun = old.FirstRun,
                 StagingSlot = old.StagingSlot,
                 SwapsEnabled = old.SwapsEnabled,
@@ -24,7 +27,7 @@ namespace HUD_Manager.Configuration {
                 Layout layout;
                 unsafe {
                     fixed (byte* ptr = entry.Value.Hud) {
-                        layout = Marshal.PtrToStructure<Layout>((IntPtr) ptr);
+                        layout = Marshal.PtrToStructure<Layout>((IntPtr)ptr);
                     }
                 }
 
@@ -42,36 +45,41 @@ namespace HUD_Manager.Configuration {
             return config;
         }
 
-        private static void WithEachLayout(JObject old, Action<JObject> action) {
+        private static void WithEachLayout(JObject old, Action<JObject> action)
+        {
             foreach (var property in old["Layouts"].Children<JProperty>()) {
                 if (property.Name == "$type") {
                     continue;
                 }
 
-                var layout = (JObject) property.Value;
+                var layout = (JObject)property.Value;
 
                 action(layout);
             }
         }
 
-        private static void WithEachElement(JObject old, Action<JObject> action) {
-            WithEachLayout(old, layout => {
-                var elements = (JObject) layout["Elements"];
+        private static void WithEachElement(JObject old, Action<JObject> action)
+        {
+            WithEachLayout(old, layout =>
+            {
+                var elements = (JObject)layout["Elements"];
 
                 foreach (var elementProp in elements.Children<JProperty>()) {
                     if (elementProp.Name == "$type") {
                         continue;
                     }
 
-                    var element = (JObject) elementProp.Value;
+                    var element = (JObject)elementProp.Value;
 
                     action(element);
                 }
             });
         }
 
-        private static void MigrateV2(JObject old) {
-            WithEachElement(old, element => {
+        private static void MigrateV2(JObject old)
+        {
+            WithEachElement(old, element =>
+            {
                 var bytes = element["Unknown4"].ToObject<byte[]>();
 
                 var options = new byte[4];
@@ -91,8 +99,10 @@ namespace HUD_Manager.Configuration {
             old["Version"] = 3;
         }
 
-        private static void MigrateV3(JObject old) {
-            WithEachElement(old, element => {
+        private static void MigrateV3(JObject old)
+        {
+            WithEachElement(old, element =>
+            {
                 var measuredFrom = element["Unknown4"].ToObject<byte>();
                 element.Remove("Unknown4");
                 element["MeasuredFrom"] = measuredFrom;
@@ -101,9 +111,11 @@ namespace HUD_Manager.Configuration {
             old["Version"] = 4;
         }
 
-        private static void MigrateV4(JObject old) {
-            WithEachLayout(old, layout => {
-                var oldPositions = (JObject) layout["Positions"];
+        private static void MigrateV4(JObject old)
+        {
+            WithEachLayout(old, layout =>
+            {
+                var oldPositions = (JObject)layout["Positions"];
                 var windows = new Dictionary<string, Window>();
 
                 foreach (var elementProp in oldPositions.Children<JProperty>()) {
@@ -111,7 +123,7 @@ namespace HUD_Manager.Configuration {
                         continue;
                     }
 
-                    var position = (JObject) elementProp.Value;
+                    var position = (JObject)elementProp.Value;
                     windows[elementProp.Name] = new Window(
                         WindowComponent.X | WindowComponent.Y,
                         new Vector2<short>(
@@ -130,7 +142,8 @@ namespace HUD_Manager.Configuration {
             old["Version"] = 5;
         }
 
-        private static string PluginConfig(string? pluginName = null) {
+        private static string PluginConfig(string? pluginName = null)
+        {
             pluginName ??= Assembly.GetAssembly(typeof(Plugin)).GetName().Name;
             return Path.Combine(new[] {
                 Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -140,7 +153,8 @@ namespace HUD_Manager.Configuration {
             });
         }
 
-        public static Config LoadConfig(Plugin plugin) {
+        public static Config LoadConfig(Plugin plugin)
+        {
             var managerPath = PluginConfig();
 
             string? text = null;
@@ -151,8 +165,7 @@ namespace HUD_Manager.Configuration {
 
             // For v2.1.1 we changed the plugin's internal name to HUDManager.
             var oldManagerPath = PluginConfig("HUD Manager");
-            if (File.Exists(oldManagerPath))
-            {
+            if (File.Exists(oldManagerPath)) {
                 text = File.ReadAllText(oldManagerPath);
                 goto CheckVersion;
             }
@@ -163,14 +176,15 @@ namespace HUD_Manager.Configuration {
                 text = File.ReadAllText(hudSwapPath);
             }
 
-            CheckVersion:
+        CheckVersion:
             if (text == null) {
                 goto DefaultConfig;
             }
 
             var config = JsonConvert.DeserializeObject<JObject>(text);
 
-            int GetVersion() {
+            int GetVersion()
+            {
                 if (config.TryGetValue("Version", out var token)) {
                     return token.Value<int>();
                 }
@@ -187,7 +201,8 @@ namespace HUD_Manager.Configuration {
             // it does not need to go through migration steps after doing this, since it will be interpreted
             // as the layout would be in memory, so the existing code can deal with it normally
             if (version == 1) {
-                var v1 = config.ToObject<ConfigV1>(new JsonSerializer {
+                var v1 = config.ToObject<ConfigV1>(new JsonSerializer
+                {
                     TypeNameHandling = TypeNameHandling.None,
                 });
 
@@ -218,7 +233,7 @@ namespace HUD_Manager.Configuration {
                 return config.ToObject<Config>();
             }
 
-            DefaultConfig:
+        DefaultConfig:
             return plugin.Interface.GetPluginConfig() as Config ?? new Config();
         }
     }

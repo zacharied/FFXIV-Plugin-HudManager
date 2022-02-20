@@ -1,32 +1,39 @@
 ﻿using System;
 
-namespace HUD_Manager.Structs.Options {
-    public class HotbarOptions {
+namespace HUD_Manager.Structs.Options
+{
+    public class HotbarOptions
+    {
         private readonly Element _element;
         private readonly byte[] _options;
 
-        public byte Index {
+        public byte Index
+        {
             get => this._options[0];
             set => this._options[0] = value;
         }
 
-        public HotbarLayout Layout {
-            get => (HotbarLayout) this._options[1];
-            set {
-                this._options[1] = (byte) value;
+        public HotbarLayout Layout
+        {
+            get => (HotbarLayout)this._options[1];
+            set
+            {
+                this._options[1] = (byte)value;
                 var size = value.Size();
                 this._element.Width = size.X;
                 this._element.Height = size.Y;
             }
         }
 
-        public HotbarOptions(Element element) {
+        public HotbarOptions(Element element)
+        {
             this._element = element;
             this._options = element.Options;
         }
     }
 
-    public enum HotbarLayout : byte {
+    public enum HotbarLayout : byte
+    {
         TwelveByOne = 1,
         SixByTwo = 2,
         FourByThree = 3,
@@ -35,9 +42,12 @@ namespace HUD_Manager.Structs.Options {
         OneByTwelve = 6,
     }
 
-    public static class HotbarLayoutExt {
-        public static string Name(this HotbarLayout layout) {
-            return layout switch {
+    public static class HotbarLayoutExt
+    {
+        public static string Name(this HotbarLayout layout)
+        {
+            return layout switch
+            {
                 HotbarLayout.TwelveByOne => "12x1",
                 HotbarLayout.SixByTwo => "6x2",
                 HotbarLayout.FourByThree => "4x3",
@@ -48,8 +58,10 @@ namespace HUD_Manager.Structs.Options {
             };
         }
 
-        public static Vector2<ushort> Size(this HotbarLayout layout) {
-            return layout switch {
+        public static Vector2<ushort> Size(this HotbarLayout layout)
+        {
+            return layout switch
+            {
                 HotbarLayout.TwelveByOne => new Vector2<ushort>(624, 72),
                 HotbarLayout.SixByTwo => new Vector2<ushort>(331, 121),
                 HotbarLayout.FourByThree => new Vector2<ushort>(241, 170),

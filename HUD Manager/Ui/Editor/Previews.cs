@@ -1,22 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using HUD_Manager.Structs;
+﻿using HUD_Manager.Structs;
 using ImGuiNET;
+using System;
+using System.Collections.Generic;
 
-namespace HUD_Manager.Ui.Editor {
-    public class Previews {
+namespace HUD_Manager.Ui.Editor
+{
+    public class Previews
+    {
         private Plugin Plugin { get; }
         private Interface Ui { get; }
 
         internal HashSet<ElementKind> Elements { get; } = new();
         internal HashSet<ElementKind> Update { get; } = new();
 
-        public Previews(Plugin plugin, Interface ui) {
+        public Previews(Plugin plugin, Interface ui)
+        {
             this.Plugin = plugin;
             this.Ui = ui;
         }
 
-        public void Draw(ref bool update) {
+        public void Draw(ref bool update)
+        {
             const float tolerance = 0.0001f;
             const ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar
                                            | ImGuiWindowFlags.NoResize

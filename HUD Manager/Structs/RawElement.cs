@@ -1,8 +1,10 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace HUD_Manager.Structs {
+namespace HUD_Manager.Structs
+{
     [StructLayout(LayoutKind.Sequential)]
-    public struct RawElement {
+    public struct RawElement
+    {
         public ElementKind id;
 
         public float x;
@@ -30,7 +32,8 @@ namespace HUD_Manager.Structs {
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public byte[] unknown8;
 
-        public RawElement(Element element) {
+        public RawElement(Element element)
+        {
             this.id = element.Id;
             this.x = element.X;
             this.y = element.Y;
@@ -45,7 +48,8 @@ namespace HUD_Manager.Structs {
             this.unknown8 = element.Unknown8;
         }
 
-        public void UpdateEnabled(Element element) {
+        public void UpdateEnabled(Element element)
+        {
             if (element[ElementComponent.X]) {
                 this.x = element.X;
             }

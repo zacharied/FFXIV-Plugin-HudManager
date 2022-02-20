@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using Dalamud.Interface;
-using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+﻿using Dalamud.Interface;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
@@ -12,9 +6,15 @@ using HUD_Manager.Ui.Editor.Tabs;
 using HUDManager.Ui.Editor.Tabs;
 using ImGuiNET;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 
-namespace HUD_Manager.Ui.Editor {
-    public class LayoutEditor {
+namespace HUD_Manager.Ui.Editor
+{
+    public class LayoutEditor
+    {
         private Plugin Plugin { get; }
         private Interface Ui { get; }
         internal Previews Previews { get; }
@@ -29,7 +29,8 @@ namespace HUD_Manager.Ui.Editor {
         private float _dragSpeed = 1f;
         internal float DragSpeed => this._dragSpeed;
 
-        public LayoutEditor(Plugin plugin, Interface ui) {
+        public LayoutEditor(Plugin plugin, Interface ui)
+        {
             this.Plugin = plugin;
             this.Ui = ui;
 
@@ -39,7 +40,8 @@ namespace HUD_Manager.Ui.Editor {
             this.ExternalElements = new ExternalElements(plugin);
         }
 
-        internal void Draw() {
+        internal void Draw()
+        {
             if (!ImGui.BeginTabItem("Layout editor")) {
                 return;
             }
@@ -59,10 +61,10 @@ namespace HUD_Manager.Ui.Editor {
 
             var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);
             if (charConfig != null) {
-                    ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
-                    goto EndTabItem;
+                ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
+                goto EndTabItem;
             }
-            
+
             this.Previews.Draw(ref update);
 
             ImGui.TextUnformatted("Layout");
@@ -82,7 +84,7 @@ namespace HUD_Manager.Ui.Editor {
 
                 foreach (var node in nodes) {
                     foreach (var (child, depth) in node.TraverseWithDepth()) {
-                        var indent = new string(' ', (int) depth * 4);
+                        var indent = new string(' ', (int)depth * 4);
                         if (!ImGui.Selectable($"{indent}{child.Value.Name}##edit-{child.Id}", child.Id == this.Ui.SelectedLayout)) {
                             continue;
                         }
@@ -93,8 +95,7 @@ namespace HUD_Manager.Ui.Editor {
                     }
                 }
 
-                if (layoutChanged)
-                {
+                if (layoutChanged) {
                     // Kill all previews so they don't fuck up the new layout.
                     Previews.Clear();
                 }
@@ -174,7 +175,7 @@ namespace HUD_Manager.Ui.Editor {
                         var disabled = selectedParent || ourChildren.Contains(child.Id);
                         var flags = disabled ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None;
 
-                        var indent = new string(' ', (int) depth * 4);
+                        var indent = new string(' ', (int)depth * 4);
                         if (!ImGui.Selectable($"{indent}{child.Value.Name}##parent-{child.Id}", selectedParent, flags)) {
                             continue;
                         }
@@ -193,7 +194,7 @@ namespace HUD_Manager.Ui.Editor {
                 ImGui.DragFloat("Slider speed", ref this._dragSpeed, 0.01f, 0.01f, 10f);
 
                 if (ImGui.BeginCombo("Positioning mode", this.Plugin.Config.PositioningMode.ToString())) {
-                    foreach (var mode in (PositioningMode[]) Enum.GetValues(typeof(PositioningMode))) {
+                    foreach (var mode in (PositioningMode[])Enum.GetValues(typeof(PositioningMode))) {
                         if (!ImGui.Selectable($"{mode}##positioning", this.Plugin.Config.PositioningMode == mode)) {
                             continue;
                         }
@@ -230,16 +231,16 @@ namespace HUD_Manager.Ui.Editor {
                 ImGui.EndTabBar();
             }
 
-            EndTabItem:
+        EndTabItem:
             ImGui.EndTabItem();
 
-            if (update)
-            {
+            if (update) {
                 this.Plugin.Config.Save();
             }
         }
 
-        private void SetUpAddLayoutPopup() {
+        private void SetUpAddLayoutPopup()
+        {
             if (!ImGui.BeginPopup(Popups.AddLayout)) {
                 return;
             }
@@ -278,7 +279,8 @@ namespace HUD_Manager.Ui.Editor {
             ImGui.EndPopup();
         }
 
-        private void SetUpDeleteVerifyPopup(IEnumerable<Node<SavedLayout>> nodes) {
+        private void SetUpDeleteVerifyPopup(IEnumerable<Node<SavedLayout>> nodes)
+        {
             if (!ImGui.BeginPopupModal(Popups.DeleteVerify)) {
                 return;
             }
@@ -314,7 +316,8 @@ namespace HUD_Manager.Ui.Editor {
             ImGui.EndPopup();
         }
 
-        private void SetUpRenameLayoutPopup() {
+        private void SetUpRenameLayoutPopup()
+        {
             if (!ImGui.BeginPopup(Popups.RenameLayout)) {
                 return;
             }
@@ -334,7 +337,8 @@ namespace HUD_Manager.Ui.Editor {
             ImGui.EndPopup();
         }
 
-        private void SetUpImportLayoutPopup() {
+        private void SetUpImportLayoutPopup()
+        {
             if (!ImGui.BeginPopup(Popups.ImportLayout)) {
                 return;
             }
@@ -352,8 +356,8 @@ namespace HUD_Manager.Ui.Editor {
             }
 
             var current = this.Plugin.Hud.GetActiveHudSlot();
-            foreach (var slot in (HudSlot[]) Enum.GetValues(typeof(HudSlot))) {
-                var name = current == slot ? $"({(int) slot + 1})" : $"{(int) slot + 1}";
+            foreach (var slot in (HudSlot[])Enum.GetValues(typeof(HudSlot))) {
+                var name = current == slot ? $"({(int)slot + 1})" : $"{(int)slot + 1}";
                 if (ImGui.Button($"{name}##import-{slot}") && this.ImportLayoutName != null) {
                     Guid id;
                     string newName;
@@ -406,7 +410,8 @@ namespace HUD_Manager.Ui.Editor {
             ImGui.EndPopup();
         }
 
-        private void SetUpExportLayoutPopup() {
+        private void SetUpExportLayoutPopup()
+        {
             if (!ImGui.BeginPopup(Popups.ExportLayout)) {
                 return;
             }
@@ -416,8 +421,8 @@ namespace HUD_Manager.Ui.Editor {
             }
 
             var current = this.Plugin.Hud.GetActiveHudSlot();
-            foreach (var slot in (HudSlot[]) Enum.GetValues(typeof(HudSlot))) {
-                var name = current == slot ? $"({(int) slot + 1})" : $"{(int) slot + 1}";
+            foreach (var slot in (HudSlot[])Enum.GetValues(typeof(HudSlot))) {
+                var name = current == slot ? $"({(int)slot + 1})" : $"{(int)slot + 1}";
                 if (ImGui.Button($"{name}##export-{slot}")) {
                     this.Plugin.Hud.WriteEffectiveLayout(slot, this.Ui.SelectedLayout);
 

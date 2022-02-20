@@ -1,6 +1,7 @@
 ﻿namespace HUD_Manager.Ui
 {
-    public static class Popups {
+    public static class Popups
+    {
         public const string AddLayout = "uimanager-add-layout-popup";
         public const string RenameLayout = "uimanager-rename-layout-popup";
         public const string ImportLayout = "uimanager-import-layout-popup";

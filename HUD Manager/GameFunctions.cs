@@ -1,11 +1,10 @@
-﻿using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Runtime.InteropServices;
 
-namespace HUD_Manager {
-    public class GameFunctions {
+namespace HUD_Manager
+{
+    public class GameFunctions
+    {
         // private delegate IntPtr GetBaseUiObjectDelegate();
 
         private delegate void SetPositionDelegate(IntPtr windowBase, short x, short y);
@@ -21,7 +20,8 @@ namespace HUD_Manager {
 
         private Plugin Plugin { get; }
 
-        public GameFunctions(Plugin plugin) {
+        public GameFunctions(Plugin plugin)
+        {
             this.Plugin = plugin;
 
             var setPositionPtr = this.Plugin.SigScanner.ScanText("4C 8B 89 ?? ?? ?? ?? 41 0F BF C0");
@@ -34,7 +34,8 @@ namespace HUD_Manager {
             this._updateAddonPosition = Marshal.GetDelegateForFunctionPointer<UpdateAddonPositionDelegate>(updatePositionPtr);
         }
 
-        public void SetAddonPosition(string uiName, short x, short y) {
+        public void SetAddonPosition(string uiName, short x, short y)
+        {
             var addon = this.Plugin.GameGui.GetAddonByName(uiName, 1);
             if (addon == IntPtr.Zero) {
                 return;
@@ -56,16 +57,18 @@ namespace HUD_Manager {
             );
         }
 
-        public Vector2<short>? GetAddonPosition(string uiName) {
+        public Vector2<short>? GetAddonPosition(string uiName)
+        {
             var addon = this.Plugin.GameGui.GetAtkUnitByName(uiName, 1);
-            if (addon == null) { 
-                return null; 
+            if (addon == null) {
+                return null;
             }
 
             return new Vector2<short>(addon.Value.X, addon.Value.Y);
         }
 
-        public void SetAddonAlpha(string name, byte alpha) {
+        public void SetAddonAlpha(string name, byte alpha)
+        {
             var addon = this.Plugin.GameGui.GetAddonByName(name, 1);
             if (addon == IntPtr.Zero) {
                 return;

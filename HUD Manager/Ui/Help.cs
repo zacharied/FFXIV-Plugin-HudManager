@@ -1,14 +1,18 @@
 ﻿using ImGuiNET;
 
-namespace HUD_Manager.Ui {
-    public class Help {
+namespace HUD_Manager.Ui
+{
+    public class Help
+    {
         private Plugin Plugin { get; }
 
-        public Help(Plugin plugin) {
+        public Help(Plugin plugin)
+        {
             this.Plugin = plugin;
         }
 
-        internal void Draw() {
+        internal void Draw()
+        {
             if (!ImGui.BeginTabItem("Help")) {
                 return;
             }
