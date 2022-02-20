@@ -56,6 +56,7 @@ namespace HUD_Manager.Ui {
             }
 
             ImGui.SetNextWindowSize(new Vector2(500, 475), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSizeConstraints(new Vector2(800, 800), new Vector2(int.MaxValue, int.MaxValue));
 
             if (!ImGui.Begin(this.Plugin.Name, ref this._settingsVisible)) {
                 return;

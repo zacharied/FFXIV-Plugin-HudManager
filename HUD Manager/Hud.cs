@@ -171,7 +171,7 @@ namespace HUD_Manager {
             }
         }
 
-        private SavedLayout? GetEffectiveLayout(Guid id) {
+        private SavedLayout? GetEffectiveLayout(Guid id, List<Guid>? layers = null) {
             // find the node for this id
             var nodes = Node<SavedLayout>.BuildTree(this.Plugin.Config.Layouts);
             var node = nodes.Find(id);
@@ -183,6 +183,7 @@ namespace HUD_Manager {
             var windows = new Dictionary<string, Window>();
             var bwOverlays = new List<BrowsingwayOverlay>();
 
+            // Apply each element of a layout on top of the virtual layout we are constructing.
             void ApplyLayout(Node<SavedLayout> node)
             {
                 foreach (var element in node.Value.Elements) {
@@ -225,11 +226,24 @@ namespace HUD_Manager {
 
             ApplyLayout(node);
 
+            // If there's layers, apply them.
+            if (Plugin.Config.AdvancedSwapMode && layers != null) {
+                foreach (var layerId in layers.Reverse<Guid>()) {
+                    var layer = nodes.Find(layerId);
+                    if (layer == null) {
+                        PluginLog.Error("unable to find layered condition by ID");
+                        break;
+                    }
+
+                    ApplyLayout(layer);
+                }
+            }
+
             return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, Guid.Empty);
         }
 
-        public void WriteEffectiveLayout(HudSlot slot, Guid id) {
-            var effective = this.GetEffectiveLayout(id);
+        public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null) {
+            var effective = this.GetEffectiveLayout(id, layers);
             if (effective == null) {
                 return;
             }

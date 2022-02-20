@@ -87,20 +87,27 @@ namespace HUD_Manager {
             this.InPvpZone = territory.IsPvpZone;
         }
 
-        private Guid CalculateCurrentHud() {
+        private (Guid layoutId, List<HudConditionMatch> layers) CalculateCurrentHud() {
+            List<HudConditionMatch> layers = new();
             var player = this.Plugin.ClientState.LocalPlayer;
             if (player == null) {
-                return Guid.Empty;
+                return (Guid.Empty, layers);
             }
 
             foreach (var match in this.Plugin.Config.HudConditionMatches) {
                 if ((!match.Status.HasValue || this._condition[match.Status.Value]) &&
                     (match.ClassJob == null || this._job?.Abbreviation.ToString() == match.ClassJob)) {
-                    return match.LayoutId;
+                    if (match.IsLayer) {
+                        layers.Add(match);
+                        continue;
+                    }
+
+                    // The first non-layer condition is the base
+                    return (match.LayoutId, layers);
                 }
             }
 
-            return Guid.Empty;
+            return (Guid.Empty, layers);
         }
 
         public void SetHudLayout(Character? player, bool update = false) {
@@ -108,7 +115,7 @@ namespace HUD_Manager {
                 this.Update(player);
             }
 
-            var layoutId = this.CalculateCurrentHud();
+            var (layoutId, layers) = this.CalculateCurrentHud();
             if (layoutId == Guid.Empty) {
                 return; // FIXME: do something better
             }
@@ -117,7 +124,7 @@ namespace HUD_Manager {
                 return; // FIXME: do something better
             }
 
-            this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId);
+            this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId, layers.ConvertAll(match => match.LayoutId));
             this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
 
@@ -178,6 +185,14 @@ namespace HUD_Manager {
         public Status? Status { get; set; }
 
         public Guid LayoutId { get; set; }
+
+        public bool IsLayer { get; set; } = false;
+
+        public void Deconstruct(out Guid layoutId, out bool isLayer)
+        {
+            layoutId = LayoutId;
+            isLayer = IsLayer;
+        }
     }
 
     // Note: Changing the names of these is a breaking change

@@ -54,7 +54,11 @@ namespace HUD_Manager.Ui {
             if (this.Plugin.Config.Layouts.Count == 0) {
                 ImGui.TextUnformatted("Create at least one layout to begin setting up swaps.");
             } else {
-                ImGui.TextUnformatted("Add swap conditions below.\nThe first condition that is satisfied will be the layout that is used.");
+                ImGui.TextWrapped("Add swap conditions below.\nThe conditions are checked from top to bottom.\nThe first condition that is satisfied will be the layout that is used.");
+                if (Plugin.Config.AdvancedSwapMode) {
+                    ImGui.TextWrapped("Setting a row to \"layer\" mode will cause it to be applied on top of the first non-layer condition."
+                        + "\nThis allows for modifying speicfic elements of the HUD conditionally without disturbing the normal swapping behavior.");
+                }
                 ImGui.Separator();
                 this.DrawConditionsTable();
             }
@@ -74,7 +78,11 @@ namespace HUD_Manager.Ui {
                                           & ~ImGuiTableFlags.BordersOuterV
                                           | ImGuiTableFlags.PadOuterX
                                           | ImGuiTableFlags.RowBg;
-            if (!ImGui.BeginTable("uimanager-swaps-table", 4, flags)) {
+
+            bool advancedMode = Plugin.Config.AdvancedSwapMode;
+            int columns = Plugin.Config.AdvancedSwapMode ? 5 : 4;
+
+            if (!ImGui.BeginTable("uimanager-swaps-table", columns, flags)) {
                 return;
             }
 
@@ -83,6 +91,8 @@ namespace HUD_Manager.Ui {
                 conditions.Add(new HudConditionMatch());
             }
 
+            if (advancedMode)
+                ImGui.TableSetupColumn("Layer", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableSetupColumn("Job");
             ImGui.TableSetupColumn("State");
             ImGui.TableSetupColumn("Layout");
@@ -96,7 +106,20 @@ namespace HUD_Manager.Ui {
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
 
+                // Layered checkbox can just always be there, i guess
+                if (advancedMode) {
+                    bool applyLayer = item.cond.IsLayer;
+                    if (ImGui.Checkbox(string.Empty, ref applyLayer)) {
+                        item.cond.IsLayer = applyLayer;
+                        // this func doesn't use an "update" var, just wing it for now
+                        Plugin.Config.Save();
+                    }
+
+                    ImGui.TableNextColumn();
+                }
+
                 if (this._editingConditionIndex == item.i) {
+                    // Editing in progress
                     this._editingCondition ??= new HudConditionMatch();
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo("##condition-edit-job", this._editingCondition.ClassJob ?? "Any")) {
@@ -208,6 +231,13 @@ namespace HUD_Manager.Ui {
                 this._editingConditionIndex = this.Plugin.Config.HudConditionMatches.Count;
                 this._editingCondition = new HudConditionMatch();
                 this._scrollToAdd = true;
+            }
+
+            ImGui.SameLine();
+
+            if (ImGui.Checkbox("Advanced mode##swap-advanced-check", ref advancedMode)) {
+                Plugin.Config.AdvancedSwapMode = advancedMode;
+                Plugin.Config.Save();
             }
 
             var recalculate = false;
