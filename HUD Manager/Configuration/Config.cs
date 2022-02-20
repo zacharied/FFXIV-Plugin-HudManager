@@ -22,7 +22,10 @@ namespace HUD_Manager.Configuration
 
         public bool AdvancedSwapMode { get; set; }
 
+        [Obsolete("No need to use this as a jank fix anymore.")]
         public bool PreventSwapsWhilePetHotbarActive { get; set; } = true;
+
+        public bool DisableHelpPanels { get; set; } = false;
 
         public HudSlot StagingSlot { get; set; } = HudSlot.Four;
 

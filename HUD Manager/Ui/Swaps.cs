@@ -59,11 +59,14 @@ namespace HUD_Manager.Ui
             if (this.Plugin.Config.Layouts.Count == 0) {
                 ImGui.TextUnformatted("Create at least one layout to begin setting up swaps.");
             } else {
-                ImGui.TextWrapped("Add swap conditions below.\nThe conditions are checked from top to bottom.\nThe first condition that is satisfied will be the layout that is used.");
-                if (Plugin.Config.AdvancedSwapMode) {
-                    ImGui.TextWrapped("Setting a row to \"layer\" mode will cause it to be applied on top of the first non-layer condition.");
+                if (!Plugin.Config.DisableHelpPanels) {
+                    ImGui.TextWrapped("Add swap conditions below.\nThe conditions are checked from top to bottom.\nThe first condition that is satisfied will be the layout that is used.");
+                    if (Plugin.Config.AdvancedSwapMode) {
+                        ImGui.TextWrapped("Setting a row to \"layer\" mode will cause it to be applied on top of the first non-layer condition.");
+                    }
+                    ImGui.Separator();
                 }
-                ImGui.Separator();
+
                 this.DrawConditionsTable();
             }
 
@@ -343,8 +346,10 @@ namespace HUD_Manager.Ui
                 return;
             }
 
-            ImGui.TextWrapped("Create named flags that can be toggled via macro.\nSee the command help for more information.");
-            ImGuiExt.HelpMarker("Some example commands:\n\t/hudman condition Condition1 true\n\t/hudman condition Condition3 toggle");
+            if (!Plugin.Config.DisableHelpPanels) {
+                ImGui.TextWrapped("Create named flags that can be toggled via macro.\nSee the command help for more information.");
+                ImGuiExt.HelpMarker("Some example commands:\n\t/hudman condition Condition1 true\n\t/hudman condition Condition3 toggle");
+            }
 
             var items = Plugin.Config.CustomConditions.Select(c => c.Name).ToArray();
             ImGui.BeginListBox("##custom-condition-listbox", new Vector2(-1, -1 - ImGui.GetTextLineHeight() * 2));

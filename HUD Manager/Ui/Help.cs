@@ -11,10 +11,16 @@ namespace HUD_Manager.Ui
             this.Plugin = plugin;
         }
 
-        internal void Draw()
+        internal void Draw(ref bool update)
         {
             if (!ImGui.BeginTabItem("Help")) {
                 return;
+            }
+
+            bool hideHelpPanels = Plugin.Config.DisableHelpPanels;
+            if (ImGui.Checkbox("Hide help text in plugin menus", ref hideHelpPanels)) {
+                Plugin.Config.DisableHelpPanels = hideHelpPanels;
+                update = true;
             }
 
             ImGui.PushTextWrapPos();

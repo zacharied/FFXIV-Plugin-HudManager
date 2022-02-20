@@ -63,6 +63,8 @@ namespace HUD_Manager.Ui
                 return;
             }
 
+            bool update = false;
+
             ImGui.SetNextWindowSize(new Vector2(500, 475), ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowSizeConstraints(new Vector2(800, 800), new Vector2(int.MaxValue, int.MaxValue));
 
@@ -106,13 +108,17 @@ namespace HUD_Manager.Ui
 
                 this.Swaps.Draw();
 
-                this.Help.Draw();
+                this.Help.Draw(ref update);
 
 #if DEBUG
                 this.Debug.Draw();
 #endif
 
                 ImGui.EndTabBar();
+            }
+
+            if (update) {
+                Plugin.Config.Save();
             }
 
             ImGui.End();
