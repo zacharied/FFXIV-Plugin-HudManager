@@ -183,28 +183,28 @@ namespace HUD_Manager {
             var windows = new Dictionary<string, Window>();
             var bwOverlays = new List<BrowsingwayOverlay>();
 
-            // get the ancestors and their elements for this node
-            foreach (var ancestor in node.Ancestors().Reverse()) {
-                foreach (var element in ancestor.Value.Elements) {
+            void ApplyLayout(Node<SavedLayout> node)
+            {
+                foreach (var element in node.Value.Elements) {
                     if (element.Value.Enabled == Element.AllEnabled || !elements.ContainsKey(element.Key)) {
-                        elements[element.Key] = element.Value.Clone();
+                        elements![element.Key] = element.Value.Clone();
                         continue;
                     }
 
                     elements[element.Key].UpdateEnabled(element.Value);
                 }
 
-                foreach (var window in ancestor.Value.Windows) {
+                foreach (var window in node.Value.Windows) {
                     if (window.Value.Enabled == Window.AllEnabled || !windows.ContainsKey(window.Key)) {
-                        windows[window.Key] = window.Value.Clone();
+                        windows![window.Key] = window.Value.Clone();
                         continue;
                     }
 
                     windows[window.Key].UpdateEnabled(window.Value);
                 }
 
-                foreach (var overlay in ancestor.Value.BrowsingwayOverlays) {
-                    if (!bwOverlays.Exists(o => o.CommandName == overlay.CommandName)) {
+                foreach (var overlay in node.Value.BrowsingwayOverlays) {
+                    if (!bwOverlays!.Exists(o => o.CommandName == overlay.CommandName)) {
                         bwOverlays.Add(overlay.Clone());
                         continue;
                     }
@@ -218,38 +218,12 @@ namespace HUD_Manager {
                 }
             }
 
-            // apply this node's elements
-            foreach (var element in node.Value.Elements) {
-                if (element.Value.Enabled == Element.AllEnabled || !elements.ContainsKey(element.Key)) {
-                    elements[element.Key] = element.Value.Clone();
-                    continue;
-                }
-
-                elements[element.Key].UpdateEnabled(element.Value);
+            // get the ancestors and their elements for this node
+            foreach (var ancestor in node.Ancestors().Reverse()) {
+                ApplyLayout(ancestor);
             }
 
-            foreach (var window in node.Value.Windows) {
-                if (window.Value.Enabled == Window.AllEnabled || !windows.ContainsKey(window.Key)) {
-                    windows[window.Key] = window.Value.Clone();
-                    continue;
-                }
-
-                windows[window.Key].UpdateEnabled(window.Value);
-            }
-
-            foreach (var overlay in node.Value.BrowsingwayOverlays) {
-                if (!bwOverlays.Exists(o => o.CommandName == overlay.CommandName)) {
-                    bwOverlays.Add(overlay.Clone());
-                    continue;
-                }
-
-                var findOverlay = bwOverlays.Find(o => o.CommandName == overlay.CommandName);
-                if (findOverlay is null) {
-                    PluginLog.Error("Unable to find overlay during ancestor search");
-                    continue;
-                }
-                findOverlay.UpdateEnabled(overlay);
-            }
+            ApplyLayout(node);
 
             return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, Guid.Empty);
         }
