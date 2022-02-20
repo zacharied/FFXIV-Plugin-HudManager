@@ -260,8 +260,6 @@ namespace HUD_Manager.Ui
 
             ImGui.EndTable();
 
-            ImGui.EndChild();
-
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "condition")) {
                 this._editingConditionIndex = this.Plugin.Config.HudConditionMatches.Count;
                 this._editingCondition = new HudConditionMatch();
@@ -269,6 +267,8 @@ namespace HUD_Manager.Ui
             } else if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("Add a new swap condition");
             }
+
+            ImGui.EndChild();
 
             ImGui.SameLine();
 
