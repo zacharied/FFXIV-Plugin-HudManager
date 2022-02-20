@@ -80,7 +80,7 @@ namespace HUD_Manager.Ui {
                                           | ImGuiTableFlags.RowBg;
 
             bool advancedMode = Plugin.Config.AdvancedSwapMode;
-            int columns = Plugin.Config.AdvancedSwapMode ? 5 : 4;
+            int columns = Plugin.Config.AdvancedSwapMode ? 6 : 5;
 
             if (!ImGui.BeginTable("uimanager-swaps-table", columns, flags)) {
                 return;
@@ -97,6 +97,7 @@ namespace HUD_Manager.Ui {
             ImGui.TableSetupColumn("State");
             ImGui.TableSetupColumn("Layout");
             ImGui.TableSetupColumn("Options");
+            ImGui.TableSetupColumn("Active", ImGuiTableColumnFlags.WidthFixed);
             ImGui.TableHeadersRow();
 
             var addCondition = false;
@@ -188,6 +189,8 @@ namespace HUD_Manager.Ui {
                         this._scrollToAdd = false;
                         ImGui.SetScrollHereY();
                     }
+
+                    ImGui.TableNextColumn();
                 } else {
                     ImGui.TextUnformatted(item.cond.ClassJob ?? string.Empty);
                     ImGui.TableNextColumn();
@@ -220,6 +223,17 @@ namespace HUD_Manager.Ui {
                         actionedItemIndex = item.i;
                         action = 1;
                     }
+
+                    ImGui.TableNextColumn();
+                    string activeText = string.Empty;
+                    if (Plugin.Statuses.ResultantLayout.activeLayout == item.cond) {
+                        activeText = "★";
+                    } else if (Plugin.Statuses.ResultantLayout.layeredLayouts.Contains(item.cond)) {
+                        activeText = "☆";
+                    }
+                    if (activeText != string.Empty) {
+                        ImGuiExt.CenterColumnText(activeText);
+                    }
                 }
             }
 
@@ -235,12 +249,14 @@ namespace HUD_Manager.Ui {
 
             ImGui.SameLine();
 
+            var recalculate = false;
+
             if (ImGui.Checkbox("Advanced mode##swap-advanced-check", ref advancedMode)) {
                 Plugin.Config.AdvancedSwapMode = advancedMode;
                 Plugin.Config.Save();
+                recalculate = true;
             }
 
-            var recalculate = false;
 
             if (addCondition) {
                 recalculate = true;

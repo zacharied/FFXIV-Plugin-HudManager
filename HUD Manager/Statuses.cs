@@ -21,6 +21,8 @@ namespace HUD_Manager {
         private readonly Dictionary<Status, bool> _condition = new();
         private ClassJob? _job;
 
+        public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout;
+
         public bool InPvpZone { get; private set; } = false;
 
         public static byte GetStatus(GameObject actor) {
@@ -87,27 +89,30 @@ namespace HUD_Manager {
             this.InPvpZone = territory.IsPvpZone;
         }
 
-        private (Guid layoutId, List<HudConditionMatch> layers) CalculateCurrentHud() {
+        /// <summary>
+        /// Get the current layout data according to the conditions that match the game state.
+        /// </summary>
+        private (HudConditionMatch? layoutId, List<HudConditionMatch> layers) CalculateResultantLayout() {
             List<HudConditionMatch> layers = new();
             var player = this.Plugin.ClientState.LocalPlayer;
             if (player == null) {
-                return (Guid.Empty, layers);
+                return (null, layers);
             }
 
             foreach (var match in this.Plugin.Config.HudConditionMatches) {
                 if ((!match.Status.HasValue || this._condition[match.Status.Value]) &&
                     (match.ClassJob == null || this._job?.Abbreviation.ToString() == match.ClassJob)) {
-                    if (match.IsLayer) {
+                    if (match.IsLayer && Plugin.Config.AdvancedSwapMode) {
                         layers.Add(match);
                         continue;
                     }
 
                     // The first non-layer condition is the base
-                    return (match.LayoutId, layers);
+                    return (match, layers);
                 }
             }
 
-            return (Guid.Empty, layers);
+            return (null, layers);
         }
 
         public void SetHudLayout(Character? player, bool update = false) {
@@ -115,16 +120,16 @@ namespace HUD_Manager {
                 this.Update(player);
             }
 
-            var (layoutId, layers) = this.CalculateCurrentHud();
-            if (layoutId == Guid.Empty) {
+            ResultantLayout = this.CalculateResultantLayout();
+            if (ResultantLayout.activeLayout is null) {
                 return; // FIXME: do something better
             }
 
-            if (!this.Plugin.Config.Layouts.ContainsKey(layoutId)) {
+            if (!this.Plugin.Config.Layouts.ContainsKey(ResultantLayout.activeLayout.LayoutId)) {
                 return; // FIXME: do something better
             }
 
-            this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, layoutId, layers.ConvertAll(match => match.LayoutId));
+            this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
             this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
 

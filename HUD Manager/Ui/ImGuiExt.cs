@@ -62,6 +62,15 @@ namespace HUD_Manager.Ui {
             return result;
         }
 
+        public static void CenterColumnText(string text)
+        {
+            var posX = ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(text).X - ImGui.GetScrollX() - 2 * ImGui.GetStyle().ItemSpacing.X;
+            if (posX > ImGui.GetCursorPosX()) {
+                ImGui.SetCursorPosX(posX);
+            }
+            ImGui.Text(text);
+        }
+
         public static Tuple<Vector2, Vector2> ConvertGameToImGui(Element element) {
             // get X & Y coords from the element, which are percentages (0 - 100)
             var percentagePos = new Vector2(element.X, element.Y);
