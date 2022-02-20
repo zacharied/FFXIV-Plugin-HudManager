@@ -237,14 +237,16 @@ namespace HUD_Manager.Ui
                     }
 
                     ImGui.TableNextColumn();
-                    string activeText = string.Empty;
-                    if (Plugin.Statuses.ResultantLayout.activeLayout == item.cond) {
-                        activeText = "★";
-                    } else if (Plugin.Statuses.ResultantLayout.layeredLayouts.Contains(item.cond)) {
-                        activeText = "☆";
-                    }
-                    if (activeText != string.Empty) {
-                        ImGuiExt.CenterColumnText(activeText);
+                    if (Plugin.Config.SwapsEnabled) {
+                        string activeText = string.Empty;
+                        if (Plugin.Statuses.ResultantLayout.activeLayout == item.cond) {
+                            activeText = "★";
+                        } else if (Plugin.Statuses.ResultantLayout.layeredLayouts.Contains(item.cond)) {
+                            activeText = "☆";
+                        }
+                        if (activeText != string.Empty) {
+                            ImGuiExt.CenterColumnText(activeText);
+                        }
                     }
                 }
             }
@@ -257,19 +259,22 @@ namespace HUD_Manager.Ui
                 this._editingConditionIndex = this.Plugin.Config.HudConditionMatches.Count;
                 this._editingCondition = new HudConditionMatch();
                 this._scrollToAdd = true;
+            } else if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Add a new swap condition");
             }
 
             ImGui.SameLine();
 
-            if (ImGuiExt.IconButton(FontAwesomeIcon.Adjust, "customconditions")) {
+            if (ImGuiExt.IconButton(FontAwesomeIcon.Flag, "customconditions")) {
                 _customConditionsWindowOpen = true;
+            } else if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Open the Custom Conditions menu");
             }
 
             if (_customConditionsWindowOpen)
                 CustomConditionsWindow();
 
             ImGui.SameLine();
-
 
             if (ImGui.Checkbox("Advanced mode##swap-advanced-check", ref advancedMode)) {
                 Plugin.Config.AdvancedSwapMode = advancedMode;
@@ -327,8 +332,9 @@ namespace HUD_Manager.Ui
         {
             bool update = false;
 
+            ImGuiWindowFlags flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking;
             ImGui.SetNextWindowSize(new Vector2(400, 500));
-            if (!ImGui.Begin("Custom Conditions", ref _customConditionsWindowOpen, ImGuiWindowFlags.AlwaysAutoResize)) {
+            if (!ImGui.Begin("[HUD Manager] Custom Conditions", ref _customConditionsWindowOpen, flags)) {
                 ImGui.End();
                 return;
             }
