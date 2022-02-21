@@ -270,8 +270,6 @@ namespace HUD_Manager.Ui
 
             ImGui.EndChild();
 
-            ImGui.SameLine();
-
             if (ImGuiExt.IconButton(FontAwesomeIcon.Flag, "customconditions")) {
                 _customConditionsWindowOpen = true;
             } else if (ImGui.IsItemHovered()) {
