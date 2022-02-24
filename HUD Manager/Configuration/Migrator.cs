@@ -1,5 +1,6 @@
 ﻿using Dalamud.Logging;
 using HUD_Manager.Structs;
+using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -142,6 +143,24 @@ namespace HUD_Manager.Configuration
             old["Version"] = 5;
         }
 
+        private static void MigrateV5(JObject old, Plugin plugin)
+        {
+            foreach (var cond in (JArray)old["HudConditionMatches"]) {
+                var oldCond = (JObject)cond;
+                // Convert ClassJobs from their language equivalent to a row ID
+                var classJob = oldCond["ClassJob"];
+
+                if (classJob.Type == JTokenType.Null)
+                    continue;
+                var sheet = plugin.DataManager.GetExcelSheet<ClassJob>()!;
+
+                oldCond["ClassJob"] = sheet.First(job => job.Abbreviation == (string)oldCond["ClassJob"]).RowId;
+                var match = oldCond.ToObject<HudConditionMatch>();
+            }
+
+            old["Version"] = 6;
+        }
+
         private static string PluginConfig(string? pluginName = null)
         {
             pluginName ??= Assembly.GetAssembly(typeof(Plugin)).GetName().Name;
@@ -220,6 +239,9 @@ namespace HUD_Manager.Configuration
                         break;
                     case 4:
                         MigrateV4(config);
+                        break;
+                    case 5:
+                        MigrateV5(config, plugin);
                         break;
                     default:
                         PluginLog.Warning($"Tried to migrate from an unknown version: {version}");

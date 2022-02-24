@@ -265,53 +265,59 @@ namespace HUD_Manager.Structs
 
         public static ClassJob? ClassJob(this ElementKind kind, DataManager data)
         {
+            ClassJob FindClassJob(int id)
+            {
+                var sheet = data.GetExcelSheet<ClassJob>()!;
+                return sheet.First(job => job.JobIndex == id);
+            }
+
             switch (kind) {
                 case ElementKind.AetherflowGaugeSch:
                 case ElementKind.FaerieGauge:
-                    return Util.FindClassJobByAbbreviation("SCH", data);
+                    return FindClassJob(9);
                 case ElementKind.AetherflowGaugeSmn:
                 case ElementKind.TranceGauge:
-                    return Util.FindClassJobByAbbreviation("SMN", data);
+                    return FindClassJob(8);
                 case ElementKind.ArcanaGauge:
-                    return Util.FindClassJobByAbbreviation("AST", data);
+                    return FindClassJob(13);
                 case ElementKind.BalanceGauge:
-                    return Util.FindClassJobByAbbreviation("RDM", data);
+                    return FindClassJob(15);
                 case ElementKind.BeastGauge:
-                    return Util.FindClassJobByAbbreviation("WAR", data);
+                    return FindClassJob(3);
                 case ElementKind.BloodGauge:
                 case ElementKind.DarksideGauge:
-                    return Util.FindClassJobByAbbreviation("DRK", data);
+                    return FindClassJob(12);
                 case ElementKind.ChakraGauge:
-                    return Util.FindClassJobByAbbreviation("MNK", data);
+                    return FindClassJob(2);
                 case ElementKind.DragonGauge:
-                    return Util.FindClassJobByAbbreviation("DRG", data);
+                    return FindClassJob(4);
                 case ElementKind.ElementalGauge:
-                    return Util.FindClassJobByAbbreviation("BLM", data);
+                    return FindClassJob(7);
                 case ElementKind.FourfoldFeathers:
                 case ElementKind.StepGauge:
-                    return Util.FindClassJobByAbbreviation("DNC", data);
+                    return FindClassJob(18);
                 case ElementKind.HealingGauge:
-                    return Util.FindClassJobByAbbreviation("WHM", data);
+                    return FindClassJob(6);
                 case ElementKind.HeatGauge:
-                    return Util.FindClassJobByAbbreviation("MCH", data);
+                    return FindClassJob(11);
                 case ElementKind.HutonGauge:
                 case ElementKind.NinkiGauge:
-                    return Util.FindClassJobByAbbreviation("NIN", data);
+                    return FindClassJob(10);
                 case ElementKind.KenkiGauge:
                 case ElementKind.SenGauge:
-                    return Util.FindClassJobByAbbreviation("SAM", data);
+                    return FindClassJob(14);
                 case ElementKind.OathGauge:
-                    return Util.FindClassJobByAbbreviation("PLD", data);
+                    return FindClassJob(1);
                 case ElementKind.PowderGauge:
-                    return Util.FindClassJobByAbbreviation("GNB", data);
+                    return FindClassJob(17);
                 case ElementKind.SongGauge:
-                    return Util.FindClassJobByAbbreviation("BRD", data);
+                    return FindClassJob(5);
                 case ElementKind.AddersgallGauge:
                 case ElementKind.EukrasiaGauge:
-                    return Util.FindClassJobByAbbreviation("SGE", data);
+                    return FindClassJob(20);
                 case ElementKind.SoulGauge:
                 case ElementKind.DeathGauge:
-                    return Util.FindClassJobByAbbreviation("RPR", data);
+                    return FindClassJob(19);
             }
             return null;
         }
@@ -356,10 +362,10 @@ namespace HUD_Manager.Structs
 
             var job = kind.ClassJob(data);
             var index = (barsPerJob[job].IndexOf(kind)
-                + (AtkElementReverseOrderedJobs.Contains(job.Abbreviation.ToString().ToUpper()) ? 1 : 0))
+                + (AtkElementReverseOrderedJobs.Contains(Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()) ? 1 : 0))
                 % 2;
 
-            return $"JobHud{job.Abbreviation.RawString.ToUpper()}{index}";
+            return $"JobHud{Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()}{index}";
         }
 
         // TODO Solution that works with more than 2 job gauges (idk though)

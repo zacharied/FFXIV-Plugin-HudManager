@@ -2,6 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using HUD_Manager.Structs;
 using ImGuiNET;
+using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -109,6 +110,14 @@ namespace HUD_Manager.Ui
                 PluginLog.Log($"{this.Plugin.Statuses.IsLevelSynced(this.Plugin.ClientState.LocalPlayer)}");
 
             }
+
+            if (ImGui.Button("Print ClassJob dict values")) {
+                string s = "";
+                foreach (var row in Plugin.DataManager.GetExcelSheet<ClassJob>()!)
+                    s += $"[{row.RowId}] = \"{row.Abbreviation}\",\n";
+                Plugin.ChatGui.Print(s);
+            }
+            
 
             // var layoutPtr = this.Plugin.Hud.GetDefaultLayoutPointer() + 8;
             //

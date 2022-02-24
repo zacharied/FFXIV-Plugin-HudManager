@@ -9,7 +9,7 @@ namespace HUD_Manager.Configuration
     [Serializable]
     public class Config : IPluginConfiguration
     {
-        public const int LatestVersion = 5;
+        public const int LatestVersion = 6;
 
         public int Version { get; set; } = LatestVersion;
 

@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using HUD_Manager.Structs;
 using HUDManager.Configuration;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -128,20 +129,23 @@ namespace HUD_Manager.Ui
                     ImGui.TableNextColumn();
                 }
 
-                var statusDisplayName = item.cond.Status?.Name() ?? item.cond.CustomCondition?.Name;
-
                 if (this._editingConditionIndex == item.i) {
                     // Editing in progress
                     this._editingCondition ??= new HudConditionMatch();
+
+                    var jobDisplayName = this._editingCondition.ClassJob is not null
+                        ? Util.JobIdToEnglishAbbreviation[this._editingCondition.ClassJob.Value]
+                        : "Any";
+
                     ImGui.PushItemWidth(-1);
-                    if (ImGui.BeginCombo("##condition-edit-job", this._editingCondition.ClassJob ?? "Any")) {
+                    if (ImGui.BeginCombo("##condition-edit-job", jobDisplayName)) {
                         if (ImGui.Selectable("Any##condition-edit-job")) {
                             this._editingCondition.ClassJob = null;
                         }
 
                         foreach (var job in this.Plugin.DataManager.GetExcelSheet<ClassJob>().Skip(1)) {
                             if (ImGui.Selectable($"{job.Abbreviation}##condition-edit-job")) {
-                                this._editingCondition.ClassJob = job.Abbreviation;
+                                this._editingCondition.ClassJob = job.RowId;
                             }
                         }
 
@@ -150,6 +154,8 @@ namespace HUD_Manager.Ui
 
                     ImGui.PopItemWidth();
                     ImGui.TableNextColumn();
+
+                    var statusDisplayName = this._editingCondition.Status?.Name() ?? this._editingCondition.CustomCondition?.Name;
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo("##condition-edit-status", statusDisplayName ?? "Any")) {
@@ -211,8 +217,14 @@ namespace HUD_Manager.Ui
 
                     ImGui.TableNextColumn();
                 } else {
-                    ImGui.TextUnformatted(item.cond.ClassJob ?? string.Empty);
+                    var jobDisplayName = item.cond.ClassJob is not null
+                        ? Util.JobIdToEnglishAbbreviation[item.cond.ClassJob.Value]
+                        : string.Empty;
+
+                    ImGui.TextUnformatted(jobDisplayName);
                     ImGui.TableNextColumn();
+
+                    var statusDisplayName = item.cond.Status?.Name() ?? item.cond.CustomCondition?.Name;
 
                     ImGui.TextUnformatted(statusDisplayName ?? string.Empty);
                     ImGui.TableNextColumn();

@@ -195,11 +195,7 @@ namespace HUD_Manager
 
     public class HudConditionMatch
     {
-        /// <summary>
-        /// Values stored here should be the abbreviation of the class/job name (all caps).
-        /// We do this because using <see cref="ClassJob"/> results in circular dependency errors when serializing.
-        /// </summary>
-        public string? ClassJob { get; set; }
+        public uint? ClassJob { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public Status? Status { get; set; }
@@ -216,7 +212,7 @@ namespace HUD_Manager
                 ? (plugin.Statuses.CustomConditionStatus.ContainsKey(this.CustomCondition)
                 ? plugin.Statuses.CustomConditionStatus[this.CustomCondition]
                 : false) : true;
-            bool jobMet = this.ClassJob == null || plugin.Statuses.Job?.Abbreviation.ToString() == this.ClassJob;
+            bool jobMet = this.ClassJob == null || plugin.Statuses.Job?.RowId == this.ClassJob;
 
             return statusMet && customConditionMet && jobMet;
         }
