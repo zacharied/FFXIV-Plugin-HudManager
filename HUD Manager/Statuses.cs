@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
@@ -61,7 +62,7 @@ namespace HUD_Manager
                 CustomConditionStatus[cond] = false;
             }
 
-            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange;
+            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange; 
         }
         public void Dispose()
         {
@@ -208,10 +209,7 @@ namespace HUD_Manager
         public bool IsActivated(Plugin plugin)
         {
             bool statusMet = !this.Status.HasValue || plugin.Statuses.Condition[this.Status.Value];
-            bool customConditionMet = this.CustomCondition is not null
-                ? (plugin.Statuses.CustomConditionStatus.ContainsKey(this.CustomCondition)
-                ? plugin.Statuses.CustomConditionStatus[this.CustomCondition]
-                : false) : true;
+            bool customConditionMet = this.CustomCondition?.IsMet(plugin) ?? true;
             bool jobMet = this.ClassJob == null || plugin.Statuses.Job?.RowId == this.ClassJob;
 
             return statusMet && customConditionMet && jobMet;

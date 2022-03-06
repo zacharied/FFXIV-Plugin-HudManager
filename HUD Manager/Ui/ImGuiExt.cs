@@ -8,6 +8,9 @@ namespace HUD_Manager.Ui
 {
     public static class ImGuiExt
     {
+        private static readonly Vector2 verticalSpace = new Vector2(0, 5f);
+        public static void VerticalSpace() => ImGui.Dummy(verticalSpace);
+
         public static void HoverTooltip(string text)
         {
             if (!ImGui.IsItemHovered()) {

@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.Command;
 using HUD_Manager.Configuration;
+using HUDManager.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,12 +57,14 @@ namespace HUD_Manager
                     return;
                 }
 
-                if (!Plugin.Config.CustomConditions.Exists(c => c.Name == argsList[1])) {
+                var cond = Plugin.Config.CustomConditions.Find(c => c.Name == argsList[1]);
+                if (cond is null) {
                     Plugin.ChatGui.PrintError("invalid condition");
                     return;
+                } else if (cond.ConditionType != CustomConditionType.ConsoleToggle) {
+                    Plugin.ChatGui.PrintError("that condition cannot be toggled by commands");
+                    return;
                 }
-
-                var cond = Plugin.Config.CustomConditions.Find(c => c.Name == argsList[1]);
 
                 bool? val = null;
                 if (argsList[2] == "true" || argsList[2] == "on") {

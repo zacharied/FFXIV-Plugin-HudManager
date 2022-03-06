@@ -1,6 +1,7 @@
 ﻿using Dalamud.Interface;
 using HUD_Manager.Structs;
 using HUDManager.Configuration;
+using HUDManager.Ui;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -18,9 +19,12 @@ namespace HUD_Manager.Ui
         private HudConditionMatch? _editingCondition;
         private bool _scrollToAdd;
 
+        private (CustomConditions window, bool isOpen) _customConditionsMenu;
+
         public Swaps(Plugin plugin)
         {
             this.Plugin = plugin;
+            this._customConditionsMenu = (new CustomConditions(plugin), false);
         }
 
         internal void Draw()
@@ -283,13 +287,13 @@ namespace HUD_Manager.Ui
             ImGui.EndChild();
 
             if (ImGuiExt.IconButton(FontAwesomeIcon.Flag, "customconditions")) {
-                _customConditionsWindowOpen = true;
+                _customConditionsMenu.isOpen = true;
             } else if (ImGui.IsItemHovered()) {
                 ImGui.SetTooltip("Open the Custom Conditions menu");
             }
 
-            if (_customConditionsWindowOpen)
-                CustomConditionsWindow();
+            if (_customConditionsMenu.isOpen)
+                _customConditionsMenu.window.Draw(ref _customConditionsMenu.isOpen);
 
             ImGui.SameLine();
 
@@ -339,75 +343,6 @@ namespace HUD_Manager.Ui
 
             this.Plugin.Statuses.Update(player);
             this.Plugin.Statuses.SetHudLayout(null);
-        }
-
-        private bool _customConditionsWindowOpen = false;
-        private int _customConditionSelectedIndex = -1;
-        private int _customConditionEditIndex = -1;
-        private string _customConditionEditBuf = string.Empty;
-        private void CustomConditionsWindow()
-        {
-            bool update = false;
-
-            ImGuiWindowFlags flags = ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking;
-            ImGui.SetNextWindowSize(new Vector2(400, 500));
-            if (!ImGui.Begin("[HUD Manager] Custom Conditions", ref _customConditionsWindowOpen, flags)) {
-                ImGui.End();
-                return;
-            }
-
-            if (!Plugin.Config.DisableHelpPanels) {
-                ImGui.TextWrapped("Create named flags that can be toggled via macro.\nSee the command help for more information.");
-                ImGuiExt.HelpMarker("Some example commands:\n\t/hudman condition Condition1 true\n\t/hudman condition Condition3 toggle");
-            }
-
-            var items = Plugin.Config.CustomConditions.Select(c => c.Name).ToArray();
-            ImGui.BeginListBox("##custom-condition-listbox", new Vector2(-1, -1 - ImGui.GetTextLineHeight() * 2));
-            foreach (var (cond, i) in Plugin.Config.CustomConditions.Select((item, i) => (item, i))) {
-                if (i == _customConditionEditIndex) {
-                    if (ImGui.InputText($"##custom-condition-name-{i}", ref _customConditionEditBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.CharsNoBlank)
-                        || ImGui.IsItemDeactivatedAfterEdit()) {
-                        cond.Name = _customConditionEditBuf;
-                        _customConditionEditIndex = -1;
-                        update = true;
-                    }
-                } else {
-                    if (ImGui.Selectable($"{cond.Name}##custom-condition-{i}", _customConditionSelectedIndex == i)) {
-                        _customConditionSelectedIndex = i;
-                    }
-                }
-            }
-            ImGui.EndListBox();
-
-            if (ImGuiExt.IconButton(FontAwesomeIcon.Plus)) {
-                int i = 1;
-                while (Plugin.Config.CustomConditions.Exists(c => c.Name == $"Condition{i}"))
-                    i++;
-
-                Plugin.Config.CustomConditions.Add(new CustomCondition($"Condition{i}"));
-
-                update = true;
-            }
-
-            ImGui.SameLine();
-
-            if (ImGuiExt.IconButton(FontAwesomeIcon.Edit) && _customConditionSelectedIndex >= 0) {
-                _customConditionEditIndex = _customConditionSelectedIndex;
-            }
-
-            ImGui.SameLine();
-
-            if (ImGuiExt.IconButton(FontAwesomeIcon.Trash) && _customConditionSelectedIndex >= 0 && _customConditionSelectedIndex < items.Length) {
-                Plugin.Config.CustomConditions.RemoveAt(_customConditionSelectedIndex);
-                _customConditionSelectedIndex = -1;
-                update = true;
-            }
-
-            ImGui.End();
-
-            if (update) {
-                Plugin.Config.Save();
-            }
         }
     }
 }

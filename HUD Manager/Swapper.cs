@@ -1,6 +1,9 @@
 ﻿using Dalamud.Game;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Logging;
+using HUDManager.Configuration;
 using System;
+using System.Collections.Generic;
 
 namespace HUD_Manager
 {
@@ -51,7 +54,7 @@ namespace HUD_Manager
                 return;
             }
 
-            var updated = this.Plugin.Statuses.Update(player) || this.Plugin.Statuses.CustomConditionStatusUpdated;
+            var updated = this.Plugin.Statuses.Update(player) || this.Plugin.Keybinder.UpdateKeyState() || this.Plugin.Statuses.CustomConditionStatusUpdated;
 
             if (updated) {
                 this.Plugin.Statuses.SetHudLayout(null);

@@ -2,12 +2,14 @@
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using HUD_Manager.Configuration;
 using HUD_Manager.Ui;
+using HUDManager;
 using Resourcer;
 using System;
 using YamlDotNet.Serialization;
@@ -28,6 +30,7 @@ namespace HUD_Manager
         public SigScanner SigScanner { get; init; }
         public GameGui GameGui { get; init; }
         public ChatGui ChatGui { get; init; }
+        public KeyState KeyState { get; init; }
 
         private Swapper Swapper { get; set; } = null!;
         private Commands Commands { get; set; } = null!;
@@ -39,6 +42,7 @@ namespace HUD_Manager
         public HelpFile Help { get; private set; } = null!;
         public GameFunctions GameFunctions { get; init; }
         public PetHotbar PetHotbar { get; init; }
+        public Keybinder Keybinder { get; init; }
 
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
@@ -49,7 +53,8 @@ namespace HUD_Manager
             [RequiredVersion("1.0")] Framework framework,
             [RequiredVersion("1.0")] SigScanner sigScanner,
             [RequiredVersion("1.0")] GameGui gameGui,
-            [RequiredVersion("1.0")] ChatGui chatGui)
+            [RequiredVersion("1.0")] ChatGui chatGui,
+            [RequiredVersion("1.0")] KeyState keyState)
         {
             this.Interface = pluginInterface;
             this.CommandManager = commandManager;
@@ -60,6 +65,7 @@ namespace HUD_Manager
             this.SigScanner = sigScanner;
             this.GameGui = gameGui;
             this.ChatGui = chatGui;
+            this.KeyState = keyState;
 
             this.Config = Migrator.LoadConfig(this);
             this.Config.Initialize(this.Interface);
@@ -77,6 +83,7 @@ namespace HUD_Manager
             this.Swapper = new Swapper(this);
             this.Commands = new Commands(this);
             this.PetHotbar = new PetHotbar(this);
+            this.Keybinder = new Keybinder(this);
 
             if (!this.Config.FirstRun) {
                 return;
