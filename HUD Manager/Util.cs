@@ -1,4 +1,6 @@
 ﻿using Dalamud.Data;
+using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
 using System.Globalization;
@@ -20,6 +22,15 @@ namespace HUD_Manager
             unsafe {
                 var player = FFXIVClientStructs.FFXIV.Client.Game.UI.UIState.Instance()->PlayerState;
                 return player.ClassJobLevelArray[classJob.ExpArrayIndex] > 0;
+            }
+        }
+
+        public static bool GamepadModeActive(Plugin plugin)
+        {
+            unsafe {
+                var configModule = ConfigModule.Instance();
+                var option = configModule->GetValueById((short)ConfigOption.GamepadMode);
+                return (option->Byte & 1) > 0;
             }
         }
 
