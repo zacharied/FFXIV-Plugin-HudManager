@@ -40,7 +40,7 @@ namespace HUD_Manager
 
             if (argsList[0] == "swap") {
                 if (argsList.Length != 2) {
-                    Plugin.ChatGui.PrintError("invalid arguments");
+                    Plugin.ChatGui.PrintError("Invalid arguments.");
                     return;
                 }
 
@@ -53,16 +53,16 @@ namespace HUD_Manager
                 this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
             } else if (argsList[0] == "condition") {
                 if (argsList.Length != 3) {
-                    Plugin.ChatGui.PrintError("invalid argument count");
+                    Plugin.ChatGui.PrintError("Invalid arguments.");
                     return;
                 }
 
                 var cond = Plugin.Config.CustomConditions.Find(c => c.Name == argsList[1]);
                 if (cond is null) {
-                    Plugin.ChatGui.PrintError("invalid condition");
+                    Plugin.ChatGui.PrintError($"Invalid condition \"{argsList[1]}\".");
                     return;
                 } else if (cond.ConditionType != CustomConditionType.ConsoleToggle) {
-                    Plugin.ChatGui.PrintError("that condition cannot be toggled by commands");
+                    Plugin.ChatGui.PrintError("That condition cannot be toggled by commands.");
                     return;
                 }
 
@@ -81,7 +81,7 @@ namespace HUD_Manager
                 }
 
                 if (!val.HasValue) {
-                    Plugin.ChatGui.PrintError("invalid setting");
+                    Plugin.ChatGui.PrintError($"Invalid setting \"{argsList[2]}\".");
                     return;
                 }
 
