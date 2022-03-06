@@ -1,4 +1,5 @@
-﻿using Dalamud.Hooking;
+﻿using Dalamud.Game;
+using Dalamud.Hooking;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager.Configuration;
@@ -33,6 +34,14 @@ namespace HUD_Manager
         private readonly SetHudLayoutDelegate? _setHudLayout;
         private Hook<SetHudLayoutDelegate> _setHudLayoutHook;
 
+        /// <summary>
+        /// Sometimes job gauges don't appear on the frame that we switch to another class, but the HUD swap happens
+        /// regardless. This results in job gauges sometimes not having their visibility settings applied.
+        /// The key here is the kv-pair from the list of Elements in the layout, and the value is how many frames
+        /// the corrrect visibility has been set for.
+        /// </summary>
+        private readonly Dictionary<(ElementKind k, Element v), int> _forceHideJobGauges = new();
+
         private Plugin Plugin { get; }
 
         public Hud(Plugin plugin)
@@ -52,6 +61,8 @@ namespace HUD_Manager
             // Set up the hook to refresh the pet hotbar when HUD is changed.
             this._setHudLayoutHook = new Hook<SetHudLayoutDelegate>(setHudLayoutPtr, this.SetHudLayoutDetour);
             this._setHudLayoutHook.Enable();
+
+            plugin.Framework.Update += RunRecurringTasks;
         }
 
         public IntPtr GetFilePointer(byte index)
@@ -266,20 +277,13 @@ namespace HUD_Manager
             this.WriteLayout(slot, effective.Elements);
 
             // Apply visibility parameters to job gauges, which don't work like other UI components.
-            foreach (var element in effective.Elements.Where(e => e.Key.IsJobGauge())) {
-                if (element.Value[ElementComponent.Visibility]) {
-                    var unitName = element.Key.GetJobGaugeAtkName(Plugin.DataManager);
-                    unsafe {
-                        var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName, 1);
-                        if (unit != null) {
-                            if ((element.Value.Visibility & VisibilityFlags.Keyboard) > 0) {
-                                if (unit->UldManager.NodeListCount == 0)
-                                    unit->UldManager.UpdateDrawNodeList();
-                            } else {
-                                unit->UldManager.NodeListCount = 0;
-                            }
-                        }
+            var player = Plugin.ClientState.LocalPlayer;
+            if (player is not null && player.ClassJob.GameData is not null) {
+                foreach (var element in effective.Elements.Where(e => e.Key.IsJobGauge())) {
+                    if (element.Key.ClassJob(Plugin.DataManager) == player.ClassJob.GameData) {
+                        _forceHideJobGauges[(element.Key, element.Value)] = default;
                     }
+                       
                 }
             }
 
@@ -308,6 +312,50 @@ namespace HUD_Manager
             }
         }
 
+        /// <summary>
+        /// Generic function meant to be added to the Framework.Update event.
+        /// Runs any cleanup or persistent code needed by this module.
+        /// </summary>
+        public void RunRecurringTasks(Framework _)
+        {
+            // Force job gauge visibility to set to the desired value.
+            // If the correct visibility has been set, frames increases by 1.
+            // If the unit is null, frames will start at 0 and decrease by 1 every frame. This is to perform emergency cleanup if
+            //  somehow remains in the list after a job switch.
+            foreach (var ((kind, element), frames) in _forceHideJobGauges) {
+                if (element[ElementComponent.Visibility]) {
+                    if (Math.Abs(frames) > 3) {
+                        // Stop applying visibility if we've had 3 frames of no changes.
+                        _forceHideJobGauges.Remove((kind, element));
+                        continue;
+                    }
+
+                    var unitName = kind.GetJobGaugeAtkName(Plugin.DataManager)!;
+                    unsafe {
+                        var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName, 1);
+                        if (unit != null) {
+                            if ((element.Visibility & VisibilityFlags.Keyboard) > 0) {
+                                // Reveal element.
+                                if (unit->UldManager.NodeListCount == 0) 
+                                    unit->UldManager.UpdateDrawNodeList();
+                                else
+                                    _forceHideJobGauges[(kind, element)]++;
+                            } else {
+                                // Hide element.
+                                if (unit->UldManager.NodeListCount > 0)
+                                    unit->UldManager.NodeListCount = 0;
+                                else
+                                    _forceHideJobGauges[(kind, element)]++;
+                            }
+                        } else {
+                            _forceHideJobGauges[(kind, element)] = Math.Min(frames, 0);
+                            _forceHideJobGauges[(kind, element)]--;
+                        }
+                    }
+                }
+            }
+        }
+
         private uint SetHudLayoutDetour(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1)
         {
             var res = this._setHudLayoutHook.Original(filePtr, hudLayout, unk0, unk1);
@@ -319,6 +367,7 @@ namespace HUD_Manager
         {
             this._setHudLayoutHook.Disable();
             this._setHudLayoutHook.Dispose();
+            this.Plugin.Framework.Update -= RunRecurringTasks;
         }
     }
 
