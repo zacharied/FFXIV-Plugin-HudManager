@@ -282,9 +282,8 @@ namespace HUD_Manager
                 foreach (var element in effective.Elements.Where(e => e.Key.IsJobGauge())) {
                     if (element.Key.ClassJob(Plugin.DataManager) == player.ClassJob.GameData) {
                         _forceHideJobGauges[(element.Key, element.Value)] = default;
+                        ApplyJobGaugeVisibility(element.Key, element.Value);
                     }
-
-                    ApplyJobGaugeVisibility(element.Key, element.Value);
                 }
             }
 
@@ -338,11 +337,11 @@ namespace HUD_Manager
 
         public unsafe int ApplyJobGaugeVisibility(ElementKind kind, Element element, int frames = 0)
         {
-            var ret = frames;
             var unitName = kind.GetJobGaugeAtkName(Plugin.DataManager)!;
             unsafe {
                 var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName, 1);
                 if (unit != null) {
+                    frames = Math.Max(frames, 0);
                     var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
                     if ((element.Visibility & visibilityMask) > 0) {
                         // Reveal element.
@@ -358,11 +357,11 @@ namespace HUD_Manager
                             frames++;
                     }
                 } else {
-                    _forceHideJobGauges[(kind, element)] = Math.Min(frames, 0);
+                    frames = Math.Min(frames, 0);
                     frames--;
                 }
             }
-            return ret;
+            return frames;
         }
 
         private uint SetHudLayoutDetour(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1)
