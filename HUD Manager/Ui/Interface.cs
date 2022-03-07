@@ -1,4 +1,5 @@
-﻿using HUD_Manager.Ui.Editor;
+﻿using Dalamud.Interface;
+using HUD_Manager.Ui.Editor;
 using ImGuiNET;
 using System;
 using System.Numerics;
@@ -65,8 +66,8 @@ namespace HUD_Manager.Ui
 
             bool update = false;
 
-            ImGui.SetNextWindowSize(new Vector2(500, 475), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowSizeConstraints(new Vector2(800, 800), new Vector2(int.MaxValue, int.MaxValue));
+            ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(530, 530), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSizeConstraints(ImGuiHelpers.ScaledVector2(530, 530), new Vector2(int.MaxValue, int.MaxValue));
 
             if (!ImGui.Begin(this.Plugin.Name, ref this._settingsVisible)) {
                 return;

@@ -32,7 +32,7 @@ namespace HUDManager.Ui
             bool update = false;
 
             ImGuiWindowFlags flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking;
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, new Vector2(700, 950));
+            ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, ImGuiHelpers.ScaledVector2(465, 630));
             if (!ImGui.Begin("[HUD Manager] Custom Conditions", ref windowOpen, flags)) {
                 ImGui.End();
                 ImGui.PopStyleVar();
@@ -55,7 +55,7 @@ namespace HUDManager.Ui
 
         private void DrawConditionSelectorPane(ref bool update)
         {
-            const int PaneWidth = 250;
+            int PaneWidth = (int)(170f * ImGuiHelpers.GlobalScale);
 
             ImGui.BeginGroup();
 
@@ -194,7 +194,7 @@ namespace HUDManager.Ui
             if (activeCondition is null)
                 return;
 
-            ImGui.PushItemWidth(150);
+            ImGui.PushItemWidth(100 * ImGuiHelpers.GlobalScale);
 
             // Modifier key
             var modifierKeyDisplay = activeCondition.ModifierKeyCode.GetFancyName();
@@ -209,7 +209,7 @@ namespace HUDManager.Ui
             }
 
             ImGui.PopItemWidth();
-            ImGui.PushItemWidth(200);
+            ImGui.PushItemWidth(135 * ImGuiHelpers.GlobalScale);
 
             // Input key
             var inputKeyDisplay = activeCondition.KeyCode.GetFancyName();
