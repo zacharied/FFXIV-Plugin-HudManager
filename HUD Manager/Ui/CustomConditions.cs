@@ -32,13 +32,14 @@ namespace HUDManager.Ui
             bool update = false;
 
             ImGuiWindowFlags flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking;
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, ImGuiHelpers.ScaledVector2(465, 630));
+
+            ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(510, 630), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSizeConstraints(ImGuiHelpers.ScaledVector2(480, 630), new Vector2(int.MaxValue, int.MaxValue));
+
             if (!ImGui.Begin("[HUD Manager] Custom Conditions", ref windowOpen, flags)) {
                 ImGui.End();
-                ImGui.PopStyleVar();
                 return;
             }
-            ImGui.PopStyleVar();
 
             DrawConditionSelectorPane(ref update);
 
@@ -55,7 +56,7 @@ namespace HUDManager.Ui
 
         private void DrawConditionSelectorPane(ref bool update)
         {
-            int PaneWidth = (int)(170f * ImGuiHelpers.GlobalScale);
+            float PaneWidth = 170f * ImGuiHelpers.GlobalScale;
 
             ImGui.BeginGroup();
 

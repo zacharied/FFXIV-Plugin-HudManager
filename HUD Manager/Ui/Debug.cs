@@ -116,59 +116,7 @@ namespace HUD_Manager.Ui
                 foreach (var row in Plugin.DataManager.GetExcelSheet<ClassJob>()!)
                     s += $"[{row.RowId}] = \"{row.Abbreviation}\",\n";
                 Plugin.ChatGui.Print(s);
-            }
-            
-
-            // var layoutPtr = this.Plugin.Hud.GetDefaultLayoutPointer() + 8;
-            //
-            // for (var i = 0; i < 291; i++) {
-            //     var rawElement = Marshal.PtrToStructure<RawElement>(layoutPtr + i * Marshal.SizeOf<RawElement>());
-            //     var element = new Element(rawElement);
-            //
-            //     if ((WindowKind) rawElement.id != WindowKind.FreeCompany) {
-            //         continue;
-            //     }
-            //
-            //     ImGui.TextUnformatted($"{(WindowKind) rawElement.id}");
-            //     ImGui.TextUnformatted($"Measured from: {rawElement.measuredFrom.Name()}");
-            //     ImGui.TextUnformatted($"Width: {rawElement.width}");
-            //     ImGui.TextUnformatted($"Height: {rawElement.height}");
-            //
-            //     var screen = ImGui.GetIO().DisplaySize;
-            //     var (pos, _) = CalcPosAndSize(element);
-            //
-            //     var x = pos.X;
-            //     if (ImGui.DragFloat($"X##addon-{rawElement.id}", ref x, this._dragSpeed)) {
-            //         this.Plugin.GameFunctions.SetAddonPosition("FreeCompany", (short) x, (short) pos.Y);
-            //     }
-            //
-            //     var y = pos.Y;
-            //     if (ImGui.DragFloat($"Y##addon-{rawElement.id}", ref y, this._dragSpeed)) {
-            //         this.Plugin.GameFunctions.SetAddonPosition("FreeCompany", (short) pos.X, (short) y);
-            //     }
-            //
-            //     ImGui.TextUnformatted($"X: {rawElement.x}/{(short) Math.Round(rawElement.x * screen.X / 100)}");
-            //     ImGui.TextUnformatted($"Y: {rawElement.y}/{(short) Math.Round(rawElement.y * screen.Y / 100)}");
-            //
-            //     var opacity = (int) rawElement.opacity;
-            //     if (ImGui.InputInt($"Opacity##addon-{rawElement.id}", ref opacity)) {
-            //         rawElement.opacity = (byte) Math.Max(0, Math.Min(255, opacity));
-            //         Marshal.StructureToPtr(rawElement, layoutPtr + i * Marshal.SizeOf<RawElement>(), false);
-            //         this.Plugin.GameFunctions.SetAddonAlpha("FreeCompany", rawElement.opacity);
-            //     }
-            //
-            //     if (ImGui.Button("Print addon address")) {
-            //         var ptr = this.Plugin.GameGui.GetAddonByName("FreeCompany", 1).Address;
-            //         this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
-            //     }
-            //
-            //     if (ImGui.Button("Print base UI object address")) {
-            //         var ptr = this.Plugin.GameGui.GetBaseUIObject();
-            //         this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
-            //     }
-            //
-            //     ImGui.Separator();
-            // }
+            }            
 
             ImGui.EndTabItem();
         }
