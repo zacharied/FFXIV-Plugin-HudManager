@@ -369,6 +369,6 @@ namespace HUD_Manager.Structs
         }
 
         // TODO Solution that works with more than 2 job gauges (idk though)
-        private static readonly string[] AtkElementReverseOrderedJobs = { "NIN" };
+        private static readonly string[] AtkElementReverseOrderedJobs = { "NIN", "SMN", "SCH" };
     }
 }
