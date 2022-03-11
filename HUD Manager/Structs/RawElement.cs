@@ -14,7 +14,7 @@ namespace HUD_Manager.Structs
         public float scale;
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-        public byte[] options;
+        public byte[]? options;
 
         public ushort width;
 
@@ -30,7 +30,7 @@ namespace HUD_Manager.Structs
 
         // last two bytes are padding
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-        public byte[] unknown8;
+        public byte[]? unknown8;
 
         public RawElement(Element element)
         {

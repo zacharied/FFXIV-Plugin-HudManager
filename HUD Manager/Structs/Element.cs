@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dalamud.Logging;
+using System;
 
 namespace HUD_Manager.Structs
 {
@@ -22,7 +23,7 @@ namespace HUD_Manager.Structs
 
         public float Scale { get; set; }
 
-        public byte[] Options { get; set; }
+        public byte[]? Options { get; set; }
 
         public ushort Width { get; set; }
 
@@ -36,7 +37,7 @@ namespace HUD_Manager.Structs
 
         public byte Opacity { get; set; }
 
-        public byte[] Unknown8 { get; set; }
+        public byte[]? Unknown8 { get; set; }
 
         public bool this[VisibilityFlags flags]
         {
@@ -95,14 +96,14 @@ namespace HUD_Manager.Structs
                 X = this.X,
                 Y = this.Y,
                 Scale = this.Scale,
-                Options = (byte[])this.Options.Clone(),
+                Options = (byte[]?)this.Options?.Clone(),
                 Width = this.Width,
                 Height = this.Height,
                 MeasuredFrom = this.MeasuredFrom,
                 Visibility = this.Visibility,
                 Unknown6 = this.Unknown6,
                 Opacity = this.Opacity,
-                Unknown8 = (byte[])this.Unknown8.Clone(),
+                Unknown8 = (byte[]?)this.Unknown8?.Clone()
             };
         }
 

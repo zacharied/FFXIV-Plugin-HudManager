@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Logging;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Structs.Options;
@@ -91,6 +92,18 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 }
 
                 if (!ImGui.CollapsingHeader($"{name}##{kind}-{this.Ui.SelectedLayout}")) {
+                    continue;
+                }
+
+                // Unknown8 seems like it will be null if the element hasn't appeared yet.
+                if (element.Unknown8 is null) {
+                    ImGui.Text("Unable to configure this element.");
+                    ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.GetStyle().ItemSpacing.X * 4 * ImGuiHelpers.GlobalScale);
+                    if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}-unk")) {
+                        toRemove.Add(kind);
+                        update = true;
+                    }
+                    ImGui.Text("Please ensure it has been visible on your screen at least once.");
                     continue;
                 }
 
@@ -298,6 +311,9 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 }
 
                 if (kind == ElementKind.TargetBar) {
+                    if (element.Options is null) {
+                        goto EndTargetBar;
+                    }
                     var targetBarOpts = new TargetBarOptions(element.Options);
 
                     ImGui.TableNextColumn();
@@ -313,9 +329,13 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
                     ImGui.PopItemWidth();
                     ImGui.TableNextRow();
+
+                    EndTargetBar:;
                 }
 
                 if (kind == ElementKind.StatusEffects) {
+                    if (element.Options is null)
+                        goto EndStatusEffects;
                     var statusOpts = new StatusOptions(element.Options);
 
                     ImGui.TableNextColumn();
@@ -338,9 +358,14 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
                     ImGui.PopItemWidth();
                     ImGui.TableNextRow();
+
+                    EndStatusEffects:;
                 }
 
                 if (kind is ElementKind.StatusInfoEnhancements or ElementKind.StatusInfoEnfeeblements or ElementKind.StatusInfoOther) {
+                    if (element.Options is null)
+                        goto EndStatusInfo;
+
                     var statusOpts = new StatusInfoOptions(kind, element.Options);
 
                     ImGui.TableNextColumn();
@@ -397,6 +422,8 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     }
 
                     ImGui.PopItemWidth();
+
+                    EndStatusInfo:;
                 }
 
                 if (kind.IsHotbar()) {
@@ -440,14 +467,18 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     ImGui.TableNextRow();
                 }
 
-                if (kind.IsJobGauge()) {
-                    var gaugeOpts = new GaugeOptions(element.Options);
+                if (kind.IsJobGauge()) { 
+                    if (element.Options is null)
+                        goto EndJobGauge;
 
                     ImGui.TableNextColumn();
                     ImGui.TableNextColumn();
                     DrawSettingName("Simple");
 
                     ImGui.PushItemWidth(-1);
+
+                    var gaugeOpts = new GaugeOptions(element.Options);
+
                     var simple = gaugeOpts.Style == GaugeStyle.Simple;
                     if (ImGui.Checkbox($"##simple-{kind}", ref simple)) {
                         gaugeOpts.Style = simple ? GaugeStyle.Simple : GaugeStyle.Normal;
@@ -456,6 +487,8 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
                     ImGui.PopItemWidth();
                     ImGui.TableNextRow();
+
+                    EndJobGauge:;
                 }
 
                 ImGui.EndTable();
