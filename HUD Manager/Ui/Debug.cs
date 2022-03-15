@@ -4,6 +4,7 @@ using HUD_Manager.Structs;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -72,6 +73,22 @@ namespace HUD_Manager.Ui
                 var layout = Marshal.PtrToStructure<Layout>(ptr);
                 this.PreviousLayout = layout;
             }
+
+            if (ImGui.Button("Find unknown IDs")) {
+                var items = new List<ElementKind>();
+                var ptr = Plugin.Hud.GetLayoutPointer(HudSlot.Four);
+                for (int i = 0; i < 92; i++) {
+                    var idPtr = (ptr + i * Marshal.SizeOf<RawElement>()) + 0;
+                    var id = Marshal.ReadInt32(idPtr);
+                    items.Add((ElementKind)(uint)id);
+                }
+
+                var diff = items.Except(Enum.GetValues<ElementKind>());
+                foreach (var v in diff) {
+                    PluginLog.Log($"Unknown ID: {v}");
+                }
+            }
+
 
             ImGui.SameLine();
 
