@@ -45,6 +45,7 @@ namespace HUD_Manager.Structs
         FaerieGauge = 2712183943, // SCH
         HealingGauge = 2050434994, // WHM
         DragonGauge = 3130538176, // DRG
+        MastersGauge = 1917955123, // MNK
         ChakraGauge = 1939064324, // MNK
         HutonGauge = 1895405704, // NIN
         NinkiGauge = 1899754175, // NIN
@@ -91,7 +92,7 @@ namespace HUD_Manager.Structs
         BattleHighGauge = 884971695,
         LeftWCrossHotbar = 1717924701,
         RightWCrossHotbar = 1893596455,
-        OceanFishingVoyageMissions = 1917955123,
+        OceanFishingVoyageMissions = 1, // TODO Fix this or something
         Timers = 2578885979,
     }
 
@@ -126,7 +127,7 @@ namespace HUD_Manager.Structs
                 ElementKind.Hotbar9 => 8,
                 ElementKind.Hotbar10 => 9,
                 ElementKind.PetHotbar => 10,
-               // ElementKind.CrossHotbar => 11,
+                ElementKind.CrossHotbar => 11,
                 ElementKind.ProgressBar => 12,
                 ElementKind.TargetBar => 13,
                 ElementKind.FocusTargetBar => 14,
@@ -197,12 +198,13 @@ namespace HUD_Manager.Structs
                 ElementKind.BattleHighGauge => 82,
                 ElementKind.NewGamePlusGuide => 83,
                 ElementKind.CompressedAether => 84,
-                ElementKind.OceanFishingVoyageMissions => 85,
+                //ElementKind.OceanFishingVoyageMissions => 85,
                 ElementKind.StatusInfoConditionalEnhancements => 86,
                 ElementKind.SoulGauge => 87,
                 ElementKind.DeathGauge => 88,
                 ElementKind.EukrasiaGauge => 89,
                 ElementKind.AddersgallGauge => 90,
+                ElementKind.MastersGauge => 91,
                 _ => null,
             };
 
@@ -257,6 +259,7 @@ namespace HUD_Manager.Structs
                 case ElementKind.EukrasiaGauge:
                 case ElementKind.SoulGauge:
                 case ElementKind.DeathGauge:
+                case ElementKind.MastersGauge:
                     return true;
                 default:
                     return false;
@@ -288,6 +291,7 @@ namespace HUD_Manager.Structs
                 case ElementKind.DarksideGauge:
                     return FindClassJob(12);
                 case ElementKind.ChakraGauge:
+                case ElementKind.MastersGauge:
                     return FindClassJob(2);
                 case ElementKind.DragonGauge:
                     return FindClassJob(4);
