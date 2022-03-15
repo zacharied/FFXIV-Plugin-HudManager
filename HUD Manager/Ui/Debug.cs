@@ -17,6 +17,8 @@ namespace HUD_Manager.Ui
 
         private Layout? PreviousLayout { get; set; }
 
+        private (bool drawUnknownIds, bool _) Ui = (false, false);
+
         public Debug(Plugin plugin)
         {
             this.Plugin = plugin;
@@ -74,23 +76,19 @@ namespace HUD_Manager.Ui
                 this.PreviousLayout = layout;
             }
 
+            var unknowns = GetUnknownElements();
             if (ImGui.Button("Find unknown IDs")) {
-                var items = new List<ElementKind>();
-                var ptr = Plugin.Hud.GetLayoutPointer(HudSlot.Four);
-                for (int i = 0; i < 92; i++) {
-                    var idPtr = (ptr + i * Marshal.SizeOf<RawElement>()) + 0;
-                    var id = Marshal.ReadInt32(idPtr);
-                    items.Add((ElementKind)(uint)id);
-                }
-
-                var diff = items.Except(Enum.GetValues<ElementKind>());
-                foreach (var v in diff) {
-                    PluginLog.Log($"Unknown ID: {v}");
+                foreach (var v in unknowns) {
+                    PluginLog.Log($"Unknown ID: {v.id}");
                 }
             }
 
-
             ImGui.SameLine();
+
+            ImGui.Checkbox("Draw unknown ID labels", ref Ui.drawUnknownIds);
+            if (Ui.drawUnknownIds) {
+                DrawUnknownIdElements(unknowns);
+            }
 
             if (ImGui.Button("Find difference") && this.PreviousLayout != null) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
@@ -136,6 +134,49 @@ namespace HUD_Manager.Ui
             }            
 
             ImGui.EndTabItem();
+        }
+
+        private List<RawElement> GetUnknownElements()
+        {
+            var items = new List<RawElement>();
+
+            foreach (var hudSlot in Enum.GetValues<HudSlot>()) {
+                var ptr = Plugin.Hud.GetLayoutPointer(hudSlot);
+                for (int i = 0; i < 92; i++) {
+                    var idPtr = (ptr + i * Marshal.SizeOf<RawElement>()) + 0;
+                    var id = Marshal.ReadInt32(idPtr);
+                    if (id == 0 || items.Exists(r => (uint)r.id == (uint)id))
+                        continue;
+                    items.Add(Marshal.PtrToStructure<RawElement>(idPtr));
+                }
+            }
+
+            return items.Where(e => !Enum.IsDefined(e.id)).ToList();
+        }
+
+        private void DrawUnknownIdElements(IEnumerable<RawElement> list)
+        {
+            const ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar
+                               | ImGuiWindowFlags.NoResize
+                               | ImGuiWindowFlags.NoFocusOnAppearing
+                               | ImGuiWindowFlags.NoScrollbar
+                               | ImGuiWindowFlags.NoMove;
+
+            foreach (var raw in list) {
+                var element = new Element(raw);
+                var (pos, size) = ImGuiExt.ConvertGameToImGui(element);
+                ImGui.SetNextWindowPos(pos, ImGuiCond.Appearing);
+
+                ImGui.SetNextWindowSize(size);
+
+                if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
+                    continue;
+                }
+
+                ImGui.TextUnformatted(element.Id.LocalisedName(this.Plugin.DataManager));
+
+                ImGui.End();
+            }
         }
     }
 #endif

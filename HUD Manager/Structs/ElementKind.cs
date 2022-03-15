@@ -126,7 +126,7 @@ namespace HUD_Manager.Structs
                 ElementKind.Hotbar9 => 8,
                 ElementKind.Hotbar10 => 9,
                 ElementKind.PetHotbar => 10,
-                ElementKind.CrossHotbar => 11,
+               // ElementKind.CrossHotbar => 11,
                 ElementKind.ProgressBar => 12,
                 ElementKind.TargetBar => 13,
                 ElementKind.FocusTargetBar => 14,
