@@ -6,12 +6,15 @@ using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.Command;
 using Dalamud.Game.Gui;
 using Dalamud.IoC;
+using Dalamud.Logging;
 using Dalamud.Plugin;
 using HUD_Manager.Configuration;
 using HUD_Manager.Ui;
 using HUDManager;
 using Resourcer;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -49,7 +52,7 @@ namespace HUD_Manager
             [RequiredVersion("1.0")] CommandManager commandManager,
             [RequiredVersion("1.0")] DataManager dataManager,
             [RequiredVersion("1.0")] ClientState clientState,
-            [RequiredVersion("1.0")] Condition condition,
+            [RequiredVersion("1.0")] Dalamud.Game.ClientState.Conditions.Condition condition,
             [RequiredVersion("1.0")] Framework framework,
             [RequiredVersion("1.0")] SigScanner sigScanner,
             [RequiredVersion("1.0")] GameGui gameGui,
@@ -66,6 +69,8 @@ namespace HUD_Manager
             this.GameGui = gameGui;
             this.ChatGui = chatGui;
             this.KeyState = keyState;
+
+            ClassJobCategoryIdExtensions.Initialize(this);
 
             this.Config = Migrator.LoadConfig(this);
             this.Config.Initialize(this.Interface);

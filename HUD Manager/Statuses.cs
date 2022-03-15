@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using HUDManager;
 using HUDManager.Configuration;
 using Lumina.Excel.GeneratedSheets;
 using Newtonsoft.Json;
@@ -196,7 +197,7 @@ namespace HUD_Manager
 
     public class HudConditionMatch
     {
-        public uint? ClassJob { get; set; }
+        public ClassJobCategoryId? ClassJobCategory { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
         public Status? Status { get; set; }
@@ -208,9 +209,16 @@ namespace HUD_Manager
 
         public bool IsActivated(Plugin plugin)
         {
+            var player = plugin.ClientState.LocalPlayer;
+            if (player is null) {
+                PluginLog.Warning("can't check job activation when player is null");
+                return false;
+            }
+
             bool statusMet = !this.Status.HasValue || plugin.Statuses.Condition[this.Status.Value];
             bool customConditionMet = this.CustomCondition?.IsMet(plugin) ?? true;
-            bool jobMet = this.ClassJob == null || plugin.Statuses.Job?.RowId == this.ClassJob;
+            bool jobMet = this.ClassJobCategory is null 
+                || this.ClassJobCategory.Value.IsActivated(plugin.ClientState.LocalPlayer!.ClassJob.GameData!);
 
             return statusMet && customConditionMet && jobMet;
         }
