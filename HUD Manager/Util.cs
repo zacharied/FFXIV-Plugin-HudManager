@@ -10,6 +10,14 @@ namespace HUD_Manager
 {
     public static class Util
     {
+        static Util()
+        {
+            EnglishAbbreviationToJobId = new();
+            foreach (var (k, v) in JobIdToEnglishAbbreviation) {
+                EnglishAbbreviationToJobId[v] = k;
+            }
+        }
+
         public static bool ContainsIgnoreCase(this string haystack, string needle)
         {
             return CultureInfo.InvariantCulture.CompareInfo.IndexOf(haystack, needle, CompareOptions.IgnoreCase) >= 0;
@@ -77,5 +85,6 @@ namespace HUD_Manager
             [39] = "RPR",
             [40] = "SGE",
         };
+        public readonly static Dictionary<string, uint> EnglishAbbreviationToJobId;
     }
 }

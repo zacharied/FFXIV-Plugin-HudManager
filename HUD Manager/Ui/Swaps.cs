@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using HUD_Manager.Structs;
+using HUDManager;
 using HUDManager.Configuration;
 using HUDManager.Ui;
 using ImGuiNET;
@@ -137,19 +138,21 @@ namespace HUD_Manager.Ui
                     // Editing in progress
                     this._editingCondition ??= new HudConditionMatch();
 
-                    var jobDisplayName = this._editingCondition.ClassJob is not null
-                        ? Util.JobIdToEnglishAbbreviation[this._editingCondition.ClassJob.Value]
-                        : "Any";
+                    var jobDisplayName = this._editingCondition.ClassJobCategory?.DisplayName(Plugin) ?? "Any";
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo("##condition-edit-job", jobDisplayName)) {
                         if (ImGui.Selectable("Any##condition-edit-job")) {
-                            this._editingCondition.ClassJob = null;
+                            this._editingCondition.ClassJobCategory = null;
                         }
 
-                        foreach (var job in this.Plugin.DataManager.GetExcelSheet<ClassJob>().Skip(1)) {
-                            if (ImGui.Selectable($"{job.Abbreviation}##condition-edit-job")) {
-                                this._editingCondition.ClassJob = job.RowId;
+                        foreach (var group in ClassJobCategoryIdExtensions.ClassJobCategoryGroupings) {
+                            ImGui.Selectable($"⸻⸻", false, ImGuiSelectableFlags.Disabled);
+                            foreach (var classJobCat in group.OrderBy(c => c.DisplayName(Plugin)))
+                            {
+                                if (ImGui.Selectable($"{classJobCat.DisplayName(Plugin)}##condition-edit-job")) {
+                                    this._editingCondition.ClassJobCategory = classJobCat;
+                                }
                             }
                         }
 
@@ -221,9 +224,7 @@ namespace HUD_Manager.Ui
 
                     ImGui.TableNextColumn();
                 } else {
-                    var jobDisplayName = item.cond.ClassJob is not null
-                        ? Util.JobIdToEnglishAbbreviation[item.cond.ClassJob.Value]
-                        : string.Empty;
+                    var jobDisplayName = item.cond.ClassJobCategory?.DisplayName(Plugin) ?? String.Empty;
 
                     ImGui.TextUnformatted(jobDisplayName);
                     ImGui.TableNextColumn();
