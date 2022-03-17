@@ -123,22 +123,26 @@ namespace HUD_Manager.Ui
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
 
-                // Layered checkbox can just always be there, i guess
-                if (advancedMode) {
-                    bool applyLayer = item.cond.IsLayer;
-                    if (ImGui.Checkbox($"##condition-layered-{item.i}", ref applyLayer)) {
-                        item.cond.IsLayer = applyLayer;
-                        update = true;
-                    }
-
-                    ImGui.TableNextColumn();
-                }
 
                 if (this._editingConditionIndex == item.i) {
                     // Editing in progress
                     this._editingCondition ??= new HudConditionMatch();
 
                     var jobDisplayName = this._editingCondition.ClassJobCategory?.DisplayName(Plugin) ?? "Any";
+
+                    // Column: Layer
+
+                    if (advancedMode) {
+                        bool applyLayer = item.cond.IsLayer;
+                        if (ImGui.Checkbox($"##condition-layered-{item.i}", ref applyLayer)) {
+                            item.cond.IsLayer = applyLayer;
+                            update = true;
+                        }
+
+                        ImGui.TableNextColumn();
+                    }
+
+                    // Column: Job
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo("##condition-edit-job", jobDisplayName)) {
@@ -224,6 +228,15 @@ namespace HUD_Manager.Ui
 
                     ImGui.TableNextColumn();
                 } else {
+                    if (advancedMode) {
+                        if (item.cond.IsLayer) {
+                            ImGui.PushFont(UiBuilder.IconFont);
+                            ImGuiExt.CenterColumnText(FontAwesomeIcon.Check.ToIconString());
+                            ImGui.PopFont();
+                        }
+                        ImGui.TableNextColumn();
+                    }
+
                     var jobDisplayName = item.cond.ClassJobCategory?.DisplayName(Plugin) ?? String.Empty;
 
                     ImGui.TextUnformatted(jobDisplayName);
