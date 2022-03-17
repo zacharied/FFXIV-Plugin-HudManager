@@ -43,20 +43,20 @@ namespace HUD_Manager.Ui.Editor
         internal void Draw()
         {
             if (!ImGui.BeginTabItem("Layout editor")) {
+                Plugin.Swapper.SwapsTemporarilyDisabled = false;
                 return;
             }
 
             var update = false;
 
-            if (this.Plugin.Config.SwapsEnabled) {
+            if (!Plugin.Swapper.SwapsTemporarilyDisabled) {
                 ImGui.TextUnformatted("Cannot edit layouts while swaps are enabled.");
 
-                if (ImGui.Button("Disable swaps")) {
-                    this.Plugin.Config.SwapsEnabled = false;
-                    this.Plugin.Config.Save();
+                if (ImGui.Button("Temporarily disable swaps")) {
+                    Plugin.Swapper.SwapsTemporarilyDisabled = true;
+                } else {
+                    goto EndTabItem;
                 }
-
-                goto EndTabItem;
             }
 
             var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);

@@ -11,6 +11,8 @@ namespace HUD_Manager
     {
         private Plugin Plugin { get; }
 
+        public bool SwapsTemporarilyDisabled = false;
+
         private bool firstTerritoryChangeFired = false;
 
         public Swapper(Plugin plugin)
@@ -45,7 +47,7 @@ namespace HUD_Manager
 
         public void OnFrameworkUpdate(Framework framework)
         {
-            if (!this.Plugin.Config.SwapsEnabled || !this.Plugin.Config.UnderstandsRisks) {
+            if (!this.Plugin.Config.SwapsEnabled || SwapsTemporarilyDisabled || !this.Plugin.Config.UnderstandsRisks) {
                 return;
             }
 

@@ -35,7 +35,7 @@ namespace HUD_Manager
         public ChatGui ChatGui { get; init; }
         public KeyState KeyState { get; init; }
 
-        private Swapper Swapper { get; set; } = null!;
+        public Swapper Swapper { get; set; } = null!;
         private Commands Commands { get; set; } = null!;
 
         public Interface Ui { get; private set; } = null!;
