@@ -54,9 +54,9 @@ namespace HUD_Manager.Ui.Editor
 
                 if (ImGui.Button("Temporarily disable swaps")) {
                     Plugin.Swapper.SwapsTemporarilyDisabled = true;
-                } else {
-                    goto EndTabItem;
                 }
+
+                goto EndTabItem;
             }
 
             var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);
