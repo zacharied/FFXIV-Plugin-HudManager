@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 
 // TODO: Zone swaps?
@@ -281,10 +282,18 @@ namespace HUD_Manager
             throw new ApplicationException($"No name was set up for {status}");
         }
 
-        public static bool Active(this Status status, Plugin plugin, Character player)
+        public static bool Active(this Status status, Plugin plugin, Character? player = null)
         {
+            // Temporary stopgap until we remove the argument entirely
+            if (player == null)
+                player = plugin.ClientState.LocalPlayer;
+
+            // Player being null is a common enough edge case that callers of this function shouldn't have
+            //  to catch an exception on their own. We can't really do anything useful if it's null so we
+            //  might as well just return false here; it makes no difference to the caller.
             if (player == null) {
-                throw new ArgumentNullException(nameof(player), "PlayerCharacter cannot be null");
+                if (RequiresPlayer.Contains(status))
+                    return false;
             }
 
             if (status > 0) {
@@ -294,11 +303,11 @@ namespace HUD_Manager
 
             switch (status) {
                 case Status.WeaponDrawn:
-                    return (Statuses.GetStatus(player) & 4) > 0;
+                    return (Statuses.GetStatus(player!) & 4) > 0;
                 case Status.Roleplaying:
-                    return Statuses.GetOnlineStatus(player) == 22;
+                    return Statuses.GetOnlineStatus(player!) == 22;
                 case Status.PlayingMusic:
-                    return Statuses.GetBardThing(player) == 16;
+                    return Statuses.GetBardThing(player!) == 16;
                 case Status.InPvp:
                     return plugin.Statuses.InPvpZone;
                 case Status.InDialogue:
@@ -306,14 +315,23 @@ namespace HUD_Manager
                         | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
                         | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
                 case Status.InFate:
-                    return plugin.Statuses.IsInFate(player);
+                    return plugin.Statuses.IsInFate(player!);
                 case Status.InFateLevelSynced:
-                    return plugin.Statuses.IsInFate(player) && plugin.Statuses.IsLevelSynced(player);
+                    return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
                 case Status.InSanctuary:
                     return plugin.Statuses.IsInSanctuary();
             }
 
             return false;
         }
+
+        private static readonly ReadOnlyCollection<Status> RequiresPlayer = new(new List<Status>()
+        {
+            Status.WeaponDrawn,
+            Status.Roleplaying,
+            Status.PlayingMusic,
+            Status.InFate,
+            Status.InFateLevelSynced
+        });
     }
 }

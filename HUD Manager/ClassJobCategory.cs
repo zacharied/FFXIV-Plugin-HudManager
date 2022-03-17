@@ -123,7 +123,7 @@ namespace HUDManager
         }
 
         public static bool IsActivated(this ClassJobCategoryId cat, ClassJob classJob)
-            => ActivationConditions?[cat][classJob.RowId] 
+            => cat == 0 ? false : ActivationConditions?[cat][classJob.RowId] 
             ?? throw new InvalidOperationException("call `Initialize` first");
 
         public static ClassJobCategoryId CategoryForClassJob(ClassJob classJob)

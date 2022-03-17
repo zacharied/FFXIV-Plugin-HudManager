@@ -11,5 +11,6 @@
         public const string DeleteVerify = "Delete layout?##uimanager-delete-layout-modal";
         public const string CustomSwapConditionsList = "uimanager-customswapconditions-list-layout-shart";
         public const string CannotRemoveCustomCondition = "custom-condition-cannot-remove";
+        public const string AddedConditionWouldCreateLoop = "Cannot add condition##multi-cond-would-have-loop";
     }
 }
