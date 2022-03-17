@@ -86,7 +86,6 @@ namespace HUD_Manager
                 }
 
                 Plugin.Statuses.CustomConditionStatus[cond] = val.Value;
-                Plugin.Statuses.CustomConditionStatusUpdated = true;
             }
         }
     }

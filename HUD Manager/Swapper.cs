@@ -54,11 +54,10 @@ namespace HUD_Manager
                 return;
             }
 
-            var updated = this.Plugin.Statuses.Update(player) || this.Plugin.Keybinder.UpdateKeyState() || this.Plugin.Statuses.CustomConditionStatusUpdated;
+            var updated = this.Plugin.Statuses.Update(player) || this.Plugin.Keybinder.UpdateKeyState() || this.Plugin.Statuses.CustomConditionStatus.IsUpdated();
 
             if (updated) {
                 this.Plugin.Statuses.SetHudLayout(null);
-                this.Plugin.Statuses.CustomConditionStatusUpdated = false;
             }
         }
     }

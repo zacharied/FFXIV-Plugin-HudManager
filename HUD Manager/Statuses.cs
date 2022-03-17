@@ -27,8 +27,7 @@ namespace HUD_Manager
 
         public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, new());
 
-        public Dictionary<CustomCondition, bool> CustomConditionStatus { get; } = new();
-        public bool CustomConditionStatusUpdated { get; set; } = false;
+        public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
 
         public bool InPvpZone { get; private set; } = false;
 
@@ -193,6 +192,39 @@ namespace HUD_Manager
 
                 return node->IsVisible;
             }
+        }
+
+        public class CustomConditionStatusContainer
+        {
+            private Dictionary<CustomCondition, bool> Status { get; } = new();
+            private bool Updated { get; set; } = false;
+
+            public bool this[CustomCondition c]
+            {
+                get
+                {
+                    return Status[c];
+                }
+
+                set
+                {
+                    Status[c] = value;
+                    Updated = true;
+                }
+            }
+
+            public bool IsUpdated()
+            {
+                var v = Updated;
+                Updated = false;
+                return v;
+            }
+
+            public bool ContainsKey(CustomCondition c) => Status.ContainsKey(c);
+
+            public bool TryGetValue(CustomCondition c, out bool v) => Status.TryGetValue(c, out v);
+
+            public void Toggle(CustomCondition c) => this[c] = !this[c];
         }
     }
 

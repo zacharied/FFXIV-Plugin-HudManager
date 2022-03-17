@@ -173,7 +173,9 @@ namespace HUDManager.Ui
             if (!Plugin.Statuses.CustomConditionStatus.ContainsKey(activeCondition))
                 return;
 
-            ImGui.Text("No settings available for this condition type.");
+            if (ImGui.Button("Toggle")) {
+                Plugin.Statuses.CustomConditionStatus.Toggle(activeCondition);
+            }
 
             ImGuiExt.VerticalSpace();
             ImGui.Separator();
