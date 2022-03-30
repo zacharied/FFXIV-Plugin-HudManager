@@ -496,9 +496,10 @@ namespace HUDManager.Ui
                 if (Ui.moveCondition.index >= 0) {
                     update = true;
 
-                    if (Ui.editingConditionIndex + Ui.moveCondition.direction >= 0
-                        && Ui.editingConditionIndex + Ui.moveCondition.direction < activeCondition.MultiCondition.Count) {
+                    if (Ui.moveCondition.index + Ui.moveCondition.direction >= 0
+                      && Ui.moveCondition.index + Ui.moveCondition.direction < activeCondition.MultiCondition.Count) {
                         var c = activeCondition.MultiCondition[Ui.moveCondition.index];
+                        var newPosition = Ui.moveCondition.index + Ui.moveCondition.direction;
                         activeCondition.MultiCondition.RemoveCondition(Ui.moveCondition.index);
                         activeCondition.MultiCondition.AddCondition(c, Ui.moveCondition.index + Ui.moveCondition.direction);
                     }
