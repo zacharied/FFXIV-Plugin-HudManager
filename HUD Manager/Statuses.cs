@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUDManager;
 using HUDManager.Configuration;
 using Lumina.Excel.GeneratedSheets;
@@ -194,6 +195,29 @@ namespace HUD_Manager
             }
         }
 
+        public bool IsChatFocused()
+        {
+            const uint ChatLogNodeId = 5;
+            const uint ChatEntryNodeId = 2;
+
+            var chatLog = Plugin.GameGui.GetAtkUnitByName("ChatLog", 1);
+            if (chatLog is null)
+                return false;
+
+            unsafe {
+                // Updated 6.08
+                var textInput = chatLog.Value.GetNodeById(ChatLogNodeId);
+                if (textInput is null)
+                    return false;
+
+                var node = textInput->GetAsAtkComponentNode()->Component->UldManager.SearchNodeById(ChatEntryNodeId);
+                if (node is null)
+                    return false;
+
+                return node->IsVisible;
+            }
+        }
+
         public class CustomConditionStatusContainer
         {
             private Dictionary<CustomCondition, bool> Status { get; } = new();
@@ -274,6 +298,7 @@ namespace HUD_Manager
         InFate = -6,
         InFateLevelSynced = -7,
         InSanctuary = -8,
+        ChatFocused = -9,
     }
 
     public static class StatusExtensions
@@ -309,6 +334,8 @@ namespace HUD_Manager
                     return "Level-synced for FATE";
                 case Status.InSanctuary:
                     return "In a sanctuary";
+                case Status.ChatFocused:
+                    return "Chat focused";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
@@ -352,6 +379,8 @@ namespace HUD_Manager
                     return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
                 case Status.InSanctuary:
                     return plugin.Statuses.IsInSanctuary();
+                case Status.ChatFocused:
+                    return plugin.Statuses.IsChatFocused();
             }
 
             return false;
