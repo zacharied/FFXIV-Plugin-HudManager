@@ -1,5 +1,6 @@
 ﻿using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
+using Dalamud.Logging;
 using HUD_Manager;
 using HUD_Manager.Ui;
 using HUDManager.Configuration;
@@ -15,21 +16,35 @@ namespace HUDManager.Ui
     public class CustomConditions
     {
         // UI data container
-        private (int selectedIndex, int editIndex, string editBuf) ui = (-1, -1, string.Empty);
+        private (int selectedIndex, int editIndex, string editBuf, bool focusTextEdit) ui = (-1, -1, string.Empty, false);
 
         private CustomCondition? activeCondition =>
-            ui.selectedIndex >= 0  ?
+            ui.selectedIndex >= 0 ?
             Plugin.Config.CustomConditions[ui.selectedIndex] :
             null;
 
         private Plugin Plugin { get; init; }
 
         private DrawConditionEditMenu_MultiCondition MenuMulti;
-        
+
         public CustomConditions(Plugin plugin)
         {
             Plugin = plugin;
             MenuMulti = new(Plugin);
+        }
+
+        private string DefaultConditionName()
+        {
+            int i = 1;
+
+            string DefaultConditionPattern() => $"Condition{i}";
+
+            while (Plugin.Config.CustomConditions.Exists(c => c.Name == DefaultConditionPattern())) {
+                PluginLog.Log($"{i}");
+                i++;
+            }
+
+            return DefaultConditionPattern();
         }
 
         public void Draw(ref bool windowOpen)
@@ -70,10 +85,25 @@ namespace HUDManager.Ui
             foreach (var (cond, i) in Plugin.Config.CustomConditions.Select((item, i) => (item, i))) {
                 if (i == ui.editIndex) {
                     if (ImGui.InputText($"##custom-condition-name-{i}", ref ui.editBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.CharsNoBlank)
-                        || ImGui.IsItemDeactivatedAfterEdit()) {
-                        cond.Name = ui.editBuf;
+                      || ImGui.IsItemDeactivated()) {
+                        // save users from themselves
+                        ui.editBuf = ui.editBuf.Trim();
+
+                        // This kind of check should really be enforced on the config level but whatever.
+                        if (string.IsNullOrWhiteSpace(ui.editBuf) || Plugin.Config.CustomConditions.Exists(c => c.Name == ui.editBuf)) {
+                            cond.Name = this.DefaultConditionName();
+                        } else {
+                            cond.Name = ui.editBuf;
+                        }
+
                         ui.editIndex = -1;
+                        ui.editBuf = string.Empty;
                         update = true;
+                    }
+
+                    if (ui.focusTextEdit) {
+                        ImGui.SetKeyboardFocusHere(-1);
+                        ui.focusTextEdit = false;
                     }
                 } else {
                     if (ImGui.Selectable($"{cond.Name}##custom-condition-{i}", ui.selectedIndex == i)) {
@@ -84,11 +114,11 @@ namespace HUDManager.Ui
             ImGui.EndListBox();
 
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus)) {
-                int i = 1;
-                while (Plugin.Config.CustomConditions.Exists(c => c.Name == $"Condition{i}"))
-                    i++;
+                Plugin.Config.CustomConditions.Add(new CustomCondition("<TEMP>", Plugin));
 
-                Plugin.Config.CustomConditions.Add(new CustomCondition($"Condition{i}", Plugin));
+                // Enable edit box
+                ui.editIndex = Plugin.Config.CustomConditions.Count - 1;
+                ui.focusTextEdit = true;
 
                 update = true;
             }
@@ -97,6 +127,7 @@ namespace HUDManager.Ui
 
             if (ImGuiExt.IconButton(FontAwesomeIcon.Edit) && ui.selectedIndex >= 0) {
                 ui.editIndex = ui.selectedIndex;
+                ui.focusTextEdit = true;
             }
 
             ImGui.SameLine();

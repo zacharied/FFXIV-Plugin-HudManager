@@ -25,7 +25,7 @@ namespace HUDManager.Configuration
         }
 
         public CustomCondition(string name, Plugin plugin) : this(name)
-        { 
+        {
             // Auto-add self to the dictionary
             plugin.Statuses.CustomConditionStatus[this] = default;
         }

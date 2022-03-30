@@ -24,8 +24,15 @@ namespace HUDManager.Configuration
 
             bool status = true;
 
+            List<MultiConditionItem> toRemove = new();
+
             bool first = true; // it's quicker than Select(i, v) and then checking i == 0
-            foreach (var item in Items) { 
+            foreach (var item in Items) {
+                if (item.Condition.CurrentType == typeof(CustomCondition) && !plugin.Config.CustomConditions.Contains(item.Condition.Custom!)) {
+                    toRemove.Add(item);
+                    continue;
+                }
+
                 if (first) {
                     status = item.Condition.IsActive(plugin);
                     first = false;
@@ -37,6 +44,9 @@ namespace HUDManager.Configuration
                 else if (item.Type is MultiConditionJunction.LogicalOr)
                     status |= item.Condition.IsActive(plugin) ^ item.Negation;
             }
+
+            foreach (var item in toRemove)
+                Items.Remove(item);
 
             return status;
         }
