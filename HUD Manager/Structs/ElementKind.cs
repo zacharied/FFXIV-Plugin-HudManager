@@ -369,10 +369,15 @@ namespace HUD_Manager.Structs
                 + (AtkElementReverseOrderedJobs.Contains(Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()) ? 1 : 0))
                 % 2;
 
-            return $"JobHud{Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()}{index}";
+            // ACN jobs are a special case
+            var gaugeName = kind is ElementKind.AetherflowGaugeSch
+                ? "ACN0"
+                : $"{Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()}{index}";
+
+            return $"JobHud{gaugeName}";
         }
 
         // TODO Solution that works with more than 2 job gauges (idk though)
-        private static readonly string[] AtkElementReverseOrderedJobs = { "NIN", "SMN", "SCH" };
+        private static readonly string[] AtkElementReverseOrderedJobs = { "NIN", "SMN" };
     }
 }
