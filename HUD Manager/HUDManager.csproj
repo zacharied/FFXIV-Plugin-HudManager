@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType>Library</OutputType>
         <TargetFramework>net50-windows</TargetFramework>
-        <Version>2.5.1.0</Version>
+        <Version>2.5.2.0</Version>
         <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
