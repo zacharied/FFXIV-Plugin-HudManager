@@ -65,6 +65,8 @@ namespace HUD_Manager.Ui
         private void Draw()
         {
             if (!this.SettingsVisible) {
+                if (Plugin.Swapper is not null)
+                    Plugin.Swapper.SwapsTemporarilyDisabled = false;
                 return;
             }
 

@@ -47,22 +47,18 @@ namespace HUD_Manager.Ui.Editor
                 return;
             }
 
+            Plugin.Swapper.SwapsTemporarilyDisabled = true;
+
             var update = false;
-
-            if (!Plugin.Swapper.SwapsTemporarilyDisabled) {
-                ImGui.TextUnformatted("Cannot edit layouts while swaps are enabled.");
-
-                if (ImGui.Button("Temporarily disable swaps")) {
-                    Plugin.Swapper.SwapsTemporarilyDisabled = true;
-                }
-
-                goto EndTabItem;
-            }
 
             var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);
             if (charConfig != null) {
                 ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
                 goto EndTabItem;
+            }
+
+            if (!Plugin.Config.DisableHelpPanels) {
+                ImGui.TextUnformatted("Note that swaps are disabled while this menu is open.");
             }
 
             this.Previews.Draw(ref update);
