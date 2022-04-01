@@ -47,7 +47,12 @@ namespace HUD_Manager.Ui.Editor
                 return;
             }
 
-            Plugin.Swapper.SwapsTemporarilyDisabled = true;
+            if (!Plugin.Swapper.SwapsTemporarilyDisabled) {
+                Plugin.Swapper.SwapsTemporarilyDisabled = true;
+
+                if (Plugin.Config.SwapsEnabled && Plugin.Statuses.ResultantLayout.activeLayout is not null)
+                    Ui.SelectedLayout = Plugin.Statuses.ResultantLayout.activeLayout.LayoutId;
+            }
 
             var update = false;
 
