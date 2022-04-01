@@ -274,16 +274,16 @@ namespace HUD_Manager
                 return;
             }
 
+            PluginLog.Debug($"Writing layout {Plugin.Config.Layouts[id].Name}");
+
             this.WriteLayout(slot, effective.Elements);
 
             // Apply visibility parameters to job gauges, which don't work like other UI components.
             var player = Plugin.ClientState.LocalPlayer;
             if (player is not null && player.ClassJob.GameData is not null) {
                 foreach (var element in effective.Elements.Where(e => e.Key.IsJobGauge())) {
-                    if (element.Key.ClassJob(Plugin.DataManager) == player.ClassJob.GameData) {
-                        _forceHideJobGauges[(element.Key, element.Value)] = default;
-                        ApplyJobGaugeVisibility(element.Key, element.Value);
-                    }
+                    _forceHideJobGauges[(element.Key, element.Value)] = 0;
+                    ApplyJobGaugeVisibility(element.Key, element.Value);
                 }
             }
 
@@ -337,25 +337,18 @@ namespace HUD_Manager
 
         public unsafe int ApplyJobGaugeVisibility(ElementKind kind, Element element, int frames = 0)
         {
-            var unitName = kind.GetJobGaugeAtkName(Plugin.DataManager)!;
+            var unitName = kind.GetJobGaugeAtkName()!;
             unsafe {
                 var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName, 1);
                 if (unit != null) {
                     frames = Math.Max(frames, 0);
                     var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
                     if ((element.Visibility & visibilityMask) > 0) {
-                        // Reveal element.
-                        if (unit->UldManager.NodeListCount == 0)
-                            unit->UldManager.UpdateDrawNodeList();
-                        else
-                            frames++;
+                        unit->IsVisible = true;
                     } else {
-                        // Hide element.
-                        if (unit->UldManager.NodeListCount > 0)
-                            unit->UldManager.NodeListCount = 0;
-                        else
-                            frames++;
+                        unit->IsVisible = false;
                     }
+                    frames++;
                 } else {
                     frames = Math.Min(frames, 0);
                     frames--;

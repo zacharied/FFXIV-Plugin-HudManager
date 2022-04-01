@@ -9,6 +9,7 @@ using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using HUD_Manager.Configuration;
+using HUD_Manager.Structs;
 using HUD_Manager.Ui;
 using HUDManager;
 using Resourcer;
@@ -71,6 +72,7 @@ namespace HUD_Manager
             this.KeyState = keyState;
 
             ClassJobCategoryIdExtensions.Initialize(this);
+            ElementKindExt.Initialize(this.DataManager);
 
             this.Config = Migrator.LoadConfig(this);
             this.Config.Initialize(this.Interface);

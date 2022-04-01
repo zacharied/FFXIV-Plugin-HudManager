@@ -1,8 +1,10 @@
 ﻿using Dalamud.Data;
+using Dalamud.Logging;
 using HUD_Manager.Lumina;
 using Lumina.Excel.GeneratedSheets;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace HUD_Manager.Structs
@@ -98,7 +100,25 @@ namespace HUD_Manager.Structs
 
     public static class ElementKindExt
     {
-        private static readonly Dictionary<ClassJob, List<ElementKind>> barsPerJob = new Dictionary<ClassJob, List<ElementKind>> { };
+        private static ReadOnlyDictionary<ClassJob, List<ElementKind>>? BarsPerJob = null;
+        private static ReadOnlyDictionary<ElementKind, ClassJob>? GaugeJobs = null;
+        private static readonly ReadOnlyDictionary<uint, string> JobGaugeAddonNameOverrides = new(new Dictionary<uint, string>()
+        {
+            [19] = "RRP", // RPR lmao
+            [20] = "GFF"  // SGE
+        });
+
+        private static bool Initialized => GaugeJobs is not null && BarsPerJob is not null;
+
+        public static void Initialize(DataManager data)
+        {
+            InitializeBarsPerJob(data);
+
+            Dictionary<ElementKind, ClassJob> gaugeJobs = new();
+            foreach (var e in All().Where(e => e.IsJobGauge()))
+                gaugeJobs[e] = e.ClassJob(data)!;
+            GaugeJobs = new(gaugeJobs);
+        }
 
         public static readonly ElementKind[] Immutable = {
             // cannot be moved with the current method the plugin is using
@@ -266,8 +286,18 @@ namespace HUD_Manager.Structs
             }
         }
 
-        public static ClassJob? ClassJob(this ElementKind kind, DataManager data)
+        public static ClassJob? ClassJob(this ElementKind kind)
         {
+            if (GaugeJobs is null)
+                throw new InvalidOperationException("call `Initialize` first");
+            return GaugeJobs!.GetValueOrDefault(kind);
+        }
+
+        private static ClassJob? ClassJob(this ElementKind kind, DataManager data)
+        {
+            if (Initialized)
+                throw new InvalidOperationException("already initialized");
+
             ClassJob FindClassJob(int id)
             {
                 var sheet = data.GetExcelSheet<ClassJob>()!;
@@ -323,6 +353,7 @@ namespace HUD_Manager.Structs
                 case ElementKind.DeathGauge:
                     return FindClassJob(19);
             }
+
             return null;
         }
 
@@ -346,38 +377,50 @@ namespace HUD_Manager.Structs
             }
         }
 
-        public static string? GetJobGaugeAtkName(this ElementKind kind, DataManager data)
+        public static string? GetJobGaugeAtkName(this ElementKind kind)
         {
-            if (barsPerJob.Count == 0) {
-                foreach (ElementKind e in Enum.GetValues(typeof(ElementKind))) {
-                    if (!e.IsJobGauge())
-                        continue;
-
-                    var j = e.ClassJob(data);
-                    if (!barsPerJob.ContainsKey(j)) {
-                        barsPerJob[j] = new List<ElementKind>();
-                    }
-                    barsPerJob[j].Add(e);
-                }
-            }
+            if (!Initialized)
+                throw new InvalidOperationException("call `Initialize` first");
 
             if (!kind.IsJobGauge())
                 return null;
 
-            var job = kind.ClassJob(data);
-            var index = (barsPerJob[job].IndexOf(kind)
-                + (AtkElementReverseOrderedJobs.Contains(Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()) ? 1 : 0))
-                % 2;
+            var job = kind.ClassJob();
+            var index = (BarsPerJob![job!].IndexOf(kind) + (AtkElementReverseOrderedJobs.Contains(job!.JobIndex) ? 1 : 0)) % 2;
 
-            // ACN jobs are a special case
-            var gaugeName = kind is ElementKind.AetherflowGaugeSch
-                ? "ACN0"
+            // SCH is just weird, EW jobs are spelled differently.
+            var gaugeName = kind is ElementKind.AetherflowGaugeSch ? "ACN0"
+                : JobGaugeAddonNameOverrides.ContainsKey(job.JobIndex) ? $"{JobGaugeAddonNameOverrides[job.JobIndex]}{index}"
                 : $"{Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()}{index}";
+
+            PluginLog.Log($"{gaugeName}");
 
             return $"JobHud{gaugeName}";
         }
 
+        private static void InitializeBarsPerJob(DataManager data)
+        {
+            if (Initialized)
+                throw new InvalidOperationException("already initialized");
+
+            Dictionary<ClassJob, List<ElementKind>> barsPerJob = new();
+
+            foreach (var e in All().Where(e => e.IsJobGauge())) {
+                var j = e.ClassJob(data);
+                if (!barsPerJob.ContainsKey(j))
+                    barsPerJob[j] = new List<ElementKind>();
+                barsPerJob[j].Add(e);
+            }
+
+            BarsPerJob = new(barsPerJob);
+        }
+
         // TODO Solution that works with more than 2 job gauges (idk though)
-        private static readonly string[] AtkElementReverseOrderedJobs = { "NIN", "SMN" };
+        private static readonly uint[] AtkElementReverseOrderedJobs = {
+            10, // NIN
+            8, // SMN
+            19, // RPR
+            20 // SGE
+        };
     }
 }
