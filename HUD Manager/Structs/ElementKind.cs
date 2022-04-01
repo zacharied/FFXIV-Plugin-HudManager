@@ -393,8 +393,6 @@ namespace HUD_Manager.Structs
                 : JobGaugeAddonNameOverrides.ContainsKey(job.JobIndex) ? $"{JobGaugeAddonNameOverrides[job.JobIndex]}{index}"
                 : $"{Util.JobIdToEnglishAbbreviation[job.RowId].ToUpper()}{index}";
 
-            PluginLog.Log($"{gaugeName}");
-
             return $"JobHud{gaugeName}";
         }
 
