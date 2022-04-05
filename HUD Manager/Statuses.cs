@@ -2,6 +2,7 @@
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
+using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -153,8 +154,14 @@ namespace HUD_Manager
         public bool IsInFate(Character player)
         {
             unsafe {
-                var fateManager = *FateManager.Instance();
-                return (fateManager.FateJoined & 1) == 1;
+                if (!Resolver.Initialized)
+                    Resolver.Initialize();
+                if (FateManager.pInstance != null) {
+                    var fateManager = *FateManager.Instance();
+                    return (fateManager.FateJoined & 1) == 1;
+                } else {
+                    return false;
+                }
             }
         }
 
