@@ -8,6 +8,7 @@ using HUD_Manager.Tree;
 using HUDManager.Structs.External;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -34,13 +35,7 @@ namespace HUD_Manager
         private readonly SetHudLayoutDelegate? _setHudLayout;
         private Hook<SetHudLayoutDelegate> _setHudLayoutHook;
 
-        /// <summary>
-        /// Sometimes job gauges don't appear on the frame that we switch to another class, but the HUD swap happens
-        /// regardless. This results in job gauges sometimes not having their visibility settings applied.
-        /// The key here is the kv-pair from the list of Elements in the layout, and the value is how many frames
-        /// the corrrect visibility has been set for.
-        /// </summary>
-        private readonly Dictionary<(ElementKind k, Element v), int> _forceHideJobGauges = new();
+        private List<(string name, ElementKind kind, Element e)> currentJobGauges = new();
 
         private Plugin Plugin { get; }
 
@@ -278,13 +273,12 @@ namespace HUD_Manager
 
             this.WriteLayout(slot, effective.Elements);
 
-            // Apply visibility parameters to job gauges, which don't work like other UI components.
-            var player = Plugin.ClientState.LocalPlayer;
-            if (player is not null && player.ClassJob.GameData is not null) {
-                foreach (var element in effective.Elements.Where(e => e.Key.IsJobGauge())) {
-                    _forceHideJobGauges[(element.Key, element.Value)] = 0;
-                    ApplyJobGaugeVisibility(element.Key, element.Value);
-                }
+            if (Plugin.ClientState.LocalPlayer is not null) {
+                currentJobGauges = effective.Elements
+                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex)
+                    .Select(kv => (kv.Key.GetJobGaugeAtkName()!, kv.Key, kv.Value))
+                    .ToList();
+                ApplyAllJobGaugeVisibility();
             }
 
             foreach (var window in effective.Windows) {
@@ -318,43 +312,39 @@ namespace HUD_Manager
         /// </summary>
         public void RunRecurringTasks(Framework _)
         {
-            // Force job gauge visibility to set to the desired value.
-            // If the correct visibility has been set, frames increases by 1.
-            // If the unit is null, frames will start at 0 and decrease by 1 every frame. This is to perform emergency cleanup if
-            //  somehow remains in the list after a job switch.
-            foreach (var ((kind, element), frames) in _forceHideJobGauges) {
-                if (element[ElementComponent.Visibility]) {
-                    if (Math.Abs(frames) > 3) {
-                        // Stop applying visibility if we've had 3 frames of no changes.
-                        _forceHideJobGauges.Remove((kind, element));
-                        continue;
-                    }
+    //        ApplyAllJobGaugeVisibility();
+        }
 
-                    _forceHideJobGauges[(kind, element)] = ApplyJobGaugeVisibility(kind, element, frames);
+        private void ApplyAllJobGaugeVisibility()
+        {
+            foreach (var (atkName, kind, element) in currentJobGauges) {
+                if (element[ElementComponent.Visibility]) {
+                    ApplyJobGaugeVisibility(kind, element, atkName);
                 }
             }
         }
 
-        public unsafe int ApplyJobGaugeVisibility(ElementKind kind, Element element, int frames = 0)
+        public unsafe void ApplyJobGaugeVisibility(ElementKind kind, Element element, string? atkName = null)
         {
-            var unitName = kind.GetJobGaugeAtkName()!;
+            var unitName = atkName ?? kind.GetJobGaugeAtkName()!;
             unsafe {
                 var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName, 1);
-                if (unit != null) {
-                    frames = Math.Max(frames, 0);
-                    var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
-                    if ((element.Visibility & visibilityMask) > 0) {
-                        unit->IsVisible = true;
-                    } else {
-                        unit->IsVisible = false;
-                    }
-                    frames++;
+                if (unit is null)
+                    return;
+
+                var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
+                if ((element.Visibility & visibilityMask) > 0) {
+                    // Reveal element.
+                    if (unit->UldManager.NodeListCount == 0)
+                        unit->UldManager.UpdateDrawNodeList();
+                    unit->IsVisible = true;
                 } else {
-                    frames = Math.Min(frames, 0);
-                    frames--;
+                    // Hide element.
+                    if (unit->UldManager.NodeListCount > 0)
+                        unit->UldManager.NodeListCount = 0;
+                    unit->IsVisible = false;
                 }
             }
-            return frames;
         }
 
         private uint SetHudLayoutDetour(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1)
