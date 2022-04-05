@@ -168,8 +168,14 @@ namespace HUD_Manager
         public bool IsLevelSynced(Character player)
         {
             unsafe {
-                var uiPlayerState = UIState.Instance()->PlayerState;
-                return (uiPlayerState.IsLevelSynced & 1) > 0;
+                if (!Resolver.Initialized)
+                    Resolver.Initialize();
+                if (UIState.pInstance != null) {
+                    var uiPlayerState = UIState.Instance()->PlayerState;
+                    return (uiPlayerState.IsLevelSynced & 1) > 0;
+                } else {
+                    return false;
+                }
             }
         }
 
