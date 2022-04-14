@@ -1,4 +1,4 @@
-﻿author: necoz (prev. ascclemens)
+﻿author: Necoji (prev. ascclemens)
 name: HUD Manager
 internal_name: HUDManager
 description: |-
@@ -10,4 +10,4 @@ description: |-
   - Change visibility of job gauges
   - Export and import layouts from text
 repo_url: https://github.com/zacharied/FFXIV-Plugin-HudManager
-dalamud_api_level: 5
+dalamud_api_level: 6
