@@ -95,6 +95,13 @@ namespace HUD_Manager.Ui
                 DrawUnknownIdElements(unknowns);
             }
 
+            if (ImGui.Button("Print layout")) {
+                var layout = this.Plugin.Hud.ReadLayout(Plugin.Hud.GetActiveHudSlot());
+                foreach (var e in layout.elements) {
+                    PluginLog.Log($"{e.id}, {e.x}");
+                }
+            }
+
             if (ImGui.Button("Find difference") && this.PreviousLayout != null) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
                 var layout = Marshal.PtrToStructure<Layout>(ptr);

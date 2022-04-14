@@ -96,6 +96,11 @@ namespace HUD_Manager.Structs
         RightWCrossHotbar = 1893596455,
         OceanFishingVoyageMissions = 1, // TODO Fix this or something
         Timers = 2578885979,
+        CrystallineConflictAllyInfo = 3780501874,
+        CrystallineConflictBattleLog = 4081580003,
+        CrystallineConflictMap = 3282875858,
+        CrystallineConflictEnemyInfo = 3805361436,
+        CrystallineConflictProgressGauge = 812941873
     }
 
     public static class ElementKindExt
@@ -126,6 +131,12 @@ namespace HUD_Manager.Structs
 
             // don't actually know if this is immutable, but idk what it is
             ElementKind.Timers,
+
+            ElementKind.CrystallineConflictAllyInfo,
+            ElementKind.CrystallineConflictBattleLog,
+            ElementKind.CrystallineConflictEnemyInfo,
+            ElementKind.CrystallineConflictMap,
+            ElementKind.CrystallineConflictProgressGauge
         };
 
         public static IEnumerable<ElementKind> All() => Enum.GetValues(typeof(ElementKind))
@@ -225,6 +236,11 @@ namespace HUD_Manager.Structs
                 ElementKind.EukrasiaGauge => 89,
                 ElementKind.AddersgallGauge => 90,
                 ElementKind.MastersGauge => 91,
+                ElementKind.CrystallineConflictProgressGauge => 92,
+                ElementKind.CrystallineConflictAllyInfo => 93,
+                ElementKind.CrystallineConflictEnemyInfo => 95,
+                ElementKind.CrystallineConflictBattleLog => 96,
+                ElementKind.CrystallineConflictMap => 97,
                 _ => null,
             };
 
