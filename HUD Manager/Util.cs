@@ -34,11 +34,15 @@ namespace HUD_Manager
 
         public static bool GamepadModeActive(Plugin plugin)
         {
+#if DEBUG
+            return false; // for now
+#else
             unsafe {
                 var configModule = ConfigModule.Instance();
                 var option = configModule->GetValueById((short)ConfigOption.GamepadMode);
                 return (option->Byte & 1) > 0;
             }
+#endif
         }
 
         public readonly static Dictionary<uint, string> JobIdToEnglishAbbreviation = new Dictionary<uint, string>()

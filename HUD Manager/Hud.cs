@@ -24,8 +24,8 @@ namespace HUD_Manager
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
         private const int LayoutSize = InMemoryLayoutElements * 36;
 
-        // Updated 6.0
-        private const int SlotOffset = 0x6018;
+        // Updated 6.1
+        private const int SlotOffset = 0x6378;
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
 
@@ -115,7 +115,7 @@ namespace HUD_Manager
             this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
         }
 
-        private IntPtr GetDataPointer()
+        public IntPtr GetDataPointer()
         {
             var dataPtr = this.GetFilePointer(0) + 0x50;
             return Marshal.ReadIntPtr(dataPtr);

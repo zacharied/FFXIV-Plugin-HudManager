@@ -35,17 +35,17 @@ namespace HUD_Manager
 
         public static byte GetStatus(GameObject actor)
         {
-            // Updated: 6.0
+            // Updated: 6.1
             // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
-            const int offset = 0x19DF;
+            const int offset = 0x1AD6;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetOnlineStatus(GameObject actor)
         {
-            // Updated: 6.05
+            // Updated: 6.1
             // E8 ?? ?? ?? ?? 48 85 C0 75 54
-            const int offset = 0x19C2;
+            const int offset = 0x1ABE;
             return Marshal.ReadByte(actor.Address + offset);
         }
 

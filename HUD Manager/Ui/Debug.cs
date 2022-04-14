@@ -70,6 +70,11 @@ namespace HUD_Manager.Ui
                 this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
             }
 
+            if (ImGui.Button("Data pointer")) {
+                var ptr = this.Plugin.Hud.GetDataPointer();
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+            }
+
             if (ImGui.Button("Save layout")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
                 var layout = Marshal.PtrToStructure<Layout>(ptr);
