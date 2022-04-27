@@ -1,4 +1,5 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Logging;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
@@ -349,6 +350,11 @@ namespace HUD_Manager.Ui.Editor
                 this.ImportLayoutName = string.IsNullOrWhiteSpace(importName) ? null : importName;
             }
 
+            void ReportImport(string source)
+            {
+                Plugin.ChatGui.Print($"Imported from {source} to layout \"{this.ImportLayoutName}\".");
+            }
+
             var exists = this.Plugin.Config.Layouts.Values.Any(layout => layout.Name == this.ImportLayoutName);
             if (exists) {
                 ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, .8f, .2f, 1f));
@@ -381,6 +387,8 @@ namespace HUD_Manager.Ui.Editor
 
                     this.Ui.SelectedLayout = id;
 
+                    ReportImport($"slot {slot + 1}");
+
                     ImGui.CloseCurrentPopup();
                 }
 
@@ -391,8 +399,10 @@ namespace HUD_Manager.Ui.Editor
                 SavedLayout? saved;
                 try {
                     saved = JsonConvert.DeserializeObject<SavedLayout>(ImGui.GetClipboardText());
-                } catch (Exception) {
+                } catch (Exception e) {
                     saved = null;
+                    Plugin.ChatGui.PrintError("Failed to import layout from clipboard.");
+                    PluginLog.LogInformation(e, "failed to import from clipboard");
                 }
 
                 if (saved != null) {
@@ -404,6 +414,8 @@ namespace HUD_Manager.Ui.Editor
 
                     this.Ui.SelectedLayout = id;
 
+                    ReportImport("the clipboard");
+
                     ImGui.CloseCurrentPopup();
                 }
             }
@@ -413,6 +425,9 @@ namespace HUD_Manager.Ui.Editor
 
         private void SetUpExportLayoutPopup()
         {
+            void ReportExport(string layoutName, string dest)
+                => Plugin.ChatGui.Print($"Exported layout \"{layoutName}\" to {dest}.");
+
             if (!ImGui.BeginPopup(Popups.ExportLayout)) {
                 return;
             }
@@ -426,6 +441,7 @@ namespace HUD_Manager.Ui.Editor
                 var name = current == slot ? $"({(int)slot + 1})" : $"{(int)slot + 1}";
                 if (ImGui.Button($"{name}##export-{slot}")) {
                     this.Plugin.Hud.WriteEffectiveLayout(slot, this.Ui.SelectedLayout);
+                    ReportExport(layout.Name, $"slot {slot + 1}");
 
                     ImGui.CloseCurrentPopup();
                 }
@@ -434,8 +450,14 @@ namespace HUD_Manager.Ui.Editor
             }
 
             if (ImGuiExt.IconButton(FontAwesomeIcon.Clipboard, "export-clipboard")) {
-                var json = JsonConvert.SerializeObject(layout);
+                var newLayout = new SavedLayout(layout)
+                {
+                    Name = string.Empty,
+                    Parent = Guid.Empty
+                };
+                var json = JsonConvert.SerializeObject(newLayout);
                 ImGui.SetClipboardText(json);
+                ReportExport(layout.Name, "the clipboard");
             }
 
             ImGui.EndPopup();

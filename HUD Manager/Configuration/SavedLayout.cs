@@ -51,6 +51,15 @@ namespace HUD_Manager.Configuration
             this.Windows = new Dictionary<string, Window>();
         }
 
+        public SavedLayout(SavedLayout layout)
+        {
+            this.Name = layout.Name;
+            this.Elements = layout.Elements;
+            this.Windows = layout.Windows;
+            this.BrowsingwayOverlays = layout.BrowsingwayOverlays;
+            this.Parent = layout.Parent;
+        }
+
         public Layout ToLayout()
         {
             var elements = this.Elements.Values.ToList();
