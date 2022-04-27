@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game.Command;
+using Dalamud.Logging;
 using HUD_Manager.Configuration;
 using HUDManager.Configuration;
 using System;
@@ -21,6 +22,7 @@ namespace HUD_Manager
                             + "\n\t/hudman → open config window"
                             + "\n\t/hudman swap <layout> → switch to a layout"
                             + "\n\t/hudman condition <condition> true|false|toggle → modify a custom condition"
+                            + "\n\t/hudman swapper on|off|toggle → enable or disable automatic layout swapping"
             });
         }
 
@@ -51,7 +53,7 @@ namespace HUD_Manager
 
                 var entry = this.Plugin.Config.Layouts.FirstOrDefault(e => e.Value.Name == argsList[1]);
                 if (entry.Equals(default(KeyValuePair<Guid, SavedLayout>))) {
-                    Plugin.ChatGui.PrintError("Invalid layout name.");
+                    Plugin.ChatGui.PrintError($"Invalid layout \"{argsList[1]}\".");
                     return;
                 }
 
@@ -92,6 +94,29 @@ namespace HUD_Manager
                 }
 
                 Plugin.Statuses.CustomConditionStatus[cond] = val.Value;
+            } else if (argsList[0] == "swapper") {
+                if (argsList.Length != 2) {
+                    Plugin.ChatGui.PrintError("Invalid arguments.");
+                    return;
+                }
+
+                bool? val = null;
+                if (argsList[1] == "true" || argsList[1] == "on") {
+                    val = true;
+                } else if (argsList[1] == "false" || argsList[1] == "off") {
+                    val = false;
+                } else if (argsList[1] == "toggle") {
+                    val = !Plugin.Config.SwapsEnabled;
+                }
+
+                if (!val.HasValue) {
+                    Plugin.ChatGui.PrintError($"Invalid setting \"{argsList[1]}\".");
+                    return;
+                }
+
+                Plugin.Config.SwapsEnabled = val.Value;
+            } else {
+                Plugin.ChatGui.PrintError($"Invalid subcommand \"{argsList[0]}\".");
             }
         }
     }
