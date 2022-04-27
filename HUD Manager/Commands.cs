@@ -39,6 +39,11 @@ namespace HUD_Manager
             var argsList = args.Split(' ');
 
             if (argsList[0] == "swap") {
+                if (Plugin.Config.SwapsEnabled) {
+                    Plugin.ChatGui.PrintError("You must first disable swaps in order to manually swap layouts.");
+                    return;
+                }
+
                 if (argsList.Length != 2) {
                     Plugin.ChatGui.PrintError("Invalid arguments.");
                     return;
@@ -46,6 +51,7 @@ namespace HUD_Manager
 
                 var entry = this.Plugin.Config.Layouts.FirstOrDefault(e => e.Value.Name == argsList[1]);
                 if (entry.Equals(default(KeyValuePair<Guid, SavedLayout>))) {
+                    Plugin.ChatGui.PrintError("Invalid layout name.");
                     return;
                 }
 
