@@ -40,6 +40,7 @@
             "GoldSaucerInfo",
             "Journal",
             "Teleport",
+            "RecommendList"
         };
     }
 }
