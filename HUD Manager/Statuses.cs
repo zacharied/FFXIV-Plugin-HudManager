@@ -5,6 +5,7 @@ using Dalamud.Logging;
 using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUDManager;
 using HUDManager.Configuration;
@@ -231,6 +232,20 @@ namespace HUD_Manager
             }
         }
 
+        public bool GamepadModeStatus()
+        {
+            unsafe {
+                if (!Resolver.Initialized)
+                    Resolver.Initialize();
+                if (UIState.pInstance != null) {
+                    var config = ConfigModule.Instance();
+                    return config->GetValueById((short)ConfigOption.GamepadMode)->UInt > 0;
+                } else {
+                    return false;
+                }
+            }
+        }
+
         public class CustomConditionStatusContainer
         {
             private Dictionary<CustomCondition, bool> Status { get; } = new();
@@ -312,6 +327,8 @@ namespace HUD_Manager
         InFateLevelSynced = -7,
         InSanctuary = -8,
         ChatFocused = -9,
+        InputModeKbm = -10,
+        InputModeGamepad = -11,
     }
 
     public static class StatusExtensions
@@ -349,6 +366,10 @@ namespace HUD_Manager
                     return "In a sanctuary";
                 case Status.ChatFocused:
                     return "Chat focused";
+                case Status.InputModeKbm:
+                    return "Keyboard/mouse mode";
+                case Status.InputModeGamepad:
+                    return "Gamepad mode";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
@@ -394,6 +415,10 @@ namespace HUD_Manager
                     return plugin.Statuses.IsInSanctuary();
                 case Status.ChatFocused:
                     return plugin.Statuses.IsChatFocused();
+                case Status.InputModeKbm:
+                    return !plugin.Statuses.GamepadModeStatus();
+                case Status.InputModeGamepad:
+                    return plugin.Statuses.GamepadModeStatus();
             }
 
             return false;
