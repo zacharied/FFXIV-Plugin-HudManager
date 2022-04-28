@@ -190,6 +190,11 @@ namespace HUD_Manager.Ui.Editor
                 ImGui.EndCombo();
             }
 
+            ImGui.SameLine();
+            ImGuiExt.HelpMarker("A layout will inherit its parameters from its parent if it has one."
+                + "\n\nWhen a parent layout is set, the \"Enabled\" column will be visible for each parameter of an element."
+                + "\n\nA parameter must be enabled for it to have any effect. If it is not enabled, the value from the parent layout will be used instead.");
+
             ImGui.Separator();
 
             if (ImGui.CollapsingHeader("Options##uimanager-options")) {
