@@ -60,3 +60,11 @@
       Additionally, due to HUD shenanigans, you cannot use /hotbar
       display X on/off to toggle hotbar visibility. Please use /hud
       HotbarX instead. This will fix your issue.
+  - name: Why do I experience lag/stuttering when the HUD layout swaps?
+    description: >-
+      This is a known issue, caused by certain third-party plugins and programs.
+      If you experience this, please disable all third-party plugins and close
+      any background program that interacts with FFXIV. If the issue persists,
+      try disabling all plugins other than HUDManager. If the issue still persists
+      after this, please open an Issue on this plugin's GitHub page along with
+      any relevant information.
