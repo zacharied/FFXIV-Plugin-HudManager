@@ -446,7 +446,8 @@ namespace HUDManager.Ui
 
                         // Column: Condition
 
-                        ImGui.Text(cond.Condition.IsActive(Plugin) ? "●" : "○");
+                        bool thisConditionActive = cond.Condition.IsActive(Plugin) ^ cond.Negation;
+                        ImGui.Text(thisConditionActive ? "●" : "○");
                         ImGui.SameLine();
                         ImGui.TextUnformatted(cond.Condition.UiName(Plugin));
                         ImGui.TableNextColumn();

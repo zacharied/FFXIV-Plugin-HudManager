@@ -34,7 +34,7 @@ namespace HUDManager.Configuration
                 }
 
                 if (first) {
-                    status = item.Condition.IsActive(plugin);
+                    status = item.Condition.IsActive(plugin) ^ item.Negation;
                     first = false;
                     continue;
                 }
