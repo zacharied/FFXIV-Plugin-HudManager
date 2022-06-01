@@ -62,8 +62,13 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     }
 
                     var currentLayout = this.Plugin.Hud.ReadLayout(this.Plugin.Hud.GetActiveHudSlot());
-                    var element = currentLayout.elements.FirstOrDefault(el => el.id == kind);
-                    this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Elements[kind] = new Element(element);
+                    try {
+                        var element = currentLayout.elements.First(el => el.id == kind);
+                        this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Elements[kind] = new Element(element);
+                    } catch (InvalidOperationException) {
+                        ImGui.OpenPopup(Popups.ErrorAddingHudElement);
+                        break;
+                    }
 
                     update = true;
 
@@ -71,6 +76,16 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 }
 
                 ImGui.EndPopup();
+            }
+
+            bool popupOpen = true;
+            if (ImGui.BeginPopupModal(Popups.ErrorAddingHudElement, ref popupOpen, ImGuiWindowFlags.AlwaysAutoResize)) {
+                ImGui.Text("An error has occurred when attempting to add that element."
+                    + "\nPlease ensure that element has been visible on your screen at least once."
+                    + "\nIf it has been visible and the issue persists, you have found a bug!"
+                    + "\nPlease report it on the plugin's GitHub page if possible.");
+
+                if (ImGui.Button("OK")) ImGui.CloseCurrentPopup();
             }
 
             var search = this.Search ?? string.Empty;

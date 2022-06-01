@@ -6,7 +6,8 @@ namespace HUD_Manager.Structs
     [StructLayout(LayoutKind.Sequential)]
     public struct Layout
     {
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 92)]
+        // Size updated 6.11a
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 104)]
         public RawElement[] elements;
 
         public Dictionary<ElementKind, Element> ToDictionary()
