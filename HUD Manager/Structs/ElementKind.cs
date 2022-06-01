@@ -131,12 +131,6 @@ namespace HUD_Manager.Structs
 
             // don't actually know if this is immutable, but idk what it is
             ElementKind.Timers,
-
-            ElementKind.CrystallineConflictAllyInfo,
-            ElementKind.CrystallineConflictBattleLog,
-            ElementKind.CrystallineConflictEnemyInfo,
-            ElementKind.CrystallineConflictMap,
-            ElementKind.CrystallineConflictProgressGauge
         };
 
         public static IEnumerable<ElementKind> All() => Enum.GetValues(typeof(ElementKind))
