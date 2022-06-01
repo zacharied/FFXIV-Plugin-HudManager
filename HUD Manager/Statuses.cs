@@ -239,7 +239,7 @@ namespace HUD_Manager
                     Resolver.Initialize();
                 if (UIState.pInstance != null) {
                     var config = ConfigModule.Instance();
-                    return config->GetValueById((short)ConfigOption.GamepadMode)->UInt > 0;
+                    return config->GetValueById((short)ConfigOption.PadMode)->UInt > 0;
                 } else {
                     return false;
                 }
