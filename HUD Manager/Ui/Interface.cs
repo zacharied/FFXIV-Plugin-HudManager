@@ -20,7 +20,7 @@ namespace HUD_Manager.Ui
         private Debug Debug { get; }
 #endif
 
-        internal Guid SelectedLayout { get; set; } = Guid.Empty;
+        public Guid SelectedLayout { get; set; } = Guid.Empty;
 
         private bool _settingsVisible;
 

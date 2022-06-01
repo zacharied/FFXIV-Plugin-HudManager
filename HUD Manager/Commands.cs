@@ -57,6 +57,7 @@ namespace HUD_Manager
                     return;
                 }
 
+                this.Plugin.Ui.SelectedLayout = entry.Key;
                 this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, entry.Key);
                 this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
             } else if (argsList[0] == "condition") {
