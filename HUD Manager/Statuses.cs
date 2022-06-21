@@ -155,9 +155,7 @@ namespace HUD_Manager
         public bool IsInFate(Character player)
         {
             unsafe {
-                if (!Resolver.Initialized)
-                    Resolver.Initialize();
-                if (FateManager.pInstance != null) {
+                if (FateManager.ppInstance != null) {
                     var fateManager = *FateManager.Instance();
                     return (fateManager.FateJoined & 1) == 1;
                 } else {
@@ -169,8 +167,6 @@ namespace HUD_Manager
         public bool IsLevelSynced(Character player)
         {
             unsafe {
-                if (!Resolver.Initialized)
-                    Resolver.Initialize();
                 if (UIState.pInstance != null) {
                     var uiPlayerState = UIState.Instance()->PlayerState;
                     return (uiPlayerState.IsLevelSynced & 1) > 0;
@@ -235,8 +231,6 @@ namespace HUD_Manager
         public bool GamepadModeStatus()
         {
             unsafe {
-                if (!Resolver.Initialized)
-                    Resolver.Initialize();
                 if (UIState.pInstance != null) {
                     var config = ConfigModule.Instance();
                     return config->GetValueById((short)ConfigOption.PadMode)->UInt > 0;
