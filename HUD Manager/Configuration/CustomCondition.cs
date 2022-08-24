@@ -62,7 +62,7 @@ namespace HUDManager.Configuration
         public ClassJobCategoryId? ClassJob { get; init; } = null;
 
         public CustomConditionUnion() {
-            throw new ArgumentException("one of the union members must be defined");
+            throw new CustomConditionUnionUndefinedException();
         }
 
         public CustomConditionUnion(CustomCondition cond)
@@ -80,11 +80,25 @@ namespace HUDManager.Configuration
             ClassJob = cond;
         }
 
+        [JsonConstructor]
+        public CustomConditionUnion(CustomCondition? Custom, Status? Game, ClassJobCategoryId? ClassJob)
+        {
+            if (Custom is not null)
+                this.Custom = Custom;
+            else if (Game is not null)
+                this.Game = Game;
+            else if (ClassJob is not null)
+                this.ClassJob = ClassJob;
+            else
+                throw new CustomConditionUnionUndefinedException();
+        }
+
+        [JsonIgnore]
         public Type CurrentType =>
             Custom is not null ? typeof(CustomCondition) :
             Game is not null ? typeof(Status) :
             ClassJob is not null ? typeof(ClassJobCategoryId) :
-            throw new InvalidOperationException("no members of union are defined");
+            throw new CustomConditionUnionUndefinedException();
 
         public bool IsActive(Plugin plugin)
         {
@@ -98,14 +112,23 @@ namespace HUDManager.Configuration
                     return false;
                 return ClassJob!.Value.IsActivated(player.ClassJob.GameData);
             }
-            throw new InvalidOperationException("no members of union are defined");
+            throw new CustomConditionUnionUndefinedException();
         }
 
         public string UiName(Plugin plugin, bool partial = false) =>
             CurrentType == typeof(CustomCondition) ? Custom!.Name :
             CurrentType == typeof(Status) ? Game!.Value.Name() :
             CurrentType == typeof(ClassJobCategoryId) ? "Class/Job" + (partial ? string.Empty : $": {ClassJob!.Value.DisplayName(plugin)}") :
-            throw new InvalidOperationException("no members of union are defined");
+            throw new CustomConditionUnionUndefinedException();
+
+        /// <summary>
+        /// Thrown when an attempt is made to instantiate or access a <see cref="CustomConditionUnion"/> with no members defined.
+        /// </summary>
+        public class CustomConditionUnionUndefinedException : InvalidOperationException {
+            public CustomConditionUnionUndefinedException()
+                : base($"no members of union are defined")
+            { }
+        }
     }
 
     public enum CustomConditionType
