@@ -51,6 +51,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
             if (ImGui.BeginPopup(Popups.AddElement)) {
                 var kinds = ElementKindExt.All()
+                    .Where(el => el.IsRealElement())
                     .OrderBy(el => el.LocalisedName(this.Plugin.DataManager));
                 foreach (var kind in kinds) {
                     var elementClassJob = kind.ClassJob();
@@ -100,7 +101,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
             var toRemove = new List<ElementKind>();
 
             var sortedElements = layout.Elements
-                .Where(entry => !ElementKindExt.Immutable.Contains(entry.Key))
+                .Where(entry => !ElementKindExt.Immutable.Contains(entry.Key) && entry.Key.IsRealElement())
                 .Select(entry => Tuple.Create(entry.Key, entry.Value, entry.Key.LocalisedName(this.Plugin.DataManager)))
                 .OrderBy(tuple => tuple.Item3);
             foreach (var (kind, element, name) in sortedElements) {

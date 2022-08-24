@@ -161,9 +161,11 @@ namespace HUD_Manager
             // update existing elements with saved data instead of wholesale overwriting
             var slotLayout = this.ReadLayout(slot);
             for (var i = 0; i < slotLayout.elements.Length; i++) {
-                if (!dict.TryGetValue(slotLayout.elements[i].id, out var element)) {
+                if (!slotLayout.elements[i].id.IsRealElement())
                     continue;
-                }
+
+                if (!dict.TryGetValue(slotLayout.elements[i].id, out var element))
+                    continue;
 
                 // just replace the struct if all options are enabled
                 if (element.Enabled == Element.AllEnabled) {

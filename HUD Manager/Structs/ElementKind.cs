@@ -137,9 +137,9 @@ namespace HUD_Manager.Structs
             .Cast<ElementKind>()
             .Where(kind => !Immutable.Contains(kind));
 
-        public static string LocalisedName(this ElementKind kind, DataManager data)
+        private static int ElementKindRowId(this ElementKind kind)
         {
-            uint? id = kind switch
+            return kind switch
             {
                 ElementKind.Hotbar1 => 0,
                 ElementKind.Hotbar2 => 1,
@@ -235,14 +235,24 @@ namespace HUD_Manager.Structs
                 ElementKind.CrystallineConflictEnemyInfo => 95,
                 ElementKind.CrystallineConflictBattleLog => 96,
                 ElementKind.CrystallineConflictMap => 97,
-                _ => null,
+                _ => -1
             };
+        }
 
-            if (id == null) {
+        public static bool IsRealElement(this ElementKind kind)
+        {
+            return kind.ElementKindRowId() >= 0;
+        }
+
+        public static string LocalisedName(this ElementKind kind, DataManager data)
+        {
+            int id = kind.ElementKindRowId();
+
+            if (id < 0) {
                 return kind.ToString();
             }
 
-            var name = data.GetExcelSheet<HudSheet>().GetRow(id.Value).Name;
+            var name = data.GetExcelSheet<HudSheet>().GetRow((uint)id).Name;
 
             uint? jobId = kind switch
             {
