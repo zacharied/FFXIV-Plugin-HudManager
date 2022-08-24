@@ -33,6 +33,7 @@ namespace HUD_Manager
         public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
 
         public bool InPvpZone { get; private set; } = false;
+        private bool SanctuaryDetectionFailed = false;
 
         public static byte GetStatus(GameObject actor)
         {
@@ -170,9 +171,13 @@ namespace HUD_Manager
 
         public bool IsInSanctuary()
         {
+            if (SanctuaryDetectionFailed)
+                return false;
+
             var expBar = Plugin.GameGui.GetAtkUnitByName("_Exp", 1);
-            if (expBar == null) {
-                PluginLog.Warning("Unable to find EXP bar element");
+            if (!expBar.HasValue) {
+                PluginLog.Error("Unable to find EXP bar element for sanctuary detection");
+                SanctuaryDetectionFailed = true;
                 return false;
             }
 
