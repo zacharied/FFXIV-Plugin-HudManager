@@ -15,6 +15,7 @@ using HUDManager;
 using Resourcer;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -99,7 +100,8 @@ namespace HUD_Manager
             this.Config.FirstRun = false;
             if (this.Config.Layouts.Count == 0) {
                 foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                    this.Hud.ImportSlot($"Auto-import {(int)slot + 1}", slot, false);
+                    this.Hud.ImportSlot(
+                        $"Auto-import {(int)slot + 1} ({DateTime.Now.ToString("yyyy-MM-dd HH\\:mm\\:ss", CultureInfo.InvariantCulture)})", slot, false);
                 }
             }
 
