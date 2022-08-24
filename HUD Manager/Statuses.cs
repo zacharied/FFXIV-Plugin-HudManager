@@ -37,17 +37,17 @@ namespace HUD_Manager
 
         public static byte GetStatus(GameObject actor)
         {
-            // Updated: 6.1
+            // Updated: 6.2
             // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
-            const int offset = 0x1AD6;
+            const int offset = 0x1AEF;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetOnlineStatus(GameObject actor)
         {
-            // Updated: 6.1
+            // Updated: 6.2
             // E8 ?? ?? ?? ?? 48 85 C0 75 54
-            const int offset = 0x1ABE;
+            const int offset = 0x1AD6;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
@@ -188,7 +188,8 @@ namespace HUD_Manager
                 var node = expBar.Value.RootNode;
 
                 if (node->ChildCount < expBarAtkMoonIconIndex) {
-                    PluginLog.Warning("Not enough child nodes in EXP bar element");
+                    PluginLog.Error("Not enough child nodes in EXP bar element for sanctuary detection");
+                    SanctuaryDetectionFailed = true;
                     return false;
                 }
 
