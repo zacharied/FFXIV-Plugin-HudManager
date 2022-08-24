@@ -446,7 +446,7 @@ namespace HUD_Manager.Ui.Editor
                 var name = current == slot ? $"({(int)slot + 1})" : $"{(int)slot + 1}";
                 if (ImGui.Button($"{name}##export-{slot}")) {
                     this.Plugin.Hud.WriteEffectiveLayout(slot, this.Ui.SelectedLayout);
-                    ReportExport(layout.Name, $"slot {slot + 1}");
+                    ReportExport(layout.Name, $"slot {slot}");
 
                     ImGui.CloseCurrentPopup();
                 }
