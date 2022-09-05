@@ -1,8 +1,10 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
+using Dalamud.Logging;
 using HUD_Manager;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 
 namespace HUDManager.Configuration
 {
@@ -17,6 +19,7 @@ namespace HUDManager.Configuration
         public VirtualKey ModifierKeyCode { get; set; } = VirtualKey.NO_KEY;
         public VirtualKey KeyCode { get; set; } = VirtualKey.NO_KEY;
         public MultiCondition MultiCondition { get; set; } = new();
+        public List<uint> MapIds { get; set; } = new();
 
         [JsonConstructor]
         private CustomCondition(string name)
@@ -40,6 +43,10 @@ namespace HUDManager.Configuration
 
                 case CustomConditionType.HoldToActivate:
                     return plugin.Keybinder.KeybindIsPressed(this.KeyCode, this.ModifierKeyCode);
+
+                case CustomConditionType.InZone:
+                    var playerMap = Map.GetRootZoneId(plugin.DataManager, plugin.ClientState.TerritoryType);
+                    return playerMap is not null ? this.MapIds.Contains(playerMap.Value) : false;
 
                 case CustomConditionType.MultiCondition:
                     return MultiCondition!.IsActive(plugin);
@@ -133,9 +140,10 @@ namespace HUDManager.Configuration
 
     public enum CustomConditionType
     {
-        ConsoleToggle,
-        HoldToActivate,
-        MultiCondition
+        ConsoleToggle = 0,
+        HoldToActivate = 1,
+        InZone = 3,
+        MultiCondition = 2,
     }
 
     public static class CustomConditionTypeExt
@@ -145,7 +153,18 @@ namespace HUDManager.Configuration
             {
                 CustomConditionType.ConsoleToggle => "Toggle by command",
                 CustomConditionType.HoldToActivate => "Hold key",
+                CustomConditionType.InZone => "In zone",
                 CustomConditionType.MultiCondition => "Multiple conditions",
+                _ => throw new ArgumentOutOfRangeException(nameof(type))
+            };
+
+        public static int DisplayOrder(this CustomConditionType type)
+            => type switch
+            {
+                CustomConditionType.ConsoleToggle => 0,
+                CustomConditionType.HoldToActivate => 1,
+                CustomConditionType.InZone => 2,
+                CustomConditionType.MultiCondition => 99,
                 _ => throw new ArgumentOutOfRangeException(nameof(type))
             };
     }

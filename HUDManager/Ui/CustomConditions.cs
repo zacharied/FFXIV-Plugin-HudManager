@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Keys;
+﻿using Dalamud.Data;
+using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Logging;
 using HUD_Manager;
@@ -25,11 +26,13 @@ namespace HUDManager.Ui
 
         private Plugin Plugin { get; init; }
 
+        private DrawConditionEditMenu_InZone ZoneMenu;
         private DrawConditionEditMenu_MultiCondition MenuMulti;
 
         public CustomConditions(Plugin plugin)
         {
             Plugin = plugin;
+            ZoneMenu = new(Plugin.DataManager);
             MenuMulti = new(Plugin);
         }
 
@@ -167,7 +170,9 @@ namespace HUDManager.Ui
             }
 
             if (ImGui.BeginCombo("Condition type", activeCondition.ConditionType.DisplayName())) {
-                foreach (var type in Enum.GetValues(typeof(CustomConditionType)).Cast<CustomConditionType>()) {
+                foreach (var type in Enum.GetValues(typeof(CustomConditionType))
+                            .Cast<CustomConditionType>()
+                            .OrderBy(t => t.DisplayOrder())) {
                     if (ImGui.Selectable(type.DisplayName())) {
                         activeCondition.ConditionType = type;
                         update = true;
@@ -185,6 +190,9 @@ namespace HUDManager.Ui
                     break;
                 case CustomConditionType.HoldToActivate:
                     DrawConditionEditMenu_Keybind(ref update);
+                    break;
+                case CustomConditionType.InZone:
+                    ZoneMenu.Draw(activeCondition, ref update);
                     break;
                 case CustomConditionType.MultiCondition:
                     MenuMulti.Draw(activeCondition!, ref update);
@@ -271,6 +279,78 @@ namespace HUDManager.Ui
             ImGui.Text($"Input status: {Plugin.Keybinder.KeybindIsPressed(activeCondition.KeyCode, activeCondition.ModifierKeyCode)}");
 
             ImGui.PopItemWidth();
+        }
+
+        private class DrawConditionEditMenu_InZone
+        {
+            private Lumina.Excel.ExcelSheet<Lumina.Excel.GeneratedSheets.Map> Sheet;
+
+            private record ZoneListData(uint MapId, string Name);
+
+            private string ZoneNameFilterInput = string.Empty;
+            private List<ZoneListData> AllZones;
+
+            private int SelectedZonesSelection = -1, AllZonesSelection = -1;
+
+            public DrawConditionEditMenu_InZone(DataManager data)
+            {
+                Sheet = data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Map>()!;
+                AllZones = Map.GetZoneMaps(data).Select(map => new ZoneListData(map.RowId, map.Name)).ToList();
+                ZoneNameFilterInput = string.Empty;
+            }
+
+            public void Draw(CustomCondition activeCondition, ref bool update)
+            {
+                if (activeCondition is null)
+                    return;
+
+                ImGui.BeginListBox("Selected zones");
+                var ConditionZoneItems = activeCondition.MapIds.Select(mid => new ZoneListData(mid, AllZones.First(zone => zone.MapId == mid).Name));
+                foreach ((ZoneListData zone, int i) in ConditionZoneItems.Select((z, i) => (z, i))) {
+                    if (ImGui.Selectable($"{zone.Name}##selected-{i}", SelectedZonesSelection == i)) {
+                        SelectedZonesSelection = i;
+                    }
+                }
+                ImGui.EndListBox();
+
+                ImGui.Separator();
+
+                if (ImGuiExt.IconButton(FontAwesomeIcon.ArrowDown, "down") && SelectedZonesSelection >= 0) {
+                    activeCondition.MapIds.RemoveAt(SelectedZonesSelection);
+                    update = true;
+
+                    SelectedZonesSelection = -1;
+                } else if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("Remove the selected zone from the list above.");
+                }
+                ImGui.SameLine();
+                if (ImGuiExt.IconButton(FontAwesomeIcon.ArrowUp, "up") && AllZonesSelection >= 0) {
+                    activeCondition.MapIds.Add(AllZones[AllZonesSelection].MapId);
+                    update = true;
+
+                    AllZonesSelection = -1;
+                } else if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("Add the selected zone from the list below.");
+                }
+
+                ImGui.Separator();
+
+                if (ImGui.InputText("Filter", ref ZoneNameFilterInput, 256)) {
+                    AllZonesSelection = -1;
+                }
+                ImGui.BeginListBox("All zones");
+                foreach ((ZoneListData zone, int i) in AllZones
+                        .Select((z, i) => (z, i))
+                        .Where(zi => zi.z.Name.ToLower().StartsWith(ZoneNameFilterInput.ToLower()))
+                        .ExceptBy(activeCondition.MapIds, zi => zi.z.MapId)) {
+                    if (ImGui.Selectable($"{zone.Name}##selected-all-{i}", AllZonesSelection == i)) {
+                        AllZonesSelection = i;
+                    }
+                }
+                ImGui.EndListBox();
+
+                //ImGui
+            }
         }
 
         private class DrawConditionEditMenu_MultiCondition
