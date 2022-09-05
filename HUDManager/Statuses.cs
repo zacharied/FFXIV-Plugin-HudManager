@@ -1,4 +1,5 @@
-﻿using Dalamud.Game.ClientState.Conditions;
+﻿using Dalamud.Data;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
@@ -31,6 +32,8 @@ namespace HUD_Manager
         public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, new());
 
         public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
+
+        public bool NeedsForceUpdate { get; private set; }
 
         public bool InPvpZone { get; private set; } = false;
         private bool SanctuaryDetectionFailed = false;
@@ -74,9 +77,10 @@ namespace HUD_Manager
             this.Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
         }
 
-        public bool Update(Character? player)
+        public bool Update()
         {
-            if (player == null) {
+            var player = Plugin.ClientState.LocalPlayer;
+            if (player is null) {
                 return false;
             }
 
@@ -134,19 +138,19 @@ namespace HUD_Manager
             return (null, layers);
         }
 
-        public void SetHudLayout(Character? player, bool update = false)
+        public void SetHudLayout()
         {
-            if (update && player != null) {
-                this.Update(player);
-            }
+            NeedsForceUpdate = false;
 
             ResultantLayout = this.CalculateResultantLayout();
             if (ResultantLayout.activeLayout is null) {
-                return; // FIXME: do something better
+                NeedsForceUpdate = true;
+                return;
             }
 
             if (!this.Plugin.Config.Layouts.ContainsKey(ResultantLayout.activeLayout.LayoutId)) {
-                return; // FIXME: do something better
+                PluginLog.Error($"Attempt to set nonexistent layout \"{ResultantLayout.activeLayout.LayoutId}\".");
+                return;
             }
 
             this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));

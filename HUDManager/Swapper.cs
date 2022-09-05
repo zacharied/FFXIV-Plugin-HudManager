@@ -13,8 +13,6 @@ namespace HUD_Manager
 
         public bool SwapsTemporarilyDisabled = false;
 
-        private bool firstTerritoryChangeFired = false;
-
         public Swapper(Plugin plugin)
         {
             this.Plugin = plugin;
@@ -33,16 +31,13 @@ namespace HUD_Manager
 
         public void OnLogin(object? sender, EventArgs e)
         {
-            firstTerritoryChangeFired = false;
+            // Player object is null here, not much to do
         }
 
         public void OnTerritoryChange(object? sender, ushort tid)
         {
-            if (this.firstTerritoryChangeFired)
-                return;
-
-            this.Plugin.Statuses.Update(this.Plugin.ClientState.LocalPlayer);
-            this.Plugin.Statuses.SetHudLayout(null);
+            this.Plugin.Statuses.Update();
+            this.Plugin.Statuses.SetHudLayout();
         }
 
         public void OnFrameworkUpdate(Framework framework)
@@ -56,10 +51,12 @@ namespace HUD_Manager
                 return;
             }
 
-            var updated = this.Plugin.Statuses.Update(player) || this.Plugin.Keybinder.UpdateKeyState() || this.Plugin.Statuses.CustomConditionStatus.IsUpdated();
+            var updated = this.Plugin.Statuses.Update()
+                || this.Plugin.Keybinder.UpdateKeyState()
+                || this.Plugin.Statuses.CustomConditionStatus.IsUpdated();
 
-            if (updated) {
-                this.Plugin.Statuses.SetHudLayout(null);
+            if (updated || this.Plugin.Statuses.NeedsForceUpdate) {
+                this.Plugin.Statuses.SetHudLayout();
             }
         }
     }

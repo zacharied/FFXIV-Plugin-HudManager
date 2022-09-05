@@ -39,7 +39,8 @@ namespace HUD_Manager.Ui
                 this.Plugin.Config.SwapsEnabled = enabled;
                 this.Plugin.Config.Save();
 
-                this.Plugin.Statuses.SetHudLayout(this.Plugin.ClientState.LocalPlayer, true);
+                this.Plugin.Statuses.Update();
+                this.Plugin.Statuses.SetHudLayout();
             }
 
             ImGui.Spacing();
@@ -357,8 +358,8 @@ namespace HUD_Manager.Ui
                 return;
             }
 
-            this.Plugin.Statuses.Update(player);
-            this.Plugin.Statuses.SetHudLayout(null);
+            this.Plugin.Statuses.Update();
+            this.Plugin.Statuses.SetHudLayout();
         }
     }
 }
