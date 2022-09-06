@@ -141,10 +141,13 @@ namespace HUD_Manager
                 if (i % 2 == 0) {
                     // non-quoted
                     var localParts = parts[i].Split(" ");
-                    if ((i - 2) % 4 == 0)
-                        newArgs.AddRange(localParts.Skip(1));
+                    if (parts.Length > 2)
+                        if ((i - 2) % 4 == 0)
+                            newArgs.AddRange(localParts.Skip(1));
+                        else
+                            newArgs.AddRange(localParts.SkipLast(1));
                     else
-                        newArgs.AddRange(localParts.SkipLast(1));
+                        newArgs.AddRange(localParts);
                 } else {
                     // quoted
                     newArgs.Add(parts[i]);
