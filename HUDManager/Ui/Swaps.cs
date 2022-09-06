@@ -124,7 +124,6 @@ namespace HUD_Manager.Ui
                 ImGui.TableNextRow();
                 ImGui.TableSetColumnIndex(0);
 
-
                 if (this._editingConditionIndex == item.i) {
                     // Editing in progress
                     this._editingCondition ??= new HudConditionMatch();
@@ -167,7 +166,9 @@ namespace HUD_Manager.Ui
                     ImGui.PopItemWidth();
                     ImGui.TableNextColumn();
 
-                    var statusDisplayName = this._editingCondition.Status?.Name() ?? this._editingCondition.CustomCondition?.Name;
+                    // Column: Status/Custom condition
+
+                    var statusDisplayName = this._editingCondition.Status?.Name() ?? this._editingCondition.CustomCondition?.DisplayName;
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo("##condition-edit-status", statusDisplayName ?? "Any")) {
@@ -183,7 +184,7 @@ namespace HUD_Manager.Ui
                         }
 
                         foreach (var cond in Plugin.Config.CustomConditions) {
-                            if (ImGui.Selectable($"{cond.Name}##condition-edit-status")) {
+                            if (ImGui.Selectable($"{cond.DisplayName}##condition-edit-status")) {
                                 this._editingCondition.CustomCondition = cond;
                                 this._editingCondition.Status = null;
                             }
@@ -229,6 +230,8 @@ namespace HUD_Manager.Ui
 
                     ImGui.TableNextColumn();
                 } else {
+                    // Column: Layer
+
                     if (advancedMode) {
                         if (item.cond.IsLayer) {
                             ImGui.PushFont(UiBuilder.IconFont);
@@ -238,19 +241,27 @@ namespace HUD_Manager.Ui
                         ImGui.TableNextColumn();
                     }
 
+                    // Column: Job
+
                     var jobDisplayName = item.cond.ClassJobCategory?.DisplayName(Plugin) ?? String.Empty;
 
                     ImGui.TextUnformatted(jobDisplayName);
                     ImGui.TableNextColumn();
 
-                    var statusDisplayName = item.cond.Status?.Name() ?? item.cond.CustomCondition?.Name;
+                    // Column: Status/Custom condition
+
+                    var statusDisplayName = item.cond.Status?.Name() ?? item.cond.CustomCondition?.DisplayName;
 
                     ImGui.TextUnformatted(statusDisplayName ?? string.Empty);
                     ImGui.TableNextColumn();
 
+                    // Column: Layout
+
                     this.Plugin.Config.Layouts.TryGetValue(item.cond.LayoutId, out var condLayout);
                     ImGui.TextUnformatted(condLayout?.Name ?? string.Empty);
                     ImGui.TableNextColumn();
+
+                    // Column: Actions
 
                     if (ImGuiExt.IconButton(FontAwesomeIcon.PencilAlt, $"{item.i}")) {
                         this._editingConditionIndex = item.i;

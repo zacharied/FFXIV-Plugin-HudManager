@@ -12,6 +12,7 @@
         public const string CustomSwapConditionsList = "uimanager-customswapconditions-list-layout-shart";
         public const string CannotRemoveCustomCondition = "custom-condition-cannot-remove";
         public const string AddedConditionWouldCreateLoop = "Cannot add condition##multi-cond-would-have-loop";
+        public const string UsedConditionWouldCreateLoop = "Cannot use condition##multi-cond-use-would-have-loop";
         public const string ErrorAddingHudElement = "Error#error-adding-hud-element";
     }
 }

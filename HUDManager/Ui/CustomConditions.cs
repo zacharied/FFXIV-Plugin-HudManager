@@ -17,7 +17,7 @@ namespace HUDManager.Ui
     public class CustomConditions
     {
         // UI data container
-        private (int selectedIndex, int editIndex, string editBuf, bool focusTextEdit) ui = (-1, -1, string.Empty, false);
+        private (int selectedIndex, int editIndex, string? previousName, string editBuf, bool focusTextEdit) ui = (-1, -1, null, string.Empty, false);
 
         private CustomCondition? activeCondition =>
             ui.selectedIndex >= 0 ?
@@ -79,6 +79,9 @@ namespace HUDManager.Ui
 
         private void DrawConditionSelectorPane(ref bool update)
         {
+            bool ConditionNameIsValid(string? s)
+                => !string.IsNullOrWhiteSpace(s) && !Plugin.Config.CustomConditions.Exists(c => c.Name != ui.previousName && c.Name == s);
+
             float PaneWidth = 170f * ImGuiHelpers.GlobalScale;
 
             ImGui.BeginGroup();
@@ -87,20 +90,23 @@ namespace HUDManager.Ui
             ImGui.BeginListBox("##custom-condition-listbox", new Vector2(PaneWidth, -1 - ImGui.GetTextLineHeight() * 2));
             foreach (var (cond, i) in Plugin.Config.CustomConditions.Select((item, i) => (item, i))) {
                 if (i == ui.editIndex) {
-                    if (ImGui.InputText($"##custom-condition-name-{i}", ref ui.editBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.CharsNoBlank)
+                    if (ImGui.InputText($"##custom-condition-name-{i}", ref ui.editBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue)
                       || ImGui.IsItemDeactivated()) {
                         // save users from themselves
-                        ui.editBuf = ui.editBuf.Trim();
+                        ui.editBuf = ui.editBuf
+                            .Trim()
+                            .Replace(Commands.QuoteCharacter, "");
 
                         // This kind of check should really be enforced on the config level but whatever.
-                        if (string.IsNullOrWhiteSpace(ui.editBuf) || Plugin.Config.CustomConditions.Exists(c => c.Name == ui.editBuf)) {
-                            cond.Name = this.DefaultConditionName();
+                        if (!ConditionNameIsValid(ui.editBuf)) {
+                            cond.Name = ConditionNameIsValid(ui.previousName) ? ui.previousName! : DefaultConditionName();
                         } else {
                             cond.Name = ui.editBuf;
                         }
 
                         ui.editIndex = -1;
                         ui.editBuf = string.Empty;
+                        ui.previousName = null;
                         update = true;
                     }
 
@@ -109,7 +115,8 @@ namespace HUDManager.Ui
                         ui.focusTextEdit = false;
                     }
                 } else {
-                    if (ImGui.Selectable($"{cond.Name}##custom-condition-{i}", ui.selectedIndex == i)) {
+                    if (ImGui.Selectable($"{cond.Name}##custom-condition-selectable", ui.selectedIndex == i)) {
+                        MenuMulti.ClearEditing();
                         ui.selectedIndex = i;
                     }
                 }
@@ -129,7 +136,9 @@ namespace HUDManager.Ui
             ImGui.SameLine();
 
             if (ImGuiExt.IconButton(FontAwesomeIcon.Edit) && ui.selectedIndex >= 0) {
+                ui.previousName = Plugin.Config.CustomConditions[ui.selectedIndex].Name;
                 ui.editIndex = ui.selectedIndex;
+                ui.editBuf = ui.previousName;
                 ui.focusTextEdit = true;
             }
 
@@ -223,7 +232,8 @@ namespace HUDManager.Ui
             ImGui.Text("Example commands:");
 
             foreach (string cmd in (new[] { "on", "off", "toggle" })) {
-                string fullCommand = $"/hudman condition {activeCondition.Name} {cmd}";
+                var name = activeCondition.Name.Any(x => char.IsWhiteSpace(x)) ? $"\"{activeCondition.Name}\"" : activeCondition.Name;
+                string fullCommand = $"/hudman condition {name} {cmd}";
                 if (ImGui.Button($"Copy##copy-condition-command-{cmd}")) {
                     ImGui.SetClipboardText(fullCommand);
                 }
@@ -248,8 +258,8 @@ namespace HUDManager.Ui
             // Modifier key
             var modifierKeyDisplay = activeCondition.ModifierKeyCode.GetFancyName();
             if (ImGui.BeginCombo("Modifier##custom-condition-modifier-key", modifierKeyDisplay)) {
-                foreach ((VirtualKey k, int i) in Plugin.Keybinder.ModifierKeys.Select((k, i) => (k, i))) {
-                    if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-modifier-key-op-{i}")) {
+                foreach (var k in Plugin.Keybinder.ModifierKeys) {
+                    if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-modifier-key-op")) {
                         activeCondition.ModifierKeyCode = k;
                         update = true;
                     }
@@ -263,8 +273,8 @@ namespace HUDManager.Ui
             // Input key
             var inputKeyDisplay = activeCondition.KeyCode.GetFancyName();
             if (ImGui.BeginCombo("Keybind##custom-condition-input-key", inputKeyDisplay)) {
-                foreach ((VirtualKey k, int i) in Plugin.Keybinder.InputKeys.Select((k, i) => (k, i))) {
-                    if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-input-key-op-{i}")) {
+                foreach (var k in Plugin.Keybinder.InputKeys) {
+                    if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-input-key-op")) {
                         activeCondition.KeyCode = k;
                         update = true;
                     }
@@ -348,8 +358,6 @@ namespace HUDManager.Ui
                     }
                 }
                 ImGui.EndListBox();
-
-                //ImGui
             }
         }
 
@@ -359,16 +367,29 @@ namespace HUDManager.Ui
 
             private (
                 int editingConditionIndex,
-                MultiCondition.MultiConditionItem? editingCondition, 
+                MultiCondition.MultiConditionItem? editingCondition,
                 bool addCondition,
                 int deleteCondition,
                 (int index, int direction) moveCondition,
                 float savedRowHeight
-            ) Ui = (-1, null, false, -1, (-1, 0), 0);
+            ) Ui;
 
             public DrawConditionEditMenu_MultiCondition(Plugin plugin)
             {
                 Plugin = plugin;
+                ClearEditing();
+            }
+
+            public void ClearEditing()
+            {
+                Ui = (
+                    editingConditionIndex: -1,
+                    editingCondition: null,
+                    addCondition: false,
+                    deleteCondition: -1,
+                    moveCondition: (-1, 0),
+                    savedRowHeight: 0
+                );
             }
 
             public void Draw(CustomCondition activeCondition, ref bool update)
@@ -394,6 +415,8 @@ namespace HUDManager.Ui
                 var workingConditions = new List<MultiCondition.MultiConditionItem>(activeCondition.MultiCondition!.AllItems);
                 if (Ui.editingConditionIndex == workingConditions.Count)
                     workingConditions.Add(Ui.editingCondition!);
+
+                bool usedConditionLoopPopup = false;
 
                 foreach (var (cond, i) in workingConditions.Select((cond, i) => (cond, i))) { 
                     ImGui.TableNextRow();
@@ -443,13 +466,22 @@ namespace HUDManager.Ui
                             }
 
                             foreach (var custom in Plugin.Config.CustomConditions) {
-                                if (ImGui.Selectable($"{custom.Name}##condition-edit-status")) {
+                                if (ImGui.Selectable($"{custom.DisplayName}##condition-edit-status")) {
+                                    var prevCondition = Ui.editingCondition.Condition;
+
                                     Ui.editingCondition.Condition = new CustomConditionUnion(custom);
+
+                                    if (!Ui.editingCondition.Condition.Custom!.MultiCondition.Validate()) {
+                                        // Revert to previous condition
+                                        Ui.editingCondition.Condition = prevCondition;
+                                        usedConditionLoopPopup = true;
+                                    }
+
                                     update = true;
                                 }
                             }
 
-                            if (ImGui.Selectable("Class/Job")) {
+                            if (ImGui.Selectable("Class/Job")) {
                                 Ui.editingCondition.Condition = new CustomConditionUnion((ClassJobCategoryId)0);
                                 update = true;
                             }
@@ -627,10 +659,25 @@ namespace HUDManager.Ui
                     Ui.deleteCondition = -1;
                 }
 
+                if (usedConditionLoopPopup) {
+                    ImGui.OpenPopup(Popups.UsedConditionWouldCreateLoop);
+                    usedConditionLoopPopup = false;
+                }
+
                 // Popups
 
-                if (ImGui.BeginPopupModal(Popups.AddedConditionWouldCreateLoop)) {
+                bool _ready = true;
+                if (ImGui.BeginPopupModal(Popups.AddedConditionWouldCreateLoop, ref _ready, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.AlwaysAutoResize)) {
                     ImGui.Text("Adding that condition would result in an infinite loop.");
+                    if (ImGui.Button("OK"))
+                        ImGui.CloseCurrentPopup();
+
+                    ImGui.EndPopup();
+                }
+
+                _ready = true;
+                if (ImGui.BeginPopupModal(Popups.UsedConditionWouldCreateLoop, ref _ready, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.AlwaysAutoResize)) {
+                    ImGui.Text("Using that condition would result in an infinite loop.");
                     if (ImGui.Button("OK"))
                         ImGui.CloseCurrentPopup();
 

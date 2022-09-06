@@ -13,6 +13,7 @@ namespace HUDManager.Configuration
     public class CustomCondition
     {
         public string Name { get; set; }
+        public string DisplayName => $"{Name}";
 
         public CustomConditionType ConditionType { get; set; } = CustomConditionType.ConsoleToggle;
 
@@ -123,9 +124,9 @@ namespace HUDManager.Configuration
         }
 
         public string UiName(Plugin plugin, bool partial = false) =>
-            CurrentType == typeof(CustomCondition) ? Custom!.Name :
+            CurrentType == typeof(CustomCondition) ? Custom!.DisplayName :
             CurrentType == typeof(Status) ? Game!.Value.Name() :
-            CurrentType == typeof(ClassJobCategoryId) ? "Class/Job" + (partial ? string.Empty : $": {ClassJob!.Value.DisplayName(plugin)}") :
+            CurrentType == typeof(ClassJobCategoryId) ? "Class/Job" + (partial ? string.Empty : $"  {ClassJob!.Value.DisplayName(plugin)}") :
             throw new CustomConditionUnionUndefinedException();
 
         /// <summary>

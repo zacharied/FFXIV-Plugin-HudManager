@@ -5,11 +5,13 @@ using HUDManager.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace HUD_Manager
 {
     public class Commands : IDisposable
     {
+        public const string QuoteCharacter = "\"";
         private Plugin Plugin { get; }
 
         public Commands(Plugin plugin)
@@ -61,14 +63,20 @@ namespace HUD_Manager
                 this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, entry.Key);
                 this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
             } else if (argsList[0] == "condition") {
-                if (argsList.Length != 3) {
+                var quotedArgs = GetArgsWithQuotes(args);
+                if (quotedArgs is null) {
+                    Plugin.ChatGui.PrintError("Malformed quotation marks.");
+                    return;
+                }
+
+                if (quotedArgs.Length != 3) {
                     Plugin.ChatGui.PrintError("Invalid arguments.");
                     return;
                 }
 
-                var cond = Plugin.Config.CustomConditions.Find(c => c.Name == argsList[1]);
+                var cond = Plugin.Config.CustomConditions.Find(c => c.Name == quotedArgs[1]);
                 if (cond is null) {
-                    Plugin.ChatGui.PrintError($"Invalid condition \"{argsList[1]}\".");
+                    Plugin.ChatGui.PrintError($"Invalid condition \"{quotedArgs[1]}\".");
                     return;
                 } else if (cond.ConditionType != CustomConditionType.ConsoleToggle) {
                     Plugin.ChatGui.PrintError("That condition cannot be toggled by commands.");
@@ -76,11 +84,11 @@ namespace HUD_Manager
                 }
 
                 bool? val = null;
-                if (argsList[2] == "true" || argsList[2] == "on") {
+                if (quotedArgs[2] == "true" || quotedArgs[2] == "on") {
                     val = true;
-                } else if (argsList[2] == "false" || argsList[2] == "off") {
+                } else if (quotedArgs[2] == "false" || quotedArgs[2] == "off") {
                     val = false;
-                } else if (argsList[2] == "toggle") {
+                } else if (quotedArgs[2] == "toggle") {
                     if (!Plugin.Statuses.CustomConditionStatus.ContainsKey(cond)) {
                         // Default value for toggling a condition we haven't registered.
                         val = true;
@@ -90,7 +98,7 @@ namespace HUD_Manager
                 }
 
                 if (!val.HasValue) {
-                    Plugin.ChatGui.PrintError($"Invalid setting \"{argsList[2]}\".");
+                    Plugin.ChatGui.PrintError($"Invalid setting \"{quotedArgs[2]}\".");
                     return;
                 }
 
@@ -119,6 +127,31 @@ namespace HUD_Manager
             } else {
                 Plugin.ChatGui.PrintError($"Invalid subcommand \"{argsList[0]}\".");
             }
+        }
+
+        private static string[]? GetArgsWithQuotes(string argString)
+        {
+            var newArgs = new List<string>();
+
+            var parts = argString.Split(QuoteCharacter);
+            if (parts.Length % 2 == 0)
+                return null;
+
+            for (int i = 0; i < parts.Length; i++) {
+                if (i % 2 == 0) {
+                    // non-quoted
+                    var localParts = parts[i].Split(" ");
+                    if ((i - 2) % 4 == 0)
+                        newArgs.AddRange(localParts.Skip(1));
+                    else
+                        newArgs.AddRange(localParts.SkipLast(1));
+                } else {
+                    // quoted
+                    newArgs.Add(parts[i]);
+                }
+            }
+
+            return newArgs.ToArray();
         }
     }
 }
