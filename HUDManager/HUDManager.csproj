@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Library</OutputType>
-        <TargetFramework>net60-windows</TargetFramework>
-        <Version>2.5.8.1</Version>
+        <TargetFramework>net7.0-windows</TargetFramework>
+        <Version>2.5.9.1</Version>
         <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <Nullable>enable</Nullable>
@@ -49,7 +49,7 @@
 	
     <ItemGroup>
         <PackageReference Include="Costura.Fody" Version="5.1.0" PrivateAssets="all" />
-        <PackageReference Include="DalamudPackager" Version="2.1.7" />
+        <PackageReference Include="DalamudPackager" Version="2.1.10" />
         <PackageReference Include="Fody" Version="6.5.1">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
