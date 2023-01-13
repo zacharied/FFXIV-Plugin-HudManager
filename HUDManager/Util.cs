@@ -36,8 +36,8 @@ namespace HUD_Manager
         {
             unsafe {
                 var configModule = ConfigModule.Instance();
-                var option = configModule->GetValueById((short)ConfigOption.PadMode);
-                return (option->Byte & 1) > 0;
+                var option = configModule->GetIntValue(ConfigOption.PadMode);
+                return (option > 0);
             }
         }
 

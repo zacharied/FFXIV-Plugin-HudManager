@@ -54,7 +54,7 @@ namespace HUD_Manager
             [RequiredVersion("1.0")] CommandManager commandManager,
             [RequiredVersion("1.0")] DataManager dataManager,
             [RequiredVersion("1.0")] ClientState clientState,
-            [RequiredVersion("1.0")] Dalamud.Game.ClientState.Conditions.Condition condition,
+            [RequiredVersion("1.0")] Condition condition,
             [RequiredVersion("1.0")] Framework framework,
             [RequiredVersion("1.0")] SigScanner sigScanner,
             [RequiredVersion("1.0")] GameGui gameGui,

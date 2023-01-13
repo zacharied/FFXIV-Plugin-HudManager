@@ -1,6 +1,8 @@
 ﻿using Dalamud.Data;
+using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
+using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Logging;
 using FFXIVClientStructs;
@@ -16,6 +18,7 @@ using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 // TODO: Zone swaps?
@@ -38,19 +41,19 @@ namespace HUD_Manager
         public bool InPvpZone { get; private set; } = false;
         private bool SanctuaryDetectionFailed = false;
 
-        public static byte GetStatus(GameObject actor)
-        {
+        //public static byte GetStatus(GameObject actor)
+        //{
             // Updated: 6.2
             // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
-            const int offset = 0x1AEF;
-            return Marshal.ReadByte(actor.Address + offset);
-        }
+            //const int offset = 0xA38;
+            //return Marshal.ReadByte(actor.Address + offset);
+        //}
 
         internal static byte GetOnlineStatus(GameObject actor)
         {
             // Updated: 6.2
             // E8 ?? ?? ?? ?? 48 85 C0 75 54
-            const int offset = 0x1AD6;
+            const int offset = 0x1B02;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
@@ -58,7 +61,7 @@ namespace HUD_Manager
         {
             // Updated: 5.5
             // E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 0F B6 43 50
-            const int offset = 0x197C;
+            const int offset = 0x1B00;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
@@ -233,8 +236,9 @@ namespace HUD_Manager
         public bool GamepadModeStatus()
         {
             unsafe {
-                var config = ConfigModule.Instance();
-                return config->GetValueById((short)ConfigOption.PadMode)->UInt > 0;
+                var configModule = ConfigModule.Instance();
+                var option = configModule->GetIntValue(ConfigOption.PadMode);
+                return option > 0;
             }
         }
 
@@ -388,7 +392,7 @@ namespace HUD_Manager
 
             switch (status) {
                 case Status.WeaponDrawn:
-                    return (Statuses.GetStatus(player!) & 4) > 0;
+                    return player!.StatusFlags.HasFlag(StatusFlags.WeaponOut);
                 case Status.Roleplaying:
                     return Statuses.GetOnlineStatus(player!) == 22;
                 case Status.PlayingMusic:
