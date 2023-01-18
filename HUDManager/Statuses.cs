@@ -40,25 +40,22 @@ namespace HUD_Manager
 
         public static byte GetStatus(GameObject actor)
         {
-            // Updated: 6.2
-            // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
-            const int offset = 0x1AEF;
+            // Updated: 6.3
+            const int offset = 0x1B1B;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetOnlineStatus(GameObject actor)
         {
-            // Updated: 6.2
-            // E8 ?? ?? ?? ?? 48 85 C0 75 54
-            const int offset = 0x1AD6;
+            // Updated: 6.3
+            const int offset = 0x1B02;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetBardThing(GameObject actor)
         {
-            // Updated: 5.5
-            // E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 0F B6 43 50
-            const int offset = 0x197C;
+            // Updated: 6.3
+            const int offset = 0x1B00;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
@@ -399,10 +396,10 @@ namespace HUD_Manager
                     return plugin.Condition[ConditionFlag.OccupiedInEvent]
                         | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
                         | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
-                case Status.InFate:
-                    return plugin.Statuses.IsInFate(player!);
-                case Status.InFateLevelSynced:
-                    return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
+                ////case Status.InFate:
+                ////    return plugin.Statuses.IsInFate(player!);
+                ////case Status.InFateLevelSynced:
+                ////    return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
                 case Status.InSanctuary:
                     return plugin.Statuses.IsInSanctuary();
                 case Status.ChatFocused:
