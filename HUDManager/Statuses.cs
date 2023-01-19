@@ -177,7 +177,7 @@ namespace HUD_Manager
         public bool IsInFate(Character player)
         {
             unsafe {
-                ////var fateManager = *FateManager.Instance();
+                var fateManager = *FateManager.Instance();
                 ////return (fateManager.FateJoined & 1) == 1;
 
                 return (Marshal.ReadByte(inFateAreaPtr) == 1);
