@@ -1,4 +1,5 @@
 ﻿using Dalamud.Data;
+using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -38,6 +39,8 @@ namespace HUD_Manager
         public bool InPvpZone { get; private set; } = false;
         private bool SanctuaryDetectionFailed = false;
 
+        private IntPtr inFateAreaPtr = IntPtr.Zero;
+
         public static byte GetStatus(GameObject actor)
         {
             // Updated: 6.3
@@ -67,8 +70,25 @@ namespace HUD_Manager
                 CustomConditionStatus[cond] = false;
             }
 
-            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange; 
+            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange;
+
+            InitializePointers();
         }
+
+        private unsafe void InitializePointers()
+        {
+            // FATE pointer (thanks to Pohky#8008)
+            try
+            {
+                var sig = this.Plugin.SigScanner.ScanText("80 3D ?? ?? ?? ?? ?? 0F 84 ?? ?? ?? ?? 48 8B 42 20");
+                inFateAreaPtr = sig + Marshal.ReadInt32(sig, 2) + 7;
+            }
+            catch
+            {
+                PluginLog.Error("Failed loading 'inFateAreaPtr'");
+            }
+        }
+
         public void Dispose()
         {
             this.Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
@@ -157,8 +177,10 @@ namespace HUD_Manager
         public bool IsInFate(Character player)
         {
             unsafe {
-                var fateManager = *FateManager.Instance();
-                return (fateManager.FateJoined & 1) == 1;
+                ////var fateManager = *FateManager.Instance();
+                ////return (fateManager.FateJoined & 1) == 1;
+
+                return (Marshal.ReadByte(inFateAreaPtr) == 1);
             }
         }
 
@@ -396,10 +418,10 @@ namespace HUD_Manager
                     return plugin.Condition[ConditionFlag.OccupiedInEvent]
                         | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
                         | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
-                ////case Status.InFate:
-                ////    return plugin.Statuses.IsInFate(player!);
-                ////case Status.InFateLevelSynced:
-                ////    return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
+                case Status.InFate:
+                    return plugin.Statuses.IsInFate(player!);
+                case Status.InFateLevelSynced:
+                    return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
                 case Status.InSanctuary:
                     return plugin.Statuses.IsInSanctuary();
                 case Status.ChatFocused:
