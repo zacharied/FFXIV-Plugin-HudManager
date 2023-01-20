@@ -39,7 +39,7 @@ namespace HUD_Manager
         public bool InPvpZone { get; private set; } = false;
         private bool SanctuaryDetectionFailed = false;
 
-        private IntPtr inFateAreaPtr = IntPtr.Zero;
+        private IntPtr InFateAreaPtr = IntPtr.Zero;
 
         public static byte GetStatus(GameObject actor)
         {
@@ -78,13 +78,10 @@ namespace HUD_Manager
         private unsafe void InitializePointers()
         {
             // FATE pointer (thanks to Pohky#8008)
-            try
-            {
+            try {
                 var sig = this.Plugin.SigScanner.ScanText("80 3D ?? ?? ?? ?? ?? 0F 84 ?? ?? ?? ?? 48 8B 42 20");
-                inFateAreaPtr = sig + Marshal.ReadInt32(sig, 2) + 7;
-            }
-            catch
-            {
+                InFateAreaPtr = sig + Marshal.ReadInt32(sig, 2) + 7;
+            } catch {
                 PluginLog.Error("Failed loading 'inFateAreaPtr'");
             }
         }
@@ -177,10 +174,7 @@ namespace HUD_Manager
         public bool IsInFate(Character player)
         {
             unsafe {
-                ////var fateManager = *FateManager.Instance();
-                ////return (fateManager.FateJoined & 1) == 1;
-
-                return (Marshal.ReadByte(inFateAreaPtr) == 1);
+                return (Marshal.ReadByte(InFateAreaPtr) == 1);
             }
         }
 
@@ -313,7 +307,7 @@ namespace HUD_Manager
 
             bool statusMet = !this.Status.HasValue || plugin.Statuses.Condition[this.Status.Value];
             bool customConditionMet = this.CustomCondition?.IsMet(plugin) ?? true;
-            bool jobMet = this.ClassJobCategory is null 
+            bool jobMet = this.ClassJobCategory is null
                 || this.ClassJobCategory.Value.IsActivated(plugin.ClientState.LocalPlayer!.ClassJob.GameData!);
 
             return statusMet && customConditionMet && jobMet;
