@@ -9,4 +9,4 @@ description: |-
   - Change visibility of job gauges
   - Export and import layouts from text
 repo_url: https://github.com/zacharied/FFXIV-Plugin-HudManager
-dalamud_api_level: 7
+dalamud_api_level: 8
