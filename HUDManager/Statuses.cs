@@ -1,4 +1,5 @@
 ﻿using Dalamud.Data;
+using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -38,27 +39,26 @@ namespace HUD_Manager
         public bool InPvpZone { get; private set; } = false;
         private bool SanctuaryDetectionFailed = false;
 
+        private IntPtr inFateAreaPtr = IntPtr.Zero;
+
         public static byte GetStatus(GameObject actor)
         {
-            // Updated: 6.2
-            // 40 57 48 83 EC 70 48 8B F9 E8 ?? ?? ?? ?? 81 BF ?? ?? ?? ?? ?? ?? ?? ??
-            const int offset = 0x1AEF;
+            // Updated: 6.3
+            const int offset = 0x1B1B;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetOnlineStatus(GameObject actor)
         {
-            // Updated: 6.2
-            // E8 ?? ?? ?? ?? 48 85 C0 75 54
-            const int offset = 0x1AD6;
+            // Updated: 6.3
+            const int offset = 0x1B02;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
         internal static byte GetBardThing(GameObject actor)
         {
-            // Updated: 5.5
-            // E8 ?? ?? ?? ?? 48 8B CB E8 ?? ?? ?? ?? 0F B6 43 50
-            const int offset = 0x197C;
+            // Updated: 6.3
+            const int offset = 0x1B00;
             return Marshal.ReadByte(actor.Address + offset);
         }
 
@@ -70,8 +70,25 @@ namespace HUD_Manager
                 CustomConditionStatus[cond] = false;
             }
 
-            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange; 
+            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange;
+
+            InitializePointers();
         }
+
+        private unsafe void InitializePointers()
+        {
+            // FATE pointer (thanks to Pohky#8008)
+            try
+            {
+                var sig = this.Plugin.SigScanner.ScanText("80 3D ?? ?? ?? ?? ?? 0F 84 ?? ?? ?? ?? 48 8B 42 20");
+                inFateAreaPtr = sig + Marshal.ReadInt32(sig, 2) + 7;
+            }
+            catch
+            {
+                PluginLog.Error("Failed loading 'inFateAreaPtr'");
+            }
+        }
+
         public void Dispose()
         {
             this.Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
@@ -160,8 +177,10 @@ namespace HUD_Manager
         public bool IsInFate(Character player)
         {
             unsafe {
-                var fateManager = *FateManager.Instance();
-                return (fateManager.FateJoined & 1) == 1;
+                ////var fateManager = *FateManager.Instance();
+                ////return (fateManager.FateJoined & 1) == 1;
+
+                return (Marshal.ReadByte(inFateAreaPtr) == 1);
             }
         }
 
