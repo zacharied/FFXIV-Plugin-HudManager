@@ -334,7 +334,7 @@ namespace HUD_Manager
                 if (unit is null)
                     return;
 
-                var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
+                var visibilityMask = Util.GamepadModeActive() ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
                 if ((element.Visibility & visibilityMask) > 0) {
                     // Reveal element.
                     if (unit->UldManager.NodeListCount == 0)

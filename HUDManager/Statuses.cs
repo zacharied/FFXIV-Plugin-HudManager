@@ -243,14 +243,6 @@ namespace HUD_Manager
             }
         }
 
-        public bool GamepadModeStatus()
-        {
-            unsafe {
-                var config = ConfigModule.Instance();
-                return config->GetValueById((short)ConfigOption.PadMode)->UInt > 0;
-            }
-        }
-
         public class CustomConditionStatusContainer
         {
             private Dictionary<CustomCondition, bool> Status { get; } = new();
@@ -421,9 +413,9 @@ namespace HUD_Manager
                 case Status.ChatFocused:
                     return plugin.Statuses.IsChatFocused();
                 case Status.InputModeKbm:
-                    return !plugin.Statuses.GamepadModeStatus();
+                    return !Util.GamepadModeActive();
                 case Status.InputModeGamepad:
-                    return plugin.Statuses.GamepadModeStatus();
+                    return Util.GamepadModeActive();
             }
 
             return false;

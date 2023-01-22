@@ -32,12 +32,12 @@ namespace HUD_Manager
             }
         }
 
-        public static bool GamepadModeActive(Plugin plugin)
+        public static bool GamepadModeActive()
         {
             unsafe {
                 var configModule = ConfigModule.Instance();
-                var option = configModule->GetValueById((short)ConfigOption.PadMode);
-                return (option->Byte & 1) > 0;
+                var option = configModule->GetIntValue((short)ConfigOption.PadMode);
+                return option > 0;
             }
         }
 
