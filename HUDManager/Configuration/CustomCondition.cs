@@ -21,6 +21,7 @@ namespace HUDManager.Configuration
         public VirtualKey KeyCode { get; set; } = VirtualKey.NO_KEY;
         public MultiCondition MultiCondition { get; set; } = new();
         public List<uint> MapIds { get; set; } = new();
+        public float HoldTime { get; set; } = 0;
 
         [JsonConstructor]
         private CustomCondition(string name)

@@ -285,13 +285,23 @@ namespace HUD_Manager.Ui
                         action = 1;
                     }
 
+                    // Column: Active
+
                     ImGui.TableNextColumn();
                     if (Plugin.Config.SwapsEnabled) {
                         string activeText = string.Empty;
                         if (Plugin.Statuses.ResultantLayout.activeLayout == item.cond) {
-                            activeText = "★";
+                            if (Plugin.Statuses.ConditionHoldTimerIsTicking(item.cond)) {
+                                activeText = "▼";
+                            } else {
+                                activeText = "★";
+                            }
                         } else if (Plugin.Statuses.ResultantLayout.layeredLayouts.Contains(item.cond)) {
-                            activeText = "☆";
+                            if (Plugin.Statuses.ConditionHoldTimerIsTicking(item.cond)) {
+                                activeText = "▽";
+                            } else {
+                                activeText = "☆";
+                            }
                         }
                         if (activeText != string.Empty) {
                             ImGuiExt.CenterColumnText(activeText);

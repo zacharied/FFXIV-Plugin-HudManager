@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Text.RegularExpressions;
 using static Dalamud.Game.ClientState.Keys.VirtualKeyExtensions;
 
 namespace HUDManager.Ui
@@ -28,6 +29,8 @@ namespace HUDManager.Ui
 
         private DrawConditionEditMenu_InZone ZoneMenu;
         private DrawConditionEditMenu_MultiCondition MenuMulti;
+
+        private readonly Regex HoldTimeInputRegex = new(@"^[0-9]*.?[0-9]*$");
 
         public CustomConditions(Plugin plugin)
         {
@@ -178,6 +181,9 @@ namespace HUDManager.Ui
                 return;
             }
 
+
+            ImGui.Separator();
+
             if (ImGui.BeginCombo("Condition type", activeCondition.ConditionType.DisplayName())) {
                 foreach (var type in Enum.GetValues(typeof(CustomConditionType))
                             .Cast<CustomConditionType>()
@@ -208,9 +214,28 @@ namespace HUDManager.Ui
                     break;
             }
 
+            ImGui.Separator();
+
+            string holdTimeText = activeCondition.HoldTime.ToString();
+            ImGui.PushItemWidth(100);
+            if (ImGui.InputText("Hold duration", ref holdTimeText, 256, ImGuiInputTextFlags.CharsDecimal)) {
+                if (HoldTimeInputRegex.IsMatch(holdTimeText)) {
+                    if (float.TryParse(holdTimeText, out float value)) {
+                        if (value > 0) {
+                            activeCondition.HoldTime = value;
+                            update = true;
+                        }
+                    }
+                }
+            }
+            ImGui.SameLine();
+            ImGuiExt.HelpMarker("Sets a duration (in seconds) to delay changing the layout once this condition is no longer satisfied. For example, this can be used to keep your combat layout up for a few seconds after combat ends.");
+            ImGui.PopItemWidth();
+
             ImGui.EndChild();
 
             ImGui.EndChild();
+
         }
 
         private void DrawConditionEditMenu_ConsoleCommand(ref bool update)

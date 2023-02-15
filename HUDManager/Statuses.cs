@@ -17,6 +17,7 @@ using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 // TODO: Zone swaps?
@@ -31,6 +32,7 @@ namespace HUD_Manager
         public ClassJob? Job { get; private set; }
 
         public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, new());
+        private Dictionary<HudConditionMatch, float> ConditionHoldTimers = new();
 
         public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
 
@@ -40,6 +42,8 @@ namespace HUD_Manager
         private bool SanctuaryDetectionFailed = false;
 
         private IntPtr InFateAreaPtr = IntPtr.Zero;
+
+        private long LastUpdateTime = 0;
 
         public static byte GetStatus(GameObject actor)
         {
@@ -93,6 +97,8 @@ namespace HUD_Manager
 
         public bool Update()
         {
+            UpdateConditionHoldTimers();
+
             var player = Plugin.ClientState.LocalPlayer;
             if (player is null) {
                 return false;
@@ -138,7 +144,14 @@ namespace HUD_Manager
             }
 
             foreach (var match in this.Plugin.Config.HudConditionMatches) {
-                if (match.IsActivated(Plugin)) {
+                var isActivated = match.IsActivated(Plugin, out bool transitioned);
+                var startTimer = (!isActivated && transitioned && match.CustomCondition?.HoldTime > 0);
+                if (isActivated || startTimer) {
+                    if (startTimer) {
+                        PluginLog.Debug($"Starting timer for \"{match.CustomCondition?.Name}\" ({match.CustomCondition?.HoldTime}s)");
+                        ConditionHoldTimers[match] = match.CustomCondition?.HoldTime ?? 0;
+                    }
+
                     if (match.IsLayer && Plugin.Config.AdvancedSwapMode) {
                         layers.Add(match);
                         continue;
@@ -243,6 +256,31 @@ namespace HUD_Manager
             }
         }
 
+        private void UpdateConditionHoldTimers()
+        {
+            // Update the timers on all ticking conditions.
+            var newTimestamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+            var removeKeys = new List<HudConditionMatch>();
+            foreach (var (k, v) in ConditionHoldTimers) {
+                ConditionHoldTimers[k] -= (float)((double)(newTimestamp - LastUpdateTime) / 1000);
+                if (ConditionHoldTimers[k] < 0) {
+                    PluginLog.Debug($"Condition timer for \"{k.CustomCondition?.Name}\" finished");
+                    removeKeys.Add(k);
+                }
+            }
+
+            // If any conditions finished their timers, we update the HUD layout.
+            removeKeys.ForEach(k => ConditionHoldTimers.Remove(k));
+            if (removeKeys.Any()) {
+                SetHudLayout();
+            }
+
+            LastUpdateTime = newTimestamp;
+        }
+
+        public bool ConditionHoldTimerIsTicking(HudConditionMatch cond)
+            => ConditionHoldTimers.ContainsKey(cond);
+
         public class CustomConditionStatusContainer
         {
             private Dictionary<CustomCondition, bool> Status { get; } = new();
@@ -289,8 +327,14 @@ namespace HUD_Manager
 
         public bool IsLayer { get; set; } = false;
 
-        public bool IsActivated(Plugin plugin)
+        private bool LastValue { get; set; } = false;
+        public float Timer { get; private set; } = 0;
+        private float LastTimestamp { get; set; } = 0;
+
+        public bool IsActivated(Plugin plugin, out bool transitioned)
         {
+            transitioned = false;
+
             var player = plugin.ClientState.LocalPlayer;
             if (player is null) {
                 PluginLog.Warning("can't check job activation when player is null");
@@ -302,7 +346,13 @@ namespace HUD_Manager
             bool jobMet = this.ClassJobCategory is null
                 || this.ClassJobCategory.Value.IsActivated(plugin.ClientState.LocalPlayer!.ClassJob.GameData!);
 
-            return statusMet && customConditionMet && jobMet;
+            var newValue = statusMet && customConditionMet && jobMet;
+            if (LastValue != newValue) {
+                transitioned = true;
+            }
+
+            LastValue = newValue;
+            return newValue;
         }
     }
 
