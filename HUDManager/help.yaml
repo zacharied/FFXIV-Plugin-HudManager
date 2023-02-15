@@ -41,12 +41,14 @@
       a minimalist layout, whereas the second is a combat-oriented layout.
       They are set up to swap on the "Weapon drawn" condition. This works
       well, but there is an issue: the Duty element is hidden on both of these
-      layouts, causing issues when trying to access FATEs. The solution here
-      is to create a new layout with no parent and a single element: the Duty
-      List element, set to be visible. They then apply this layout with the Layered
+      layouts, preventing us from clicking the "Level Sync" button when entering
+      FATES.
+      
+      The solution here is to create a new layout with no parent and a single element: 
+      the Duty List element, set to be visible. They then apply this layout with the Layered
       option checked, on the condition of "In FATE zone", as a swap, placed at the 
       very top of the list. Now, with this set-up, the Duty List will appear whenever
-      they are near a FATE, however their normal sheathing/unsheathing swap will also
+      the player is near a FATE, however their normal sheathing/unsheathing swap will also
       work!
   - name: Why do my hotbars keep appearing/disappearing when visibility is disabled?
     description: >-

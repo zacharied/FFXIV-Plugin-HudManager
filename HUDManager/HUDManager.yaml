@@ -4,7 +4,8 @@ internal_name: HUDManager
 punchline: Take total control over your HUD.
 description: |-
   - Save infinite HUD layouts
-  - Swap between HUD layouts based on conditions
+  - Edit your HUD with precision
+  - Automatically swap between HUD layouts based on conditions
   - Make child layouts that only affect desired HUD elements
   - Change visibility of job gauges
   - Export and import layouts from text
