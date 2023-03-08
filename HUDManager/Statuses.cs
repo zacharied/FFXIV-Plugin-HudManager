@@ -181,7 +181,7 @@ namespace HUD_Manager
             }
 
             this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
-            this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
+            //this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
 
         public bool IsInFate(Character player)
