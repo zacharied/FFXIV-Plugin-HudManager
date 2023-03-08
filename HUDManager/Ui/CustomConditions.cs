@@ -8,6 +8,7 @@ using HUD_Manager;
 using HUD_Manager.Ui;
 using HUDManager.Configuration;
 using ImGuiNET;
+using Lumina;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -202,7 +203,8 @@ namespace HUDManager.Ui
 
             var valueChildBgColor = activeCondition.IsMet(Plugin) ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed;
             ImGui.PushStyleColor(ImGuiCol.ChildBg, valueChildBgColor - new Vector4(0, 0, 0, 0.82f));
-            if (ImGui.BeginChild("##condition-edit-display-value-child", new Vector2(-1, ImGui.GetTextLineHeight() * 2), true)) {
+            if (ImGui.BeginChild("##condition-edit-display-value-child", 
+                                 new Vector2(-1, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemInnerSpacing.Y * 2), true)) {
                 ImGui.Text("Current value:");
                 ImGui.SameLine();
 
