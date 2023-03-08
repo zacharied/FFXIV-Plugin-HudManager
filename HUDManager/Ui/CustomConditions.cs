@@ -1,7 +1,9 @@
 ﻿using Dalamud.Data;
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager;
 using HUD_Manager.Ui;
 using HUDManager.Configuration;
@@ -17,6 +19,8 @@ namespace HUDManager.Ui
 {
     public class CustomConditions
     {
+        private uint SwapperSettingsPaneHeight => (uint)(120 * ImGuiHelpers.GlobalScale);
+
         // UI data container
         private (int selectedIndex, int editIndex, string? previousName, string editBuf, bool focusTextEdit) ui = (-1, -1, null, string.Empty, false);
 
@@ -29,8 +33,6 @@ namespace HUDManager.Ui
 
         private DrawConditionEditMenu_InZone ZoneMenu;
         private DrawConditionEditMenu_MultiCondition MenuMulti;
-
-        private readonly Regex HoldTimeInputRegex = new(@"^[0-9]*.?[0-9]*$");
 
         public CustomConditions(Plugin plugin)
         {
@@ -59,8 +61,8 @@ namespace HUDManager.Ui
 
             ImGuiWindowFlags flags = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking;
 
-            ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(605, 630), ImGuiCond.FirstUseEver);
-            ImGui.SetNextWindowSizeConstraints(ImGuiHelpers.ScaledVector2(605, 630), new Vector2(int.MaxValue, int.MaxValue));
+            ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(605, 700), ImGuiCond.FirstUseEver);
+            ImGui.SetNextWindowSizeConstraints(ImGuiHelpers.ScaledVector2(605, 700), new Vector2(int.MaxValue, int.MaxValue));
 
             if (!ImGui.Begin("[HUD Manager] Custom Conditions", ref windowOpen, flags)) {
                 ImGui.End();
@@ -181,7 +183,6 @@ namespace HUDManager.Ui
                 return;
             }
 
-
             ImGui.Separator();
 
             if (ImGui.BeginCombo("Condition type", activeCondition.ConditionType.DisplayName())) {
@@ -197,45 +198,89 @@ namespace HUDManager.Ui
                 ImGui.EndCombo();
             }
 
-            ImGui.BeginChild("##condition-menu-child-edit-condition-settings", new Vector2(-1, -1), true);
+            ImGui.Spacing();
 
-            switch (activeCondition.ConditionType) {
-                case CustomConditionType.ConsoleToggle:
-                    DrawConditionEditMenu_ConsoleCommand(ref update);
-                    break;
-                case CustomConditionType.HoldToActivate:
-                    DrawConditionEditMenu_Keybind(ref update);
-                    break;
-                case CustomConditionType.InZone:
-                    ZoneMenu.Draw(activeCondition, ref update);
-                    break;
-                case CustomConditionType.MultiCondition:
-                    MenuMulti.Draw(activeCondition!, ref update);
-                    break;
+            var valueChildBgColor = activeCondition.IsMet(Plugin) ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed;
+            ImGui.PushStyleColor(ImGuiCol.ChildBg, valueChildBgColor - new Vector4(0, 0, 0, 0.82f));
+            if (ImGui.BeginChild("##condition-edit-display-value-child", new Vector2(-1, ImGui.GetTextLineHeight() * 2), true)) {
+                ImGui.Text("Current value:");
+                ImGui.SameLine();
+
+                if (activeCondition.IsMet(Plugin)) {
+                    ImGui.TextColored(ImGuiColors.ParsedGreen, "✓ TRUE");
+                } else {
+                    ImGui.TextColored(ImGuiColors.DalamudRed, "× FALSE");
+                }
+
+                ImGui.EndChild();
+            }
+            ImGui.PopStyleColor();
+
+            ImGui.Spacing();
+
+            if (ImGui.BeginChild("##condition-menu-child-edit-condition-settings-main",
+                                new Vector2(-1, ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeight() - SwapperSettingsPaneHeight),
+                                false)) {
+                ImGui.Spacing();
+                switch (activeCondition.ConditionType) {
+                    case CustomConditionType.ConsoleToggle:
+                        DrawConditionEditMenu_ConsoleCommand(ref update);
+                        break;
+                    case CustomConditionType.HoldToActivate:
+                        DrawConditionEditMenu_Keybind(ref update);
+                        break;
+                    case CustomConditionType.InZone:
+                        ZoneMenu.Draw(activeCondition, ref update);
+                        break;
+                    case CustomConditionType.MultiCondition:
+                        MenuMulti.Draw(activeCondition!, ref update);
+                        break;
+                }
+
+                ImGui.EndChild();
             }
 
-            ImGui.Separator();
+            if (ImGui.BeginChild("##condition-menu-child-sub-settings", new Vector2(-1, SwapperSettingsPaneHeight), true)) {
+                DrawConditionEditMenuSwapSettings(ref update);
 
-            string holdTimeText = activeCondition.HoldTime.ToString();
-            ImGui.PushItemWidth(100);
-            if (ImGui.InputText("Hold duration", ref holdTimeText, 256, ImGuiInputTextFlags.CharsDecimal)) {
-                if (HoldTimeInputRegex.IsMatch(holdTimeText)) {
-                    if (float.TryParse(holdTimeText, out float value)) {
-                        if (value > 0) {
-                            activeCondition.HoldTime = value;
-                            update = true;
-                        }
+                ImGui.EndChild();
+            }
+
+            ImGui.EndChild();
+
+        }
+
+        private void DrawConditionEditMenuSwapSettings(ref bool update)
+        {
+            if (activeCondition is null)
+                return;
+
+            ImGui.Text("Swapper Settings");
+
+            bool enableHoldTime = activeCondition.HoldTime > 0;
+            if (ImGui.Checkbox("Delay layout change when deactivating", ref enableHoldTime)) {
+                activeCondition.HoldTime = enableHoldTime ? 0.1f : 0;
+            }
+
+            ImGui.SameLine();
+            ImGuiExt.HelpMarker("Sets a duration (in seconds) to delay changing the layout once this condition is no longer satisfied." +
+                "For example, this can be used to keep your combat layout up for a few seconds after combat ends." +
+                "\n\nNote that the delay will only be applied when the condition is activated as a Swap condition." +
+                "It will be ignored when activating the condition in this menu.");
+
+            if (enableHoldTime) {
+                float holdTimeInput = activeCondition.HoldTime;
+
+                ImGui.Indent();
+                ImGui.PushItemWidth(180);
+                if (ImGui.InputFloat("Delay duration", ref holdTimeInput, 0.05f, 0.2f, "%.2f")) {
+                    if (holdTimeInput > 0) {
+                        activeCondition.HoldTime = Math.Max(0, holdTimeInput);
+                        update = true;
                     }
                 }
+                ImGui.PopItemWidth();
             }
-            ImGui.SameLine();
-            ImGuiExt.HelpMarker("Sets a duration (in seconds) to delay changing the layout once this condition is no longer satisfied. For example, this can be used to keep your combat layout up for a few seconds after combat ends.");
-            ImGui.PopItemWidth();
-
-            ImGui.EndChild();
-
-            ImGui.EndChild();
-
         }
 
         private void DrawConditionEditMenu_ConsoleCommand(ref bool update)
@@ -265,12 +310,6 @@ namespace HUDManager.Ui
                 ImGui.SameLine();
                 ImGui.Text(fullCommand);
             }
-
-            ImGuiExt.VerticalSpace();
-            ImGui.Separator();
-            ImGuiExt.VerticalSpace();
-
-            ImGui.Text($"Current value: {Plugin.Statuses.CustomConditionStatus[activeCondition]}");
         }
 
         private void DrawConditionEditMenu_Keybind(ref bool update)
@@ -278,7 +317,7 @@ namespace HUDManager.Ui
             if (activeCondition is null)
                 return;
 
-            ImGui.PushItemWidth(100 * ImGuiHelpers.GlobalScale);
+            ImGui.PushItemWidth(135 * ImGuiHelpers.GlobalScale);
 
             // Modifier key
             var modifierKeyDisplay = activeCondition.ModifierKeyCode.GetFancyName();
@@ -292,9 +331,6 @@ namespace HUDManager.Ui
                 ImGui.EndCombo();
             }
 
-            ImGui.PopItemWidth();
-            ImGui.PushItemWidth(135 * ImGuiHelpers.GlobalScale);
-
             // Input key
             var inputKeyDisplay = activeCondition.KeyCode.GetFancyName();
             if (ImGui.BeginCombo("Keybind##custom-condition-input-key", inputKeyDisplay)) {
@@ -306,12 +342,6 @@ namespace HUDManager.Ui
                 }
                 ImGui.EndCombo();
             }
-
-            ImGuiExt.VerticalSpace();
-            ImGui.Separator();
-            ImGuiExt.VerticalSpace();
-
-            ImGui.Text($"Input status: {Plugin.Keybinder.KeybindIsPressed(activeCondition.KeyCode, activeCondition.ModifierKeyCode)}");
 
             ImGui.PopItemWidth();
         }
@@ -339,7 +369,9 @@ namespace HUDManager.Ui
                 if (activeCondition is null)
                     return;
 
-                ImGui.BeginListBox("Selected zones");
+                var listBoxSize = new Vector2(ImGui.GetContentRegionAvail().X - 100 * ImGuiHelpers.GlobalScale,
+                                              (ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeight() * 5) / 2);
+                ImGui.BeginListBox("Selected zones", listBoxSize);
                 var ConditionZoneItems = activeCondition.MapIds.Select(mid => new ZoneListData(mid, AllZones.First(zone => zone.MapId == mid).Name));
                 foreach ((ZoneListData zone, int i) in ConditionZoneItems.Select((z, i) => (z, i))) {
                     if (ImGui.Selectable($"{zone.Name}##selected-{i}", SelectedZonesSelection == i)) {
@@ -370,10 +402,13 @@ namespace HUDManager.Ui
 
                 ImGui.Separator();
 
+                ImGui.PushItemWidth(listBoxSize.X);
                 if (ImGui.InputText("Filter", ref ZoneNameFilterInput, 256)) {
                     AllZonesSelection = -1;
                 }
-                ImGui.BeginListBox("All zones");
+                ImGui.PopItemWidth();
+
+                ImGui.BeginListBox("All zones", listBoxSize);
                 foreach ((ZoneListData zone, int i) in AllZones
                         .Select((z, i) => (z, i))
                         .Where(zi => zi.z.Name.ToLower().StartsWith(ZoneNameFilterInput.ToLower()))
@@ -424,9 +459,6 @@ namespace HUDManager.Ui
 
                 const ImGuiTableFlags flags = ImGuiTableFlags.PadOuterX
                                         | ImGuiTableFlags.RowBg;
-
-                if (!ImGui.BeginChild("##custom-condition-multi-table-child-container", new Vector2(0, ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeightWithSpacing() * 5), true))
-                    return;
 
                 if (!ImGui.BeginTable("custom-condition-multi-table", 4, flags))
                     return;
@@ -635,12 +667,6 @@ namespace HUDManager.Ui
                 } else if (ImGui.IsItemHovered()) {
                     ImGui.SetTooltip("Add a new condition");
                 }
-
-                ImGui.EndChild();
-
-                ImGui.BeginGroup();
-
-                ImGui.TextUnformatted($"Current status: {activeCondition.IsMet(Plugin)}");
 
                 if (Ui.addCondition) {
                     update = true;

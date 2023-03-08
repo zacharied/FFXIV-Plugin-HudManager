@@ -392,7 +392,7 @@ namespace HUD_Manager.Ui.Editor
 
                     this.Ui.SelectedLayout = id;
 
-                    ReportImport($"slot {slot + 1}");
+                    ReportImport($"slot {slot}");
 
                     ImGui.CloseCurrentPopup();
                 }
