@@ -223,6 +223,8 @@ namespace HUD_Manager.Ui.Editor
             }
 
             SetUpOptionsPopup();
+
+            ImGui.Indent();
             if (ImGuiExt.IconButton(FontAwesomeIcon.Cog)) {
                 ImGui.OpenPopup(Popups.LayoutEditorOptions);
             }
