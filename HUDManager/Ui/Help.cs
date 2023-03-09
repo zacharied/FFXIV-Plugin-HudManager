@@ -25,10 +25,27 @@ namespace HUD_Manager.Ui
 
             ImGui.PushTextWrapPos();
 
-            foreach (var entry in this.Plugin.Help.Help) {
-                if (ImGui.CollapsingHeader(entry.Name)) {
-                    ImGui.TextUnformatted(entry.Description.Replace("\n", "\n\n"));
+            void DrawHelp(HelpEntry help)
+            {
+                if (ImGui.CollapsingHeader(help.Name)) {
+                    if (help.Description is not null) {
+                        ImGui.TextUnformatted(help.Description.Replace("\n", "\n\n"));
+                    }
+                    
+                    if (help.Help is not null) {
+                        ImGui.Spacing();
+                        foreach (var subHelp in help.Help) {
+                            ImGui.Indent();
+                            DrawHelp(subHelp);
+                            ImGui.Unindent();
+                        }
+                        ImGui.Spacing();
+                    }
                 }
+            }
+
+            foreach (var entry in this.Plugin.Help.Help) {
+                DrawHelp(entry);
             }
 
             ImGui.PopTextWrapPos();

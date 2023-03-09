@@ -1,72 +1,118 @@
 ﻿help:
-  - name: Basic overview
+  - name: Overview
     description: >-
-      HUD Manager allows you to create infinite HUD layouts and
-      dynamically swap to them based on in-game conditions.
-  - name: What is the staging slot?
-    description: >-
-      The staging slot is the in-game HUD slot that the plugin will
-      update. For example, if it is set to 4, your in-game HUD slot
-      will always be 4 while the plugin is active. The plugin will
-      update that slot with whichever layout is appropriate when
-      necessary.
-  - name: What is a layout parent? How does inheritance work?
-    description: >-
-      Every layout created by HUD Manager may have a parent. Layouts
-      with parents are called child layouts. Child layouts inherit all
-      HUD elements from all of their parents but can override
-      them. This system allows for you to create one base layout and
-      have several variations. When you update the base layout, all
-      the variations will reflect that update automatically without
-      any extra work on your part.
+      HUD Manager is designed to provide complete control over the game's HUD.
+      There are two main parts to HUD Manager.
 
-      For example, imagine a layout called "Default" and a layout
-      called "Battle". The Battle layout is a child of the Default
-      layout and is set to turn on in combat. The Battle layout has
-      one HUD element added: gil, and gil is hidden. The Default
-      layout has gil visible. When not in combat, gil will be visible,
-      but when entering combat, gil will be hidden. This is because
-      the Battle layout inherits all the HUD elements from the Default
-      layout, but it overrides the gil HUD element to hide it during
-      combat.
-  - name: How does layering work?
-    description: >-
-      When enabled, Layout layering (accessed by enabling "advanced 
-      mode" in the Swap menu) allows for any HUD layout to be layered 
-      on top of the active HUD. This is useful for applying a persistent
-      element in certain scenarios, while still allowing normal HUD
-      swaps to happen.
+      Layout Editor allows you to precisely adjust elements of the UI. 
+      You can adjust the position of UI elements numerically, as well as change other settings of the element
+      such as visibility and scale.
+      You can save your HUD layouts in named presets, independent of the game's built-in four slots, and swap to
+      them at will with a chat command, or automatically with Swapper.
 
-      As an example, imagine a setup with 2 layouts. The first is
-      a minimalist layout, whereas the second is a combat-oriented layout.
-      They are set up to swap on the "Weapon drawn" condition. This works
-      well, but there is an issue: the Duty element is hidden on both of these
-      layouts, preventing us from clicking the "Level Sync" button when entering
-      FATES.
+      Swapper allows your HUD to react to the game state, changing the layout when in-game conditions of your choosing are fulfilled.
+      Swapper has a highly flexible configuration system that allows your HUD layout to respond to almost anything in the game.
+
+  - name: Layout Editor
+    description: >-
+      The Layout Editor provides similar functions to the in-game "HUD Layout" menu option.
+      However, the interface is designed for precision rather than speed.
+      You may want to consider first designing the outline of your UI with the in-game "HUD Layout" menu option before improving upon it in Layout Editor.
+
+      The top of the window allows you to choose a layout from your list of presets, as well as add and delete presets to your collection.
+      Upon first run, you should see that your four HUD slots from the "HUD Layout" screen have been imported as presets. If you ever wish to re-import
+      your layouts, you can use the "Import" button at the top of the window.
+      There is also the "Parent" field, which can be empty. Setting a parent allows the layout to inherit all elements from another layout.
+
+      The "Options" dropdown allows you to change how the Layout Editor itself works. The defaults should be fine for most uses.
+
+      Below the Options you can find the elements in your layout. 
+      A layout does not necessarily contain every HUD element,
+      and any HUD element not in the preset will be completely ignored by HUD Manager when changing to that preset.
+      You can add a new element to the preset with the button at the top of the HUD Elements tab.
+
+    help:
+      - name: HUD element
+        description: >-
+          Upon clicking on a HUD element, it will expand to show its properties. From here you can move the element by adjusting its X and Y,
+          as well as changing any other settings.
+          
+          You can click the magnifying glass icon to show a gray window on top of the element in question.
+          You can click and drag this box to move the element.
+          However, the box is not accurate for most elements, so don't rely on it for precise positioning.
+
+          You can also click the trash can icon to delete the element from the layout.
+          Please note that this will not hide the element—it will only prevent HUD Manager from adjusting it when changing to the current layout.
+
+          If your layout has a parent, you will see a column "Enabled" on the left.
+          This allows you to adjust only certain parameters of the HUD element,
+          as any property with this column unchecked will inherit the value from the parent layout, if the parent layout also has the element.
+          In most cases, this should be on, but it is useful for things like adjusting the opacity of elements without moving them.
       
-      The solution here is to create a new layout with no parent and a single element: 
-      the Duty List element, set to be visible. They then apply this layout with the Layered
-      option checked, on the condition of "In FATE zone", as a swap, placed at the 
-      very top of the list. Now, with this set-up, the Duty List will appear whenever
-      the player is near a FATE, however their normal sheathing/unsheathing swap will also
-      work!
-  - name: Why do my hotbars keep appearing/disappearing when visibility is disabled?
-    description: >-
-      Please make sure that any hotbar with a visibility that the
-      plugin is not supposed to change has its visibility disabled in
-      all layouts. This means if you want Hotbar 1's visibility to not
-      be managed by the plugin, and you use layout C, which is
-      underneath layout A and B, you must set Hotbar 1's visibility to
-      disabled in layouts A, B, and C.
+      - name: Window
+        description: >-
+          Windows refer to the menu windows shown in-game such as Inventory, Map, and Chat. They can be changed similarly to HUD elements.
+          
+          Note that unlike HUD elements, you must first have the window open in order to add it to your layout.
 
-      Additionally, due to HUD shenanigans, you cannot use /hotbar
-      display X on/off to toggle hotbar visibility. Please use /hud
-      HotbarX instead. This will fix your issue.
-  - name: Why do I experience lag/stuttering when the HUD layout swaps?
+      - name: External Elements
+        description: >-
+          At the moment, the only External Element that can be configured is Browsingway overlays.
+          The Browsingway plugin must be installed for this to do anything.
+
+          You need to set the "Name" field manually to be the same as the name of the Browsingway overlay.
+
+          The "Enabled" column on the left allows you to define whether to change that property, or leave it untouched.
+
+  - name: Swapper
     description: >-
-      This is a known issue, caused by certain third-party plugins and programs.
-      If you experience this, please disable all third-party plugins and close
-      any background program that interacts with FFXIV. If the issue persists,
-      try disabling all plugins other than HUDManager. If the issue still persists
-      after this, please open an Issue on this plugin's GitHub page along with
-      any relevant information.
+      The Swapper allows you to apply different HUD layouts based on the in-game state.
+      Examples of such states include being a specific class/job, being mounted, or having your weapon drawn.
+
+      First, you must choose your staging slot. This is the HUD slot that HUD Manager will write the HUD layouts to when
+      a layout change is triggered. Whatever is in this slot will be overwritten, so make sure you've imported that slot's layout into the
+      Layout Editor. Once you've chosen a staging slot, you must select it (via the HUD Layout option in the game's main menu) to see the swaps.
+
+      The swapper's configuration is displayed as a table. The first column allows you to (optionally) specify a job,
+      and the second allows you to choose a gameplay state. 
+      When the specified job and state become active, the layout, chosen in the third column, will be applied. 
+      You can edit, delete, and move your conditions with the buttons in the fourth column.
+      Finally, if the swapper is enabled, the rightmost column shows a mark if that condition is met.
+
+      You can think of the conditions as being checked from top to bottom. As soon as a satisfied condition is met, that layout is applied
+      and nothing below that layout will be checked. In other words, the topmost active condition will be used.
+
+    help:
+      - name: Advanced mode
+        description: >-
+          Enabling advanced mode at the bottom of the screen will show the Layer column on the left. This can be turned on and off by editing the desired row.
+
+          A row with Layer activated will allow the swapper to ignore the "topmost active condition" rule.
+          Instead of using the Layered row's layout as the final layout, the conditions below will be checked.
+          If any of those conditions are met, the Layered row's layout will be applied on top of the below condition's layout.
+
+          An obvious usecase here is 
+          to create a "DPS Meter" layout that only contains a Browsingway external element,
+          named the same as your DPS meter inlay in Browsingway.
+          The "Hidden" flag would be enabled and active.
+          Your base layout would have the same external element set up, but with the Hidden flag enabled and inactive.
+          Then, you would create a new condition in the Swapper with Layer enabled and with "In instance" as the condition,
+          and "DPS Meter" as the layout. If you put that condition at the top of the list, any time you enter an instance,
+          your DPS meter inlay will be shown on top of whatever other layout has been selected.
+
+          If this is still confusing, sorry, I pretty much made this feature with only that usecase in mind.
+          I'm sure you can find some other uses for it though.
+
+      - name: Custom conditions
+        description: >-
+          Custom conditions allow you to set up more complex States to be matched by the swapper. There are four kinds of custom condition.
+
+          "Toggle by command" allows you to change the value of this State with a console command.
+
+          "Hold key" causes the State to be activated when a given key (combination) is held.
+
+          "In zone" will only activate the State when you are in one of chosen list of locations.
+
+          Finally, "Multiple conditions" allows you to combine the result of several conditions using logical operations.
+          For example, you could have a "Non-PvP Instance" condition that specifies being in an instance, but NOT being in PvP.
+          You can have as many conditions as you wan, and these conditions can even be other Custom Conditions.

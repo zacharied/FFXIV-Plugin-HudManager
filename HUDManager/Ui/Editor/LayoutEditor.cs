@@ -43,7 +43,7 @@ namespace HUD_Manager.Ui.Editor
 
         internal void Draw()
         {
-            if (!ImGui.BeginTabItem("Layout editor")) {
+            if (!ImGui.BeginTabItem("Layout Editor")) {
                 Plugin.Swapper.SwapsTemporarilyDisabled = false;
                 return;
             }
@@ -155,87 +155,76 @@ namespace HUD_Manager.Ui.Editor
                 goto EndTabItem;
             }
 
-            var layout = this.Plugin.Config.Layouts[this.Ui.SelectedLayout];
+            var layoutElementsHeight = ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeightWithSpacing() - ImGui.GetStyle().ItemInnerSpacing.Y;
+            if (ImGui.BeginChild("##layout-editor-main", new Vector2(-1, layoutElementsHeight), true)) {
+                var layout = this.Plugin.Config.Layouts[this.Ui.SelectedLayout];
 
-            this.Plugin.Config.Layouts.TryGetValue(layout.Parent, out var parent);
-            var parentName = parent?.Name ?? "<none>";
+                this.Plugin.Config.Layouts.TryGetValue(layout.Parent, out var parent);
+                var parentName = parent?.Name ?? "<none>";
 
-            var ourChildren = nodes.Find(this.Ui.SelectedLayout)
-                ?.Traverse()
-                .Select(el => el.Id)
-                .ToArray() ?? new Guid[0];
+                var ourChildren = nodes.Find(this.Ui.SelectedLayout)
+                    ?.Traverse()
+                    .Select(el => el.Id)
+                    .ToArray() ?? new Guid[0];
 
-            if (ImGui.BeginCombo("Parent", parentName)) {
-                if (ImGui.Selectable("<none>")) {
-                    layout.Parent = Guid.Empty;
-                    this.Plugin.Config.Save();
-                }
-
-                foreach (var node in nodes) {
-                    foreach (var (child, depth) in node.TraverseWithDepth()) {
-                        var selectedParent = child.Id == this.Ui.SelectedLayout;
-                        var disabled = selectedParent || ourChildren.Contains(child.Id);
-                        var flags = disabled ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None;
-
-                        var indent = new string(' ', (int)depth * 4);
-                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##parent-{child.Id}", selectedParent, flags)) {
-                            continue;
-                        }
-
-                        layout.Parent = child.Id;
+                if (ImGui.BeginCombo("Parent", parentName)) {
+                    if (ImGui.Selectable("<none>")) {
+                        layout.Parent = Guid.Empty;
                         this.Plugin.Config.Save();
                     }
-                }
 
-                ImGui.EndCombo();
-            }
+                    foreach (var node in nodes) {
+                        foreach (var (child, depth) in node.TraverseWithDepth()) {
+                            var selectedParent = child.Id == this.Ui.SelectedLayout;
+                            var disabled = selectedParent || ourChildren.Contains(child.Id);
+                            var flags = disabled ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None;
 
-            ImGui.SameLine();
-            ImGuiExt.HelpMarker("A layout will inherit its parameters from its parent if it has one."
-                + "\n\nWhen a parent layout is set, the \"Enabled\" column will be visible for each parameter of an element."
-                + "\n\nA parameter must be enabled for it to have any effect. If it is not enabled, the value from the parent layout will be used instead.");
+                            var indent = new string(' ', (int)depth * 4);
+                            if (!ImGui.Selectable($"{indent}{child.Value.Name}##parent-{child.Id}", selectedParent, flags)) {
+                                continue;
+                            }
 
-            ImGui.Separator();
-
-            if (ImGui.CollapsingHeader("Options##uimanager-options")) {
-                ImGui.DragFloat("Slider speed", ref this._dragSpeed, 0.01f, 0.01f, 10f);
-
-                if (ImGui.BeginCombo("Positioning mode", this.Plugin.Config.PositioningMode.ToString())) {
-                    foreach (var mode in (PositioningMode[])Enum.GetValues(typeof(PositioningMode))) {
-                        if (!ImGui.Selectable($"{mode}##positioning", this.Plugin.Config.PositioningMode == mode)) {
-                            continue;
+                            layout.Parent = child.Id;
+                            this.Plugin.Config.Save();
                         }
-
-                        this.Plugin.Config.PositioningMode = mode;
-                        this.Plugin.Config.Save();
                     }
 
                     ImGui.EndCombo();
                 }
+
+                ImGui.SameLine();
+                ImGuiExt.HelpMarker("A layout will inherit its parameters from its parent if it has one."
+                    + "\n\nWhen a parent layout is set, the \"Enabled\" column will be visible for each parameter of an element."
+                    + "\n\nA parameter must be enabled for it to have any effect. If it is not enabled, the value from the parent layout will be used instead.");
+
+                if (ImGui.BeginTabBar("uimanager-positioning")) {
+                    if (ImGui.BeginTabItem("HUD Elements")) {
+                        this.HudElements.Draw(layout, ref update);
+
+                        ImGui.EndTabItem();
+                    }
+
+                    if (ImGui.BeginTabItem("Windows")) {
+                        this.Windows.Draw(layout);
+
+                        ImGui.EndTabItem();
+                    }
+
+                    if (ImGui.BeginTabItem("External Elements")) {
+                        this.ExternalElements.Draw(layout, ref update);
+
+                        ImGui.EndTabItem();
+                    }
+
+                    ImGui.EndTabBar();
+                }
+
+                ImGui.EndChild();
             }
 
-            ImGui.Separator();
-
-            if (ImGui.BeginTabBar("uimanager-positioning")) {
-                if (ImGui.BeginTabItem("HUD Elements")) {
-                    this.HudElements.Draw(layout, ref update);
-
-                    ImGui.EndTabItem();
-                }
-
-                if (ImGui.BeginTabItem("Windows")) {
-                    this.Windows.Draw(layout);
-
-                    ImGui.EndTabItem();
-                }
-
-                if (ImGui.BeginTabItem("External Elements")) {
-                    this.ExternalElements.Draw(layout, ref update);
-
-                    ImGui.EndTabItem();
-                }
-
-                ImGui.EndTabBar();
+            SetUpOptionsPopup();
+            if (ImGuiExt.IconButton(FontAwesomeIcon.Cog)) {
+                ImGui.OpenPopup(Popups.LayoutEditorOptions);
             }
 
         EndTabItem:
@@ -463,6 +452,30 @@ namespace HUD_Manager.Ui.Editor
                 var json = JsonConvert.SerializeObject(newLayout);
                 ImGui.SetClipboardText(json);
                 ReportExport(layout.Name, "the clipboard");
+            }
+
+            ImGui.EndPopup();
+        }
+
+        private void SetUpOptionsPopup()
+        {
+            if (!ImGui.BeginPopup(Popups.LayoutEditorOptions)) {
+                return;
+            }
+
+            ImGui.DragFloat("Slider speed", ref this._dragSpeed, 0.01f, 0.01f, 10f);
+
+            if (ImGui.BeginCombo("Positioning mode", this.Plugin.Config.PositioningMode.ToString())) {
+                foreach (var mode in (PositioningMode[])Enum.GetValues(typeof(PositioningMode))) {
+                    if (!ImGui.Selectable($"{mode}##positioning", this.Plugin.Config.PositioningMode == mode)) {
+                        continue;
+                    }
+
+                    this.Plugin.Config.PositioningMode = mode;
+                    this.Plugin.Config.Save();
+                }
+
+                ImGui.EndCombo();
             }
 
             ImGui.EndPopup();

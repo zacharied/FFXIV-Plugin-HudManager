@@ -14,5 +14,6 @@
         public const string AddedConditionWouldCreateLoop = "Cannot add condition##multi-cond-would-have-loop";
         public const string UsedConditionWouldCreateLoop = "Cannot use condition##multi-cond-use-would-have-loop";
         public const string ErrorAddingHudElement = "Error#error-adding-hud-element";
+        public const string LayoutEditorOptions = "layout-editor-options";
     }
 }

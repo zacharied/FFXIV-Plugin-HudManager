@@ -30,7 +30,7 @@ namespace HUD_Manager.Ui
 
         internal void Draw()
         {
-            if (!ImGui.BeginTabItem("Swaps")) {
+            if (!ImGui.BeginTabItem("Swapper")) {
                 return;
             }
 
