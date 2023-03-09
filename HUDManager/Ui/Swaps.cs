@@ -83,7 +83,7 @@ namespace HUD_Manager.Ui
         private void DrawConditionsTable()
         {
             ImGui.PushFont(UiBuilder.IconFont);
-            var height = ImGui.GetContentRegionAvail().Y - ImGui.CalcTextSize(FontAwesomeIcon.Plus.ToIconString()).Y * 2 - ImGui.GetStyle().ItemSpacing.Y - ImGui.GetStyle().ItemInnerSpacing.Y * 2;
+            var height = ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeightWithSpacing() - ImGui.GetStyle().ItemInnerSpacing.Y;
             ImGui.PopFont();
             if (!ImGui.BeginChild("##conditions-table", new Vector2(-1, height))) {
                 return;
@@ -322,6 +322,8 @@ namespace HUD_Manager.Ui
 
             ImGui.EndChild();
 
+            ImGui.Indent();
+
             if (ImGuiExt.IconButton(FontAwesomeIcon.Flag, "customconditions")) {
                 _customConditionsMenu.isOpen = true;
             } else if (ImGui.IsItemHovered()) {
@@ -338,8 +340,6 @@ namespace HUD_Manager.Ui
                 Plugin.Config.Save();
                 update = true;
             }
-
-            ImGui.Dummy(ImGuiHelpers.ScaledVector2(0, 3));
 
             if (addCondition) {
                 update = true;
