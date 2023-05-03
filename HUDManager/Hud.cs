@@ -204,6 +204,7 @@ namespace HUD_Manager
             var elements = new Dictionary<ElementKind, Element>();
             var windows = new Dictionary<string, Window>();
             var bwOverlays = new List<BrowsingwayOverlay>();
+            CrossUpConfig? crossUpConfig;
 
             // Apply each element of a layout on top of the virtual layout we are constructing.
             void ApplyLayout(Node<SavedLayout> node)
@@ -239,6 +240,9 @@ namespace HUD_Manager
                     }
                     findOverlay.UpdateEnabled(overlay);
                 }
+
+                crossUpConfig = node.Value.CrossUpConfig?.Clone();
+
             }
 
             // get the ancestors and their elements for this node
@@ -261,7 +265,7 @@ namespace HUD_Manager
                 }
             }
 
-            return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, Guid.Empty);
+            return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, crossUpConfig, Guid.Empty);
         }
 
         public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null)
@@ -290,6 +294,8 @@ namespace HUD_Manager
             foreach (var overlay in effective.BrowsingwayOverlays) {
                 overlay.ApplyOverlay(Plugin);
             }
+
+            effective.CrossUpConfig?.ApplyConfig(Plugin);
         }
 
         internal void ImportSlot(string name, HudSlot slot, bool save = true)

@@ -41,6 +41,16 @@ namespace HUD_Manager
             }
         }
 
+        public static bool FullScreen() // treats Borderless as Full Screen
+        {
+            unsafe
+            {
+                var configModule = ConfigModule.Instance();
+                var option = configModule->GetIntValue((short)ConfigOption.ScreenMode);
+                return option > 0;
+            }
+        }
+
         public readonly static Dictionary<uint, string> JobIdToEnglishAbbreviation = new Dictionary<uint, string>()
         {
             [0] = "ADV",

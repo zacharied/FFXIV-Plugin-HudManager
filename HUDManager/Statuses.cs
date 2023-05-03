@@ -376,6 +376,8 @@ namespace HUD_Manager
         ChatFocused = -9,
         InputModeKbm = -10,
         InputModeGamepad = -11,
+        Windowed = -12,
+        FullScreen = -13,
     }
 
     public static class StatusExtensions
@@ -417,6 +419,10 @@ namespace HUD_Manager
                     return "Keyboard/mouse mode";
                 case Status.InputModeGamepad:
                     return "Gamepad mode";
+                case Status.Windowed:
+                    return "Windowed";
+                case Status.FullScreen:
+                    return "Full Screen";
             }
 
             throw new ApplicationException($"No name was set up for {status}");
@@ -466,6 +472,10 @@ namespace HUD_Manager
                     return !Util.GamepadModeActive();
                 case Status.InputModeGamepad:
                     return Util.GamepadModeActive();
+                case Status.Windowed:
+                    return !Util.FullScreen();
+                case Status.FullScreen:
+                    return Util.FullScreen();
             }
 
             return false;
