@@ -22,7 +22,8 @@ namespace HUDManager.Ui.Editor.Tabs
 
         public interface IExternalElement
         {
-            public void AddButtonToList(SavedLayout layout, ref bool update);
+            public bool Available(Plugin plugin);
+            public void AddButtonToList(SavedLayout layout, ref bool update, bool available);
             public void DrawControls(SavedLayout layout, ref bool update);
         }
 
@@ -34,11 +35,11 @@ namespace HUDManager.Ui.Editor.Tabs
 
         internal void Draw(SavedLayout layout, ref bool update)
         {
-            foreach (var e in Elements) e.AddButtonToList(layout, ref update);
+            foreach (var elem in Elements) elem.AddButtonToList(layout, ref update, elem.Available(this.Plugin));
 
             if (!ImGui.BeginChild("uimanager-overlay-edit", new Vector2(0, 0), true)) return;
             
-            foreach (var e in Elements) e.DrawControls(layout, ref update);
+            foreach (var elem in Elements) elem.DrawControls(layout, ref update);
 
             if (update)
             {

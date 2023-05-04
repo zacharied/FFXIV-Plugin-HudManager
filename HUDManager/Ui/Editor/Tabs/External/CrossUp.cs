@@ -3,6 +3,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using HUD_Manager.Configuration;
+using HUD_Manager;
 using HUD_Manager.Ui;
 using ImGuiNET;
 using static HUDManager.Structs.External.CrossUpConfig;
@@ -13,7 +14,19 @@ internal partial class ExternalElements
 {
     public sealed class CrossUp : IExternalElement
     {
-        public void AddButtonToList(SavedLayout layout, ref bool update)
+        public bool Available(Plugin plugin)
+        {
+            try
+            {
+                return plugin.Interface.PluginNames.Contains("CrossUp") && plugin.Interface.GetIpcSubscriber<bool>("CrossUp.Available").InvokeFunc();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public void AddButtonToList(SavedLayout layout, ref bool update, bool avail)
         {
             var exists = layout.CrossUpConfig != null;
             var icon = exists ? FontAwesomeIcon.TrashAlt : FontAwesomeIcon.Plus;
@@ -27,16 +40,19 @@ internal partial class ExternalElements
 
             ImGui.SameLine();
 
-            ImGui.Text("CrossUp");
+            if (avail)
+                ImGui.Text("CrossUp");
+            else
+                ImGui.TextDisabled("CrossUp (not installed)");
+
             ImGui.SameLine();
-            ImGuiExt.HelpMarker(
-                "Install CrossUp before use. You can modify certain CrossUp settings for this layout.");
+            ImGuiExt.HelpMarker("CrossUp is a plugin that enables additional customization and features for the Cross Hotbar. If you have the CrossUp plugin installed, you can use HUD Manager layouts to manipulate your CrossUp settings.");
         }
 
         public void DrawControls(SavedLayout layout, ref bool update)
         {
-            if (layout.CrossUpConfig == null || !ImGui.CollapsingHeader("CrossUp Settings##xup")) return;
-
+            if (layout.CrossUpConfig == null || !ImGui.CollapsingHeader("CrossUp Settings##xup")) {return;}
+            
             const ImGuiTableFlags tableFlags = ImGuiTableFlags.Borders | ImGuiTableFlags.PadOuterX |
                                                ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg;
             const ImGuiColorEditFlags pickerFlags = ImGuiColorEditFlags.PickerMask | ImGuiColorEditFlags.DisplayHex;
@@ -99,8 +115,18 @@ internal partial class ExternalElements
 
                     ImGui.EndTabItem();
                 }
+                
 
-                TrashButton(ref update);
+                
+                ImGui.PushFont(UiBuilder.IconFont);
+                ImGui.SetNextItemWidth(23f*Scale);
+                if (ImGui.TabItemButton($"{FontAwesomeIcon.TrashAlt.ToIconString()}##xup-overlay-remove"))
+                {
+                    layout.CrossUpConfig = null;
+                    update = true;
+                }
+                ImGui.PopFont();
+                ImGuiExt.HoverTooltip("Remove CrossUp settings from this layout");
 
                 ImGui.EndTabBar();
             }
@@ -112,21 +138,21 @@ internal partial class ExternalElements
                 ImGui.TableHeadersRow();
             }
 
-            void DrawEnabledCheckbox(CrossUpComponent component, ref bool update1)
+            void DrawEnabledCheckbox(CrossUpComponent component, ref bool update)
             {
                 var enabled = layout.CrossUpConfig[component];
                 if (!ImGui.Checkbox($"###xup-{component}-enabled", ref enabled)) return;
                 layout.CrossUpConfig[component] = enabled;
-                update1 = true;
+                update = true;
             }
 
-            void LRSplit(ref bool update2)
+            void LRSplit(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
                 ImGui.Spacing();
-                DrawEnabledCheckbox(CrossUpComponent.Split, ref update2);
+                DrawEnabledCheckbox(CrossUpComponent.Split, ref update);
 
                 ImGui.TableNextColumn();
 
@@ -135,7 +161,7 @@ internal partial class ExternalElements
 
                 ImGui.Text("Separate Left/Right");
                 ImGui.SameLine(160f * Scale);
-                if (ImGui.Checkbox("##xup-splitOn", ref layout.CrossUpConfig.Split.on)) update2 = true;
+                if (ImGui.Checkbox("##xup-splitOn", ref layout.CrossUpConfig.Split.on)) update = true;
 
                 if (layout.CrossUpConfig.Split.on)
                 {
@@ -145,7 +171,7 @@ internal partial class ExternalElements
                     if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                     {
                         layout.CrossUpConfig.Split.distance = 100;
-                        update2 = true;
+                        update = true;
                     }
 
                     ImGui.PopID();
@@ -155,7 +181,7 @@ internal partial class ExternalElements
                     {
                         layout.CrossUpConfig.Split.distance =
                             Math.Max(layout.CrossUpConfig.Split.distance, -142);
-                        update2 = true;
+                        update = true;
                     }
 
 
@@ -166,14 +192,14 @@ internal partial class ExternalElements
                     if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                     {
                         layout.CrossUpConfig.Split.center = 0;
-                        update2 = true;
+                        update = true;
                     }
 
                     ImGui.PopID();
                     ImGui.SameLine();
                     ImGui.SetNextItemWidth(90 * Scale);
                     if (ImGui.InputInt("##xup-centerPoint", ref layout.CrossUpConfig.Split.center))
-                        update2 = true;
+                        update = true;
 
                     ImGuiComponents.HelpMarker(
                         "This will override your HUD setting for the bar's horizontal position.");
@@ -182,12 +208,12 @@ internal partial class ExternalElements
                 ImGui.EndGroup();
             }
 
-            void Padlock(ref bool update3)
+            void Padlock(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                DrawEnabledCheckbox(CrossUpComponent.Padlock, ref update3);
+                DrawEnabledCheckbox(CrossUpComponent.Padlock, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -200,32 +226,36 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.Padlock = (0, 0, false);
-                    update3 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(90 * Scale);
-                if (ImGui.InputInt("X##xup-padlockX", ref layout.CrossUpConfig.Padlock.x)) update3 = true;
+                if (ImGui.InputInt("##xup-padlockX", ref layout.CrossUpConfig.Padlock.x)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltH, true);
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(90 * Scale);
-                if (ImGui.InputInt("Y##xup-padlockY", ref layout.CrossUpConfig.Padlock.y)) update3 = true;
+                if (ImGui.InputInt("##xup-padlockY", ref layout.CrossUpConfig.Padlock.y)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltV, true);
 
                 ImGui.SameLine();
                 if (ImGui.Checkbox("Hide##xup-hidePadlock", ref layout.CrossUpConfig.Padlock.hide))
-                    update3 = true;
+                    update = true;
 
                 ImGui.EndGroup();
             }
 
-            void SetNumText(ref bool update4)
+            void SetNumText(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                DrawEnabledCheckbox(CrossUpComponent.SetNum, ref update4);
+                DrawEnabledCheckbox(CrossUpComponent.SetNum, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -238,32 +268,36 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.SetNum = (0, 0, false);
-                    update4 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(90 * Scale);
-                if (ImGui.InputInt("X##xup-setNumTextX", ref layout.CrossUpConfig.SetNum.x)) update4 = true;
+                if (ImGui.InputInt("##xup-setNumTextX", ref layout.CrossUpConfig.SetNum.x)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltH, true);
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(90 * Scale);
-                if (ImGui.InputInt("Y##xup-SetNumTextY", ref layout.CrossUpConfig.SetNum.y)) update4 = true;
+                if (ImGui.InputInt("##xup-SetNumTextY", ref layout.CrossUpConfig.SetNum.y)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltV, true);
 
                 ImGui.SameLine();
                 if (ImGui.Checkbox("Hide##xup-hideSetNumText", ref layout.CrossUpConfig.SetNum.hide))
-                    update4 = true;
+                    update = true;
 
                 ImGui.EndGroup();
             }
 
-            void ChangeSetDisplay(ref bool update5)
+            void ChangeSetDisplay(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                DrawEnabledCheckbox(CrossUpComponent.ChangeSet, ref update5);
+                DrawEnabledCheckbox(CrossUpComponent.ChangeSet, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -276,28 +310,32 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.ChangeSet = (0, 0);
-                    update5 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(90 * Scale);
-                if (ImGui.InputInt("X##xup-changeSetX", ref layout.CrossUpConfig.ChangeSet.x)) update5 = true;
+                if (ImGui.InputInt("##xup-changeSetX", ref layout.CrossUpConfig.ChangeSet.x)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltH, true);
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(90 * Scale);
-                if (ImGui.InputInt("Y##xup-changeSetY", ref layout.CrossUpConfig.ChangeSet.y)) update5 = true;
+                if (ImGui.InputInt("##xup-changeSetY", ref layout.CrossUpConfig.ChangeSet.y)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltV, true);
 
                 ImGui.EndGroup();
             }
 
-            void TriggerText(ref bool update6)
+            void TriggerText(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                DrawEnabledCheckbox(CrossUpComponent.TriggerText, ref update6);
+                DrawEnabledCheckbox(CrossUpComponent.TriggerText, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -306,17 +344,17 @@ internal partial class ExternalElements
                 ImGui.SameLine(160f * Scale);
 
                 if (ImGui.Checkbox("##xup-hideTriggerText", ref layout.CrossUpConfig.HideTriggerText))
-                    update6 = true;
+                    update = true;
 
                 ImGui.EndGroup();
             }
 
-            void UnassignedSlots(ref bool update7)
+            void UnassignedSlots(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                DrawEnabledCheckbox(CrossUpComponent.Unassigned, ref update7);
+                DrawEnabledCheckbox(CrossUpComponent.Unassigned, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -325,11 +363,11 @@ internal partial class ExternalElements
                 ImGui.SameLine(160f * Scale);
 
                 if (ImGui.Checkbox("##xup-hideUnassigned", ref layout.CrossUpConfig.HideUnassigned))
-                    update7 = true;
+                    update = true;
                 ImGui.EndGroup();
             }
 
-            void SelectBG(ref bool update8)
+            void SelectBG(ref bool update)
             {
                 var solid = layout.CrossUpConfig.SelectBG.style == 0;
                 var frame = layout.CrossUpConfig.SelectBG.style == 1;
@@ -341,7 +379,7 @@ internal partial class ExternalElements
                 ImGui.TableNextColumn();
 
                 ImGui.Spacing();
-                DrawEnabledCheckbox(CrossUpComponent.SelectBG, ref update8);
+                DrawEnabledCheckbox(CrossUpComponent.SelectBG, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -354,7 +392,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.SelectBG.color = new(100f / 255f);
-                    update8 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -362,28 +400,28 @@ internal partial class ExternalElements
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
                 if (ImGui.ColorEdit3("##xup-bgColor", ref layout.CrossUpConfig.SelectBG.color, pickerFlags))
-                    update8 = true;
+                    update = true;
 
                 ImGui.Text("Backdrop Style");
                 ImGui.SameLine(160f * Scale);
                 if (ImGui.RadioButton("Solid##xup-bgStyle0", solid))
                 {
                     layout.CrossUpConfig.SelectBG.style = 0;
-                    update8 = true;
+                    update = true;
                 }
 
                 ImGui.SameLine();
                 if (ImGui.RadioButton("Frame##xup-bgStyle1", frame))
                 {
                     layout.CrossUpConfig.SelectBG.style = 1;
-                    update8 = true;
+                    update = true;
                 }
 
                 ImGui.SameLine();
                 if (ImGui.RadioButton("Hidden##xup-bgStyle2", hidden))
                 {
                     layout.CrossUpConfig.SelectBG.style = 2;
-                    update8 = true;
+                    update = true;
                 }
 
                 ImGui.Text("Color Blending");
@@ -391,26 +429,26 @@ internal partial class ExternalElements
                 if (ImGui.RadioButton("Normal##xup-bgBlend0", normal))
                 {
                     layout.CrossUpConfig.SelectBG.blend = 0;
-                    update8 = true;
+                    update = true;
                 }
 
                 ImGui.SameLine();
                 if (ImGui.RadioButton("Dodge##xup-bgBlend2", dodge))
                 {
                     layout.CrossUpConfig.SelectBG.blend = 2;
-                    update8 = true;
+                    update = true;
                 }
 
                 ImGui.EndGroup();
             }
 
-            void Buttons(ref bool update9)
+            void Buttons(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
                 ImGui.Spacing();
-                DrawEnabledCheckbox(CrossUpComponent.Buttons, ref update9);
+                DrawEnabledCheckbox(CrossUpComponent.Buttons, ref update);
                 ImGui.TableNextColumn();
 
                 ImGui.BeginGroup();
@@ -424,7 +462,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.Buttons.glow = new(1f);
-                    update9 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -432,7 +470,7 @@ internal partial class ExternalElements
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
                 if (ImGui.ColorEdit3("##xup-buttonGlow", ref layout.CrossUpConfig.Buttons.glow, pickerFlags))
-                    update9 = true;
+                    update = true;
 
 
                 ImGui.Text("Button Pulse");
@@ -442,7 +480,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.Buttons.pulse = new(1f);
-                    update9 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -450,18 +488,18 @@ internal partial class ExternalElements
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
                 if (ImGui.ColorEdit3("##xup-ButtonPulse", ref layout.CrossUpConfig.Buttons.pulse, pickerFlags))
-                    update9 = true;
+                    update = true;
 
                 ImGui.EndGroup();
             }
 
-            void TextColor(ref bool update10)
+            void TextColor(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
                 ImGui.Spacing();
-                DrawEnabledCheckbox(CrossUpComponent.Text, ref update10);
+                DrawEnabledCheckbox(CrossUpComponent.Text, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -476,7 +514,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.Text.color = new(1f);
-                    update10 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -484,7 +522,7 @@ internal partial class ExternalElements
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
                 if (ImGui.ColorEdit3("##xup-textColor", ref layout.CrossUpConfig.Text.color, pickerFlags))
-                    update10 = true;
+                    update = true;
 
 
                 ImGui.Text("Text Glow");
@@ -494,7 +532,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.Text.glow = new(0.616f, 0.514f, 0.357f);
-                    update10 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -502,7 +540,7 @@ internal partial class ExternalElements
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
                 if (ImGui.ColorEdit3("##xup-textGlow", ref layout.CrossUpConfig.Text.glow, pickerFlags))
-                    update10 = true;
+                    update = true;
 
 
                 ImGui.Text("Border Color");
@@ -512,7 +550,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.Text.border = new(1f);
-                    update10 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -520,18 +558,18 @@ internal partial class ExternalElements
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
                 if (ImGui.ColorEdit3("##xup-border", ref layout.CrossUpConfig.Text.border, pickerFlags))
-                    update10 = true;
+                    update = true;
 
                 ImGui.EndGroup();
             }
 
-            void SeparateEx(ref bool update11)
+            void SeparateEx(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
                 ImGui.Spacing();
-                DrawEnabledCheckbox(CrossUpComponent.SepEx, ref update11);
+                DrawEnabledCheckbox(CrossUpComponent.SepEx, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -539,7 +577,7 @@ internal partial class ExternalElements
 
                 ImGui.TextColored(ImGuiColors.DalamudGrey3, "EXPANDED HOLD CONTROLS");
                 if (ImGui.Checkbox("Display Expanded Hold Controls Separately##xup-sepEx",
-                        ref layout.CrossUpConfig.SepEx)) update11 = true;
+                        ref layout.CrossUpConfig.SepEx)) update = true;
 
                 ImGuiComponents.HelpMarker(
                     "NOTE: This feature functions by borrowing the buttons from two of your standard mouse/keyboard hotbars. Please use CrossUp's plugin configuration to select which bars to borrow.\n\nThe hotbars you choose will not be overwritten, but they will be unavailable while the feature is active.");
@@ -548,25 +586,24 @@ internal partial class ExternalElements
                 if (ImGui.RadioButton("Show Only One Bar##xup-onlyone", layout.CrossUpConfig.OnlyOneEx))
                 {
                     layout.CrossUpConfig.OnlyOneEx = true;
-                    update11 = true;
+                    update = true;
                 }
-
-                ImGui.SameLine();
+                
                 if (ImGui.RadioButton("Show Both##xup-showBoth", !layout.CrossUpConfig.OnlyOneEx))
                 {
                     layout.CrossUpConfig.OnlyOneEx = false;
-                    update11 = true;
+                    update = true;
                 }
 
 
                 ImGui.EndGroup();
             }
 
-            void LRpos(ref bool update12)
+            void LRpos(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                DrawEnabledCheckbox(CrossUpComponent.LRpos, ref update12);
+                DrawEnabledCheckbox(CrossUpComponent.LRpos, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -582,7 +619,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.LRpos = (-214, -88);
-                    update12 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -590,20 +627,24 @@ internal partial class ExternalElements
                 ImGui.SameLine();
 
                 ImGui.SetNextItemWidth(100 * Scale);
-                if (ImGui.InputInt("X##xup-lrX", ref layout.CrossUpConfig.LRpos.x)) update12 = true;
+                if (ImGui.InputInt("##xup-lrX", ref layout.CrossUpConfig.LRpos.x)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltH, true);
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
-                if (ImGui.InputInt("Y##xup-lrY", ref layout.CrossUpConfig.LRpos.y)) update12 = true;
+                if (ImGui.InputInt("##xup-lrY", ref layout.CrossUpConfig.LRpos.y)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltV, true);
 
                 ImGui.EndGroup();
             }
 
-            void RLpos(ref bool update13)
+            void RLpos(ref bool update)
             {
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
-                DrawEnabledCheckbox(CrossUpComponent.RLpos, ref update13);
+                DrawEnabledCheckbox(CrossUpComponent.RLpos, ref update);
 
                 ImGui.TableNextColumn();
                 ImGui.BeginGroup();
@@ -618,7 +659,7 @@ internal partial class ExternalElements
                 if (ImGuiComponents.IconButton(FontAwesomeIcon.UndoAlt))
                 {
                     layout.CrossUpConfig.RLpos = (214, -88);
-                    update13 = true;
+                    update = true;
                 }
 
                 ImGui.PopID();
@@ -626,29 +667,27 @@ internal partial class ExternalElements
                 ImGui.SameLine();
 
                 ImGui.SetNextItemWidth(100 * Scale);
-                if (ImGui.InputInt("X##xup-rlX", ref layout.CrossUpConfig.RLpos.x)) update13 = true;
+                if (ImGui.InputInt("##xup-rlX", ref layout.CrossUpConfig.RLpos.x)) update = true;
+
+                WriteIcon(FontAwesomeIcon.ArrowsAltH, true);
 
                 ImGui.SameLine();
                 ImGui.SetNextItemWidth(100 * Scale);
-                if (ImGui.InputInt("Y##xup-rlY", ref layout.CrossUpConfig.RLpos.y)) update13 = true;
+                if (ImGui.InputInt("##xup-rlY", ref layout.CrossUpConfig.RLpos.y)) update = true;
 
+                WriteIcon(FontAwesomeIcon.ArrowsAltV, true);
 
                 ImGui.EndGroup();
             }
-
-            void TrashButton(ref bool update14)
-            {
-                ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 1.5f * Scale);
-                if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, "xup-overlay-remove"))
-                {
-                    layout.CrossUpConfig = null;
-                    update14 = true;
-                }
-
-                ImGuiExt.HoverTooltip("Remove CrossUp settings from this layout");
-            }
         }
 
+        public static void WriteIcon(FontAwesomeIcon icon, bool sameLine = false)
+        {
+            if (sameLine) ImGui.SameLine();
+            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.Text($"{icon.ToIconString()}");
+            ImGui.PopFont();
+        }
     }
 
     private static float Scale => ImGuiHelpers.GlobalScale;

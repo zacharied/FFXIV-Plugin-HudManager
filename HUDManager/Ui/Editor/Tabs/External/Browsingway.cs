@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Interface;
+using HUD_Manager;
 using HUD_Manager.Configuration;
 using HUD_Manager.Ui;
 using HUDManager.Structs.External;
@@ -12,7 +13,9 @@ internal partial class ExternalElements
 {
     public sealed class Browsingway : IExternalElement
     {
-        public void AddButtonToList(SavedLayout layout, ref bool update)
+        public bool Available(Plugin plugin) => plugin.Interface.PluginNames.Contains("Browsingway");
+
+        public void AddButtonToList(SavedLayout layout, ref bool update, bool avail)
         {
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "uimanager-add-browsingway"))
             {
@@ -20,7 +23,12 @@ internal partial class ExternalElements
             }
 
             ImGui.SameLine();
-            ImGui.Text("Browsingway");
+
+            if (avail)
+                 ImGui.Text("Browsingway");
+            else
+                 ImGui.TextDisabled("Browsingway (not installed)");
+
             ImGui.SameLine();
             ImGuiExt.HelpMarker("Install the Browsingway plugin before use. You can set up changes to Browsingway overlays using this menu.");
         }
@@ -30,7 +38,7 @@ internal partial class ExternalElements
 
             foreach (var (overlay, i) in layout.BrowsingwayOverlays.Select((overlay, i) => (overlay, i)))
             {
-                if (!ImGui.CollapsingHeader($"{overlay.CommandName}###bw-overlay-{i}"))
+                if (!ImGui.CollapsingHeader($"Browsingway: {overlay.CommandName}###bw-overlay-{i}"))
                 {
                     continue;
                 }

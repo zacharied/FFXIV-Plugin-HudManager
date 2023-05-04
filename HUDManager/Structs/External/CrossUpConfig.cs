@@ -62,38 +62,22 @@ public class CrossUpConfig
 
     public void ApplyConfig(Plugin plugin)
     {
-        static void Exec(string cmd, Plugin plugin)
-        {
-            PluginLog.Log($"CrossUp command: {cmd}");
-            plugin.CommandManager.ProcessCommand(cmd);
-        }
-
-        static string FloatToHex(float f) => Convert.ToHexString(BitConverter.GetBytes((uint)(f * 255)))[..2];
-        static string VecToHex(Vector3 color) => FloatToHex(color.X) + FloatToHex(color.Y) + FloatToHex(color.Z);
-
         try
         {
-            if (this[CrossUpComponent.Split]) Exec($"/xup split {(Split.on ? "on" : "off")} {Split.distance} {Split.center}", plugin);
-            if (this[CrossUpComponent.Padlock]) Exec($"/xup padlock {(Padlock.hide ? "off" : "on")} {Padlock.x} {Padlock.y}", plugin);
-            if (this[CrossUpComponent.SetNum]) Exec($"/xup setnum {(SetNum.hide ? "off" : "on")} {SetNum.x} {SetNum.y}", plugin);
-            if (this[CrossUpComponent.ChangeSet]) Exec($"/xup changeset {ChangeSet.x} {ChangeSet.y}", plugin);
-            if (this[CrossUpComponent.TriggerText]) Exec($"/xup triggertext {(HideTriggerText ? "off" : "on")}", plugin);
-            if (this[CrossUpComponent.Unassigned]) Exec($"/xup emptyslots {(HideUnassigned ? "off" : "on")}", plugin);
-            if (this[CrossUpComponent.SelectBG]) Exec($"/xup selectbg {SelectBG.style} {SelectBG.blend} {VecToHex(SelectBG.color)}", plugin);
-            if (this[CrossUpComponent.Buttons]) Exec($"/xup buttonglow {VecToHex(Buttons.glow)} {VecToHex(Buttons.pulse)}", plugin);
-            if (this[CrossUpComponent.Text]) Exec($"/xup text {VecToHex(Text.color)} {VecToHex(Text.glow)} {VecToHex(Text.border)}", plugin);
-            if (this[CrossUpComponent.SepEx])
-            {
-                Exec($"/xup exbar {(SepEx ? "on" : "off")}", plugin);
-                Exec($"/xup onlyone {(OnlyOneEx ? "true" : "false")}", plugin);
-            }
-            if (this[CrossUpComponent.LRpos]) Exec($"/xup lrpos {LRpos.x} {LRpos.y}", plugin);
-            if (this[CrossUpComponent.RLpos]) Exec($"/xup rlpos {RLpos.x} {RLpos.y}", plugin);
+            if (this[CrossUpComponent.Split]) plugin.Interface.GetIpcSubscriber<(bool, int, int), bool>("CrossUp.SplitBar").InvokeAction(Split);
+            if (this[CrossUpComponent.Padlock]) plugin.Interface.GetIpcSubscriber<(int, int, bool), bool>("CrossUp.Padlock").InvokeAction(Padlock);
+            if (this[CrossUpComponent.SetNum]) plugin.Interface.GetIpcSubscriber<(int, int, bool), bool>("CrossUp.SetNumText").InvokeAction(SetNum);
+            if (this[CrossUpComponent.ChangeSet]) plugin.Interface.GetIpcSubscriber<(int, int), bool>("CrossUp.ChangeSet").InvokeAction(ChangeSet);
+            if (this[CrossUpComponent.TriggerText]) plugin.Interface.GetIpcSubscriber<bool, bool>("CrossUp.TriggerText").InvokeAction(!HideTriggerText);
+            if (this[CrossUpComponent.Unassigned]) plugin.Interface.GetIpcSubscriber<bool, bool>("CrossUp.EmptySlots").InvokeAction(!HideUnassigned);
+            if (this[CrossUpComponent.SelectBG]) plugin.Interface.GetIpcSubscriber<(int, int, Vector3), bool>("CrossUp.SelectBG").InvokeAction(SelectBG);
+            if (this[CrossUpComponent.Buttons]) plugin.Interface.GetIpcSubscriber<(Vector3, Vector3), bool>("CrossUp.ButtonGlow").InvokeAction(Buttons);
+            if (this[CrossUpComponent.Text]) plugin.Interface.GetIpcSubscriber<(Vector3, Vector3, Vector3), bool>("CrossUp.TextAndBorders").InvokeAction(Text);
+            if (this[CrossUpComponent.SepEx]) plugin.Interface.GetIpcSubscriber<(bool, bool), bool>("CrossUp.ExBar").InvokeAction((SepEx, OnlyOneEx));
+            if (this[CrossUpComponent.LRpos]) plugin.Interface.GetIpcSubscriber<(int, int), bool>("CrossUp.LRpos").InvokeAction(LRpos);
+            if (this[CrossUpComponent.RLpos]) plugin.Interface.GetIpcSubscriber<(int, int), bool>("CrossUp.RLpos").InvokeAction(RLpos);
         }
-        catch (Exception ex)
-        {
-            PluginLog.LogWarning($"Error applying CrossUp settings: {ex}");
-        }
+        catch { PluginLog.LogWarning($"IPC with CrossUp failed. Is CrossUp installed?"); }
     }
 
     public bool this[CrossUpComponent component]
@@ -105,7 +89,6 @@ public class CrossUpConfig
             else Enabled &= ~component;
         }
     }
-
     public CrossUpConfig Clone() => new(Enabled, Split, Padlock, SetNum, ChangeSet, HideTriggerText, HideUnassigned,
         SelectBG, Buttons, Text, SepEx, OnlyOneEx, LRpos, RLpos);
 
