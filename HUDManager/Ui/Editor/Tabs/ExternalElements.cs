@@ -1,10 +1,7 @@
-﻿using Dalamud.Interface;
-using HUD_Manager;
+﻿using HUD_Manager;
 using HUD_Manager.Configuration;
 using HUD_Manager.Ui;
 using ImGuiNET;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 
 namespace HUDManager.Ui.Editor.Tabs
@@ -18,24 +15,25 @@ namespace HUDManager.Ui.Editor.Tabs
         {
             this.Plugin = plugin;
             this.Ui = ui;
+
+            Elements = new IExternalElement[] {
+                new Browsingway(this.Plugin), 
+                new CrossUp(this.Plugin)
+            };
         }
 
         public interface IExternalElement
         {
-            public bool Available(Plugin plugin);
+            public bool Available();
             public void AddButtonToList(SavedLayout layout, ref bool update, bool available);
             public void DrawControls(SavedLayout layout, ref bool update);
         }
 
-        private readonly IExternalElement[] Elements =
-        {
-            new Browsingway(), 
-            new CrossUp()
-        };
+        private readonly IExternalElement[] Elements;
 
         internal void Draw(SavedLayout layout, ref bool update)
         {
-            foreach (var elem in Elements) elem.AddButtonToList(layout, ref update, elem.Available(this.Plugin));
+            foreach (var elem in Elements) elem.AddButtonToList(layout, ref update, elem.Available());
 
             if (!ImGui.BeginChild("uimanager-overlay-edit", new Vector2(0, 0), true)) return;
             

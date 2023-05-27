@@ -60,6 +60,20 @@ public class CrossUpConfig
         RLpos = rl;
     }
 
+    public void OpenCrossUp(ref Plugin plugin)
+    {
+
+        try
+        {
+            plugin.Interface.GetIpcSubscriber<bool>("CrossUp.Open").InvokeAction();
+        }
+        catch
+        {
+           PluginLog.LogWarning("IPC with CrossUp failed. Is CrossUp installed?");
+        }
+    
+    }
+
     public void ApplyConfig(Plugin plugin)
     {
         try
@@ -77,7 +91,7 @@ public class CrossUpConfig
             if (this[CrossUpComponent.LRpos]) plugin.Interface.GetIpcSubscriber<(int, int), bool>("CrossUp.LRpos").InvokeAction(LRpos);
             if (this[CrossUpComponent.RLpos]) plugin.Interface.GetIpcSubscriber<(int, int), bool>("CrossUp.RLpos").InvokeAction(RLpos);
         }
-        catch { PluginLog.LogWarning($"IPC with CrossUp failed. Is CrossUp installed?"); }
+        catch { PluginLog.LogWarning("IPC with CrossUp failed. Is CrossUp installed?"); }
     }
 
     public bool this[CrossUpComponent component]
@@ -106,6 +120,6 @@ public class CrossUpConfig
         Text = 1 << 8,
         SepEx = 1 << 9,
         LRpos = 1 << 10,
-        RLpos = 1 << 11,
+        RLpos = 1 << 11
     }
 }
