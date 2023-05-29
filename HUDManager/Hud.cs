@@ -24,8 +24,8 @@ namespace HUD_Manager
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
         private const int LayoutSize = InMemoryLayoutElements * 36;
 
-        // Updated 6.1
-        private const int SlotOffset = 0x6378;
+        // Updated 6.4
+        private const int SlotOffset = 0x6408;
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
 
