@@ -5,6 +5,7 @@ using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace HUD_Manager
 {
@@ -38,6 +39,15 @@ namespace HUD_Manager
                 var configModule = ConfigModule.Instance();
                 var option = configModule->GetIntValue((short)ConfigOption.PadMode);
                 return option > 0;
+            }
+        }
+
+        public static bool IsCharacterConfigOpen()
+        {
+            unsafe {
+                var agent = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance()->GetUiModule()->GetAgentModule()->
+                    GetAgentByInternalId(AgentId.ConfigCharacter);
+                return agent->IsAgentActive();
             }
         }
 
