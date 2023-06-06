@@ -38,7 +38,7 @@ namespace HUD_Manager.Ui.Editor
             this.Previews = new Previews(plugin, ui);
             this.HudElements = new HudElements(plugin, ui, this);
             this.Windows = new Windows(plugin);
-            this.ExternalElements = new ExternalElements(plugin);
+            this.ExternalElements = new ExternalElements(plugin, ui);
         }
 
         internal void Draw()

@@ -42,6 +42,16 @@ namespace HUD_Manager
             }
         }
 
+        public static bool FullScreen() // treats Borderless as Full Screen
+        {
+            unsafe
+            {
+                var configModule = ConfigModule.Instance();
+                var option = configModule->GetIntValue((short)ConfigOption.ScreenMode);
+                return option > 0;
+            }
+        }
+
         public static bool IsCharacterConfigOpen()
         {
             unsafe {
