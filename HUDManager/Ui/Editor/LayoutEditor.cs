@@ -57,8 +57,7 @@ namespace HUD_Manager.Ui.Editor
 
             var update = false;
 
-            var charConfig = this.Plugin.GameGui.GetAtkUnitByName("ConfigCharacter", 1);
-            if (charConfig != null) {
+            if (Util.IsCharacterConfigOpen()) {
                 ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
                 goto EndTabItem;
             }

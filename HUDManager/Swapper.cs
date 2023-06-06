@@ -51,6 +51,10 @@ namespace HUD_Manager
                 return;
             }
 
+            if (Util.IsCharacterConfigOpen()) {
+                return;
+            }
+
             var updated = this.Plugin.Statuses.Update()
                 || this.Plugin.Keybinder.UpdateKeyState()
                 || this.Plugin.Statuses.CustomConditionStatus.IsUpdated();
