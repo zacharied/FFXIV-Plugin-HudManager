@@ -100,7 +100,8 @@ namespace HUD_Manager.Structs
         CrystallineConflictBattleLog = 4081580003,
         CrystallineConflictMap = 3282875858,
         CrystallineConflictEnemyInfo = 3805361436,
-        CrystallineConflictProgressGauge = 812941873
+        CrystallineConflictProgressGauge = 812941873,
+        FrontlineScoreInfo = 758283662
     }
 
     public static class ElementKindExt
@@ -235,6 +236,7 @@ namespace HUD_Manager.Structs
                 ElementKind.CrystallineConflictEnemyInfo => 95,
                 ElementKind.CrystallineConflictBattleLog => 96,
                 ElementKind.CrystallineConflictMap => 97,
+                ElementKind.FrontlineScoreInfo => 98,
                 _ => -1
             };
         }

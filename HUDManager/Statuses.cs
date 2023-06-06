@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Dalamud.Game.ClientState.Objects.Enums;
 
 // TODO: Zone swaps?
 
@@ -44,27 +45,6 @@ namespace HUD_Manager
         private IntPtr InFateAreaPtr = IntPtr.Zero;
 
         private long LastUpdateTime = 0;
-
-        public static byte GetStatus(GameObject actor)
-        {
-            // Updated: 6.3
-            const int offset = 0x1B1B;
-            return Marshal.ReadByte(actor.Address + offset);
-        }
-
-        internal static byte GetOnlineStatus(GameObject actor)
-        {
-            // Updated: 6.3
-            const int offset = 0x1B02;
-            return Marshal.ReadByte(actor.Address + offset);
-        }
-
-        internal static byte GetBardThing(GameObject actor)
-        {
-            // Updated: 6.3
-            const int offset = 0x1B00;
-            return Marshal.ReadByte(actor.Address + offset);
-        }
 
         public Statuses(Plugin plugin)
         {
@@ -449,11 +429,11 @@ namespace HUD_Manager
 
             switch (status) {
                 case Status.WeaponDrawn:
-                    return (Statuses.GetStatus(player!) & 4) > 0;
+                    return (player!.StatusFlags & StatusFlags.WeaponOut) != 0;
                 case Status.Roleplaying:
-                    return Statuses.GetOnlineStatus(player!) == 22;
+                    return player!.OnlineStatus.Id == 22;
                 case Status.PlayingMusic:
-                    return Statuses.GetBardThing(player!) == 16;
+                    return plugin.Condition[ConditionFlag.Performing];
                 case Status.InPvp:
                     return plugin.Statuses.InPvpZone;
                 case Status.InDialogue:
