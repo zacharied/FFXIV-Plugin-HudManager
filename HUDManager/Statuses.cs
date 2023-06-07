@@ -30,7 +30,8 @@ namespace HUD_Manager
         private Plugin Plugin { get; }
 
         public readonly Dictionary<Status, bool> Condition = new();
-        public ClassJob? Job { get; private set; }
+        private readonly IEnumerable<Status> StatusTypes = Enum.GetValues(typeof(Status)).Cast<Status>();
+        private uint LastJobId = uint.MaxValue;
 
         public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, new());
         private Dictionary<HudConditionMatch, float> ConditionHoldTimers = new();
@@ -86,14 +87,14 @@ namespace HUD_Manager
 
             var anyChanged = false;
 
-            var currentJob = this.Plugin.DataManager.GetExcelSheet<ClassJob>()!.GetRow(player.ClassJob.Id);
-            if (this.Job != null && this.Job != currentJob) {
+            var currentJobId = player.ClassJob.Id;
+            if (this.LastJobId != currentJobId) {
                 anyChanged = true;
             }
 
-            this.Job = currentJob;
+            this.LastJobId = currentJobId;
 
-            foreach (Status status in Enum.GetValues(typeof(Status))) {
+            foreach (Status status in StatusTypes) {
                 var old = this.Condition.ContainsKey(status) && this.Condition[status];
                 this.Condition[status] = status.Active(this.Plugin, player);
                 anyChanged |= old != this.Condition[status];
