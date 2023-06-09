@@ -20,6 +20,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Dalamud.Game.ClientState.Objects.Enums;
+using FFXIVClientStructs.FFXIV.Client.Game;
 
 // TODO: Zone swaps?
 
@@ -165,14 +166,12 @@ namespace HUD_Manager
             //this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
 
-        public bool IsInFate(Character player)
+        public bool IsInFate()
         {
-            unsafe {
-                return (Marshal.ReadByte(InFateAreaPtr) == 1);
-            }
+            return Marshal.ReadByte(InFateAreaPtr) == 1;
         }
 
-        public bool IsLevelSynced(Character player)
+        public bool IsLevelSynced()
         {
             unsafe {
                 var uiPlayerState = UIState.Instance()->PlayerState;
@@ -182,36 +181,7 @@ namespace HUD_Manager
 
         public bool IsInSanctuary()
         {
-            if (SanctuaryDetectionFailed)
-                return false;
-
-            var expBar = Plugin.GameGui.GetAtkUnitByName("_Exp", 1);
-            if (!expBar.HasValue) {
-                PluginLog.Error("Unable to find EXP bar element for sanctuary detection");
-                SanctuaryDetectionFailed = true;
-                return false;
-            }
-
-            const int expBarAtkMoonIconIndex = 3;
-            unsafe {
-                // TODO Find a real memory address where this is stored instead of descending into UI elements LMAO
-                int i = 0;
-                var node = expBar.Value.RootNode;
-
-                if (node->ChildCount < expBarAtkMoonIconIndex) {
-                    PluginLog.Error("Not enough child nodes in EXP bar element for sanctuary detection");
-                    SanctuaryDetectionFailed = true;
-                    return false;
-                }
-
-                node = node->ChildNode;
-                while (i < expBarAtkMoonIconIndex) {
-                    node = node->PrevSiblingNode;
-                    i++;
-                }
-
-                return node->IsVisible;
-            }
+            return GameMain.IsInSanctuary();
         }
 
         public bool IsChatFocused()
@@ -442,9 +412,9 @@ namespace HUD_Manager
                         | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
                         | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
                 case Status.InFate:
-                    return plugin.Statuses.IsInFate(player!);
+                    return plugin.Statuses.IsInFate();
                 case Status.InFateLevelSynced:
-                    return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
+                    return plugin.Statuses.IsInFate() && plugin.Statuses.IsLevelSynced();
                 case Status.InSanctuary:
                     return plugin.Statuses.IsInSanctuary();
                 case Status.ChatFocused:
@@ -465,10 +435,7 @@ namespace HUD_Manager
         private static readonly ReadOnlyCollection<Status> RequiresPlayer = new(new List<Status>()
         {
             Status.WeaponDrawn,
-            Status.Roleplaying,
-            Status.PlayingMusic,
-            Status.InFate,
-            Status.InFateLevelSynced
+            Status.Roleplaying
         });
     }
 }
