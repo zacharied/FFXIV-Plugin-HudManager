@@ -33,7 +33,6 @@ namespace HUD_Manager
 
         private readonly GetFilePointerDelegate? _getFilePointer;
         private readonly SetHudLayoutDelegate? _setHudLayout;
-        private Hook<SetHudLayoutDelegate> _setHudLayoutHook;
 
         private List<(string name, ElementKind kind, Element e)> currentJobGauges = new();
 
@@ -52,10 +51,6 @@ namespace HUD_Manager
             if (setHudLayoutPtr != IntPtr.Zero) {
                 this._setHudLayout = Marshal.GetDelegateForFunctionPointer<SetHudLayoutDelegate>(setHudLayoutPtr);
             }
-
-            // Set up the hook to refresh the pet hotbar when HUD is changed.
-            this._setHudLayoutHook = new Hook<SetHudLayoutDelegate>(setHudLayoutPtr, this.SetHudLayoutDetour);
-            this._setHudLayoutHook.Enable();
 
             plugin.Framework.Update += RunRecurringTasks;
         }
@@ -355,17 +350,8 @@ namespace HUD_Manager
             }
         }
 
-        private uint SetHudLayoutDetour(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1)
-        {
-            var res = this._setHudLayoutHook.Original(filePtr, hudLayout, unk0, unk1);
-            this.Plugin.PetHotbar.ResetPetHotbar();
-            return res;
-        }
-
         public void Dispose()
         {
-            this._setHudLayoutHook.Disable();
-            this._setHudLayoutHook.Dispose();
             this.Plugin.Framework.Update -= RunRecurringTasks;
         }
     }

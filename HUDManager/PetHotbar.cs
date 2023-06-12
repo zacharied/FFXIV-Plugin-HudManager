@@ -1,44 +1,54 @@
-﻿using Dalamud.Game;
-using Dalamud.Logging;
-using HUD_Manager;
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
+using Dalamud.Game;
+using Dalamud.Game.Config;
+using Dalamud.Hooking;
+using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ClientFramework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
 
+namespace HUD_Manager;
+
 /// <summary>
-/// Manages keeping the state of the pet hotbar when HUD changes are made.
-/// 
-/// It's a little complicated. Basically, in the Character Configuration window, there is a setting to change how the pet
-/// hotbar is displayed, either reflecting the actions on hotbar 1 when it appears, or revealing its own hotbar (the "Pet Hotbar"
-/// HUD element). Pet hotbar isn't really used for pets anymore, but rather any mount/state change that gives the player new
-/// actions. This includes beast tribe mount quests like the Vanu Sanuwa quest, role-playing scenes where you play as an NPC,
-/// and vehicles like A4.
-/// 
-/// The game suffers from a slight bug in which changing the HUD will cause your hotbar 1 to discard the "overlain" pet hotbar
-/// and revert to its original set of actions. This is problematic since entering a state in which the pet hotbar is shown
-/// can cause a HUD swap depending on the user's configuration, which will lead to the end result of the pet hotbar
-/// being thrown out immediately whenever it would appear on screen.
-/// 
-/// This manager tracks the state of the pet hotbar in memory, and automatically calls the function that populates the pet hotbars
-/// whenever a HUD change is made.
+/// Fixes the pet hotbar on occasions when it becomes "stuck" in PvP when hotbar 1 pet overlays are enabled.
+///
+/// This class actually works around a bug in the base game. When "Automatically replace hotbar 1 with pet hotbar when
+/// mounted" is enabled, swapping HUD slots when mounted in PvP using a mount with mount actions causes the overlaid
+/// per bar not to be fixed upon dismounting. This can be replicated without addons by mounting, swapping hud slots
+/// manually, then dismounting. However, naturally HUD Manager makes this more likely by causing more swaps to happen.
+///
+/// To fix this, we detect a potential dismount in resetPetHotbarHook (which called when the game tries to restore the
+/// hotbar upon dismounting). However, when this bug happens, the bar will not be restored as expected. To fix this, we
+/// force-reenable the pet overlay on the following frame by calling setupPetHotbar (clearing the bugged state) then
+/// follow up with yet another call to resetPetHotbarHook on the frame after that.
+///
+/// I don't know if it's possible to break this fix if an automated HUD swap would happen between these frames. If so,
+/// we could block swaps while FixingPvpPetBar is set. However, it seems vanishingly unlikely to happen, and could
+/// simply be fixed by remounting it if did.
 /// </summary>
 public class PetHotbar : IDisposable
 {
-    private delegate void PreparePetHotbarResetDelegate();
-    private delegate void PerformPetHotbarResetDelegate(IntPtr uiModule, byte playSound);
-    private delegate long GetPetHotbarManagerThing(IntPtr thingPointer);
+    // Known values at HotbarPetTypeOffset:
+    //   0x0E  Quest mount, e.g. Namazu Mikoshi quests
+    //   0x12  Regular mount with actions, e.g. Logistics Node
+    //   0x22  Unknown (found function but not found in game)
+    // (Last updated in 6.4)
+    private const int HotbarPetTypeOffset = 0x11970;
 
-    private readonly IntPtr hotbarModuleAddress;
-    private readonly IntPtr uiModuleAddress;
+    private delegate void ResetPetHotbarDelegate();
+
+    private delegate void SetupPetHotbarDelegate(IntPtr uiModule, uint value);
 
     private readonly Plugin plugin;
 
-    private readonly PreparePetHotbarResetDelegate prepareReset;
-    private readonly PerformPetHotbarResetDelegate performReset;
-    private readonly GetPetHotbarManagerThing getManagerThing;
+    private readonly IntPtr raptureHotbarModulePtr;
+    private readonly IntPtr hotbarPetTypePtr;
 
-    private bool resetInProgress = false;
-    private bool prepared = false;
+    private readonly SetupPetHotbarDelegate setupPetHotbar;
+    private readonly Hook<ResetPetHotbarDelegate> resetPetHotbarHook;
+
+    private FixingPvpPetBar fixStage = FixingPvpPetBar.Off;
+    private uint fixPetType;
 
     public PetHotbar(Plugin plugin)
     {
@@ -46,83 +56,79 @@ public class PetHotbar : IDisposable
 
         unsafe {
             var uiModule = ClientFramework.Instance()->GetUiModule();
-            this.uiModuleAddress = (IntPtr)uiModule;
-            this.hotbarModuleAddress = (IntPtr)uiModule->GetRaptureHotbarModule();
+            raptureHotbarModulePtr = (IntPtr)uiModule->GetRaptureHotbarModule();
+            hotbarPetTypePtr = raptureHotbarModulePtr + HotbarPetTypeOffset;
         }
 
-        var preparePetHotbarChangePtr = plugin.SigScanner.ScanText("48 83 EC 28 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 1F 48 8B 10 48 8B C8");
-        var performPetHotbarChangePtr = plugin.SigScanner.ScanText("40 53 48 83 EC 20 83 B9 70 19 01 00 00 48 8B D9 75 14");
-        if (preparePetHotbarChangePtr == IntPtr.Zero || performPetHotbarChangePtr == IntPtr.Zero) {
-            PluginLog.Error("PetHotbar: unable to find one or more signatures. Pet hotbar functionality will be disabled.\n" +
-                           $"prepare: {preparePetHotbarChangePtr}\nperform: {performPetHotbarChangePtr}");
+        var resetPetHotbarPtr =
+            plugin.SigScanner.ScanText(
+                "48 83 EC 28 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 1F 48 8B 10 48 8B C8");
+        var setupPetHotbarRealPtr = plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB 40 83 FD 01");
+
+        if (setupPetHotbarRealPtr == IntPtr.Zero || resetPetHotbarPtr == IntPtr.Zero) {
+            PluginLog.Error(
+                "PetHotbar: unable to find one or more signatures. Pet hotbar functionality will be disabled.\n" +
+                $"setup: {setupPetHotbarRealPtr}\nreset: 0x{resetPetHotbarPtr:X}");
             return;
         }
 
-        this.prepareReset = Marshal.GetDelegateForFunctionPointer<PreparePetHotbarResetDelegate>(preparePetHotbarChangePtr);
-        this.performReset = Marshal.GetDelegateForFunctionPointer<PerformPetHotbarResetDelegate>(performPetHotbarChangePtr);
+        setupPetHotbar = Marshal.GetDelegateForFunctionPointer<SetupPetHotbarDelegate>(setupPetHotbarRealPtr);
+        resetPetHotbarHook = Hook<ResetPetHotbarDelegate>.FromAddress(resetPetHotbarPtr, ResetPetHotbarDetour);
+        resetPetHotbarHook.Enable();
 
-        unsafe {
-            // 0x14079c16b: CALL qword ptr [RDX + <offset>]
-            // Updated 6.08
-            const int vtblOffset = 0x68;
+        this.plugin.Framework.Update += CheckFixLoop;
+    }
 
-            // We want to run the "perform change" function from the game, but the function we hooked here is normally wrapped
-            //  by an outer function to perform setup first. We want to disable sounds so we still must run this internal function,
-            //  so this code here is just replicating what the outer function would do.
+    private void ResetPetHotbarDetour()
+    {
+        if (plugin.ClientState.IsPvP && fixStage == FixingPvpPetBar.Off) {
+            var hotbarPetType = unchecked((uint)Marshal.ReadInt32(hotbarPetTypePtr));
+            if (hotbarPetType > 0) {
+                bool isPetOverlayEnabled;
+                unsafe {
+                    var configModule = ConfigModule.Instance();
+                    isPetOverlayEnabled = configModule->GetIntValue((short)ConfigOption.ExHotbarChangeHotbar1) > 0;
+                }
 
-            // Double dereference to acquire the function address from the table.
-            var fnPointer = *(long*)uiModuleAddress + vtblOffset;
-            this.getManagerThing = Marshal.GetDelegateForFunctionPointer<GetPetHotbarManagerThing>((IntPtr)(*(long*)fnPointer));
+                if (isPetOverlayEnabled) {
+                    PluginLog.Debug("PetHotbarFix F0: Detected potentially broken pet hotbar overlay. Fixing...");
+                    fixStage = FixingPvpPetBar.Setup;
+                    fixPetType = hotbarPetType;
+                }
+            }
         }
 
-        this.plugin.Framework.Update += CheckResetLoop;
+        resetPetHotbarHook.Original();
     }
 
-    public void ResetPetHotbar()
+    private void CheckFixLoop(Framework _)
     {
-        if (resetInProgress)
-            return;
-
-        resetInProgress = true;
-        prepared = false;
-    }
-
-    private void CheckResetLoop(Framework _)
-    {
-        if (resetInProgress) {
-            if (!prepared && PetHotbarActive()) {
-                this.prepareReset.Invoke();
-                prepared = true;
+        if (fixStage > FixingPvpPetBar.Off) {
+            if (fixStage == FixingPvpPetBar.Setup) {
+                PluginLog.Debug("PetHotbarFix F1: Setting hotbar back to mounted state");
+                setupPetHotbar(raptureHotbarModulePtr, fixPetType);
+                fixStage = FixingPvpPetBar.Reset;
                 return;
             }
 
-            if (prepared) {
-                this.PerformReset(false);
-                resetInProgress = false;
-                prepared = false;
-            } else {
-                resetInProgress = false;
-            }
+            PluginLog.Debug("PetHotbarFix F2: Resetting hotbar");
+            resetPetHotbarHook.Original();
+            fixStage++;
+            fixStage = FixingPvpPetBar.Off;
         }
     }
 
-    private void PerformReset(bool playSound)
+    private enum FixingPvpPetBar
     {
-        var managerThing = this.getManagerThing.Invoke(uiModuleAddress);
-        this.performReset.Invoke((IntPtr)managerThing, (byte)(playSound ? 1 : 0));
-    }
-
-    public bool PetHotbarActive()
-    {
-        // 0x140633216: CMP dword ptr [RCX + <offset>],0x0
-        // Updated 6.08
-        const int offset = 0x11970;
-
-        return Marshal.ReadByte(hotbarModuleAddress + offset) == 0xE;
+        Off = 0,
+        Setup = 1,
+        Reset = 2
     }
 
     public void Dispose()
     {
-        this.plugin.Framework.Update -= CheckResetLoop;
+        resetPetHotbarHook.Disable();
+        resetPetHotbarHook.Dispose();
+        plugin.Framework.Update -= CheckFixLoop;
     }
 }
