@@ -1,32 +1,24 @@
-﻿using Dalamud.Data;
-using Dalamud.Game;
-using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Logging;
-using FFXIVClientStructs;
-using FFXIVClientStructs.FFXIV.Client.Game.Fate;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using HUDManager;
-using HUDManager.Configuration;
-using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using HUDManager;
+using HUDManager.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 // TODO: Zone swaps?
 
 namespace HUD_Manager
 {
-    public class Statuses : IDisposable
+    public class Statuses
     {
         private Plugin Plugin { get; }
 
@@ -41,9 +33,6 @@ namespace HUD_Manager
 
         public bool NeedsForceUpdate { get; private set; }
 
-        public bool InPvpZone { get; private set; } = false;
-        private bool SanctuaryDetectionFailed = false;
-
         private IntPtr InFateAreaPtr = IntPtr.Zero;
 
         private long LastUpdateTime = 0;
@@ -55,8 +44,6 @@ namespace HUD_Manager
             foreach (var cond in this.Plugin.Config.CustomConditions) {
                 CustomConditionStatus[cond] = false;
             }
-
-            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange;
 
             InitializePointers();
         }
@@ -70,11 +57,6 @@ namespace HUD_Manager
             } catch {
                 PluginLog.Error("Failed loading 'inFateAreaPtr'");
             }
-        }
-
-        public void Dispose()
-        {
-            this.Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
         }
 
         public bool Update()
@@ -102,16 +84,6 @@ namespace HUD_Manager
             }
 
             return anyChanged;
-        }
-
-        private void OnTerritoryChange(object? sender, ushort tid)
-        {
-            var territory = this.Plugin.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(tid);
-            if (territory == null) {
-                PluginLog.Warning("Unable to get territory data for current zone");
-                return;
-            }
-            this.InPvpZone = territory.IsPvpZone;
         }
 
         /// <summary>
@@ -406,7 +378,7 @@ namespace HUD_Manager
                 case Status.PlayingMusic:
                     return plugin.Condition[ConditionFlag.Performing];
                 case Status.InPvp:
-                    return plugin.Statuses.InPvpZone;
+                    return plugin.ClientState.IsPvP;
                 case Status.InDialogue:
                     return plugin.Condition[ConditionFlag.OccupiedInEvent]
                         | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]

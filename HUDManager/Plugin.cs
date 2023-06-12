@@ -113,7 +113,6 @@ namespace HUD_Manager
             this.Commands.Dispose();
             this.Ui.Dispose();
             this.Swapper.Dispose();
-            this.Statuses.Dispose();
             this.PetHotbar.Dispose();
             this.Hud.Dispose();
         }
