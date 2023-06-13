@@ -162,6 +162,11 @@ namespace HUD_Manager
                 if (!dict.TryGetValue(slotLayout.elements[i].id, out var element))
                     continue;
 
+                if (element.Id == ElementKind.Minimap && reloadIfNecessary) {
+                    // Don't load minimap zoom/rotation from HUD settings but use current UI state instead
+                    element.Options = slotLayout.elements[i].options;
+                }
+
                 // just replace the struct if all options are enabled
                 if (element.Enabled == Element.AllEnabled) {
                     slotLayout.elements[i] = new RawElement(element);
