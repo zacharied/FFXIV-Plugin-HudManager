@@ -4,6 +4,7 @@ using Dalamud.Logging;
 using HUDManager.Configuration;
 using System;
 using System.Collections.Generic;
+using Dalamud.Game.ClientState.Conditions;
 
 namespace HUD_Manager
 {
@@ -51,7 +52,15 @@ namespace HUD_Manager
                 return;
             }
 
+            // Skipping due to bugs caused by HUD swaps while Character Config is open
             if (Util.IsCharacterConfigOpen()) {
+                return;
+            }
+
+            // Skipping due to HUD swaps in cutscenes causing main menu to become visible
+            if (Plugin.Condition[ConditionFlag.OccupiedInCutSceneEvent]
+                || Plugin.Condition[ConditionFlag.WatchingCutscene78]
+                || Plugin.Condition[ConditionFlag.BoundByDuty95]) {
                 return;
             }
 
