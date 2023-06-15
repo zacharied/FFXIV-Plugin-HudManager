@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace HUD_Manager.Structs
 {
@@ -73,6 +74,22 @@ namespace HUD_Manager.Structs
             if (element[ElementComponent.Options]) {
                 this.options = element.Options;
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(id)}: {id}, " +
+                   $"{nameof(x)}: {x}, " +
+                   $"{nameof(y)}: {y}, " +
+                   $"{nameof(scale)}: {scale}, " +
+                   $"{nameof(options)}: {BitConverter.ToString(options)}, " +
+                   $"{nameof(width)}: {width}, " +
+                   $"{nameof(height)}: {height}, " +
+                   $"{nameof(measuredFrom)}: {measuredFrom}, " +
+                   $"{nameof(visibility)}: {visibility}, " +
+                   $"{nameof(unknown6)}: 0x{unknown6:X}, " +
+                   $"{nameof(opacity)}: 0x{opacity:X}, " +
+                   $"{nameof(unknown8)}: {BitConverter.ToString(unknown8)}";
         }
     }
 }

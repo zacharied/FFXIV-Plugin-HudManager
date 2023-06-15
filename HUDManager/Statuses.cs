@@ -1,36 +1,30 @@
-﻿using Dalamud.Data;
-using Dalamud.Game;
-using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.ClientState.Keys;
-using Dalamud.Game.ClientState.Objects.Types;
-using Dalamud.Logging;
-using FFXIVClientStructs;
-using FFXIVClientStructs.FFXIV.Client.Game.Fate;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
-using FFXIVClientStructs.FFXIV.Component.GUI;
-using HUDManager;
-using HUDManager.Configuration;
-using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
+using Dalamud.Game.ClientState.Objects.Types;
+using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using HUDManager;
+using HUDManager.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 // TODO: Zone swaps?
 
 namespace HUD_Manager
 {
-    public class Statuses : IDisposable
+    public class Statuses
     {
         private Plugin Plugin { get; }
 
         public readonly Dictionary<Status, bool> Condition = new();
-        public ClassJob? Job { get; private set; }
+        private readonly IEnumerable<Status> StatusTypes = Enum.GetValues(typeof(Status)).Cast<Status>();
+        private uint LastJobId = uint.MaxValue;
 
         public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, new());
         private Dictionary<HudConditionMatch, float> ConditionHoldTimers = new();
@@ -38,9 +32,6 @@ namespace HUD_Manager
         public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
 
         public bool NeedsForceUpdate { get; private set; }
-
-        public bool InPvpZone { get; private set; } = false;
-        private bool SanctuaryDetectionFailed = false;
 
         private IntPtr InFateAreaPtr = IntPtr.Zero;
 
@@ -53,8 +44,6 @@ namespace HUD_Manager
             foreach (var cond in this.Plugin.Config.CustomConditions) {
                 CustomConditionStatus[cond] = false;
             }
-
-            this.Plugin.ClientState.TerritoryChanged += OnTerritoryChange;
 
             InitializePointers();
         }
@@ -70,11 +59,6 @@ namespace HUD_Manager
             }
         }
 
-        public void Dispose()
-        {
-            this.Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
-        }
-
         public bool Update()
         {
             UpdateConditionHoldTimers();
@@ -86,30 +70,20 @@ namespace HUD_Manager
 
             var anyChanged = false;
 
-            var currentJob = this.Plugin.DataManager.GetExcelSheet<ClassJob>()!.GetRow(player.ClassJob.Id);
-            if (this.Job != null && this.Job != currentJob) {
+            var currentJobId = player.ClassJob.Id;
+            if (this.LastJobId != currentJobId) {
                 anyChanged = true;
             }
 
-            this.Job = currentJob;
+            this.LastJobId = currentJobId;
 
-            foreach (Status status in Enum.GetValues(typeof(Status))) {
+            foreach (Status status in StatusTypes) {
                 var old = this.Condition.ContainsKey(status) && this.Condition[status];
                 this.Condition[status] = status.Active(this.Plugin, player);
                 anyChanged |= old != this.Condition[status];
             }
 
             return anyChanged;
-        }
-
-        private void OnTerritoryChange(object? sender, ushort tid)
-        {
-            var territory = this.Plugin.DataManager.GetExcelSheet<TerritoryType>()!.GetRow(tid);
-            if (territory == null) {
-                PluginLog.Warning("Unable to get territory data for current zone");
-                return;
-            }
-            this.InPvpZone = territory.IsPvpZone;
         }
 
         /// <summary>
@@ -164,14 +138,12 @@ namespace HUD_Manager
             //this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
 
-        public bool IsInFate(Character player)
+        public bool IsInFate()
         {
-            unsafe {
-                return (Marshal.ReadByte(InFateAreaPtr) == 1);
-            }
+            return Marshal.ReadByte(InFateAreaPtr) == 1;
         }
 
-        public bool IsLevelSynced(Character player)
+        public bool IsLevelSynced()
         {
             unsafe {
                 var uiPlayerState = UIState.Instance()->PlayerState;
@@ -181,36 +153,7 @@ namespace HUD_Manager
 
         public bool IsInSanctuary()
         {
-            if (SanctuaryDetectionFailed)
-                return false;
-
-            var expBar = Plugin.GameGui.GetAtkUnitByName("_Exp", 1);
-            if (!expBar.HasValue) {
-                PluginLog.Error("Unable to find EXP bar element for sanctuary detection");
-                SanctuaryDetectionFailed = true;
-                return false;
-            }
-
-            const int expBarAtkMoonIconIndex = 3;
-            unsafe {
-                // TODO Find a real memory address where this is stored instead of descending into UI elements LMAO
-                int i = 0;
-                var node = expBar.Value.RootNode;
-
-                if (node->ChildCount < expBarAtkMoonIconIndex) {
-                    PluginLog.Error("Not enough child nodes in EXP bar element for sanctuary detection");
-                    SanctuaryDetectionFailed = true;
-                    return false;
-                }
-
-                node = node->ChildNode;
-                while (i < expBarAtkMoonIconIndex) {
-                    node = node->PrevSiblingNode;
-                    i++;
-                }
-
-                return node->IsVisible;
-            }
+            return GameMain.IsInSanctuary();
         }
 
         public bool IsChatFocused()
@@ -435,15 +378,15 @@ namespace HUD_Manager
                 case Status.PlayingMusic:
                     return plugin.Condition[ConditionFlag.Performing];
                 case Status.InPvp:
-                    return plugin.Statuses.InPvpZone;
+                    return plugin.ClientState.IsPvP;
                 case Status.InDialogue:
                     return plugin.Condition[ConditionFlag.OccupiedInEvent]
                         | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
                         | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
                 case Status.InFate:
-                    return plugin.Statuses.IsInFate(player!);
+                    return plugin.Statuses.IsInFate();
                 case Status.InFateLevelSynced:
-                    return plugin.Statuses.IsInFate(player!) && plugin.Statuses.IsLevelSynced(player!);
+                    return plugin.Statuses.IsInFate() && plugin.Statuses.IsLevelSynced();
                 case Status.InSanctuary:
                     return plugin.Statuses.IsInSanctuary();
                 case Status.ChatFocused:
@@ -464,10 +407,7 @@ namespace HUD_Manager
         private static readonly ReadOnlyCollection<Status> RequiresPlayer = new(new List<Status>()
         {
             Status.WeaponDrawn,
-            Status.Roleplaying,
-            Status.PlayingMusic,
-            Status.InFate,
-            Status.InFateLevelSynced
+            Status.Roleplaying
         });
     }
 }

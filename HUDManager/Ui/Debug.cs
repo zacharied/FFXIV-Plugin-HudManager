@@ -134,7 +134,7 @@ namespace HUD_Manager.Ui
 
             if (ImGui.Button("FATE Status")) {
                 ////PluginLog.Log($"{this.Plugin.Statuses.IsInFate(this.Plugin.ClientState.LocalPlayer)}");
-                PluginLog.Log($"{this.Plugin.Statuses.IsLevelSynced(this.Plugin.ClientState.LocalPlayer)}");
+                PluginLog.Log($"{this.Plugin.Statuses.IsLevelSynced()}");
 
             }
 
