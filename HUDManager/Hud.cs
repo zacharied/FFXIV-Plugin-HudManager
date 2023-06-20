@@ -52,7 +52,8 @@ namespace HUD_Manager
                 this._setHudLayout = Marshal.GetDelegateForFunctionPointer<SetHudLayoutDelegate>(setHudLayoutPtr);
             }
 
-            plugin.Framework.Update += RunRecurringTasks;
+            // Removed since this is not actually running anything currently.
+            // plugin.Framework.Update += RunRecurringTasks;
         }
 
         public IntPtr GetFilePointer(byte index)

@@ -37,13 +37,17 @@ namespace HUD_Manager
 
         public void OnTerritoryChange(object? sender, ushort tid)
         {
+            if (!this.Plugin.Ready) {
+                return;
+            }
+
             this.Plugin.Statuses.Update();
             this.Plugin.Statuses.SetHudLayout();
         }
 
         public void OnFrameworkUpdate(Framework framework)
         {
-            if (!this.Plugin.Config.SwapsEnabled || SwapsTemporarilyDisabled || !this.Plugin.Config.UnderstandsRisks) {
+            if (!this.Plugin.Ready || !this.Plugin.Config.SwapsEnabled || SwapsTemporarilyDisabled || !this.Plugin.Config.UnderstandsRisks) {
                 return;
             }
 

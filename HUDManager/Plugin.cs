@@ -49,6 +49,8 @@ namespace HUD_Manager
         public PetHotbar PetHotbar { get; init; }
         public Keybinder Keybinder { get; init; }
 
+        public bool Ready;
+
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
             [RequiredVersion("1.0")] CommandManager commandManager,
@@ -94,6 +96,7 @@ namespace HUD_Manager
             this.Keybinder = new Keybinder(this);
 
             if (!this.Config.FirstRun) {
+                this.Ready = true;
                 return;
             }
 
@@ -106,6 +109,8 @@ namespace HUD_Manager
             }
 
             this.Config.Save();
+
+            this.Ready = true;
         }
 
         public void Dispose()
