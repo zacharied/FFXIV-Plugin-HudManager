@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using HUD_Manager.Structs.Options;
 
 namespace HUD_Manager
 {
@@ -163,9 +164,16 @@ namespace HUD_Manager
                 if (!dict.TryGetValue(slotLayout.elements[i].id, out var element))
                     continue;
 
-                if (element.Id == ElementKind.Minimap && reloadIfNecessary) {
-                    // Don't load minimap zoom/rotation from HUD settings but use current UI state instead
-                    element.Options = slotLayout.elements[i].options;
+                if (reloadIfNecessary) {
+                    if (element.Id is ElementKind.Minimap) {
+                        // Minimap: Don't load zoom/rotation from HUD settings but use current UI state instead
+                        element.Options = slotLayout.elements[i].options;
+                    }
+
+                    if (element.Id is ElementKind.Hotbar1 && reloadIfNecessary) {
+                        // Hotbar1: Keep cycling state
+                        element.Options![0] = slotLayout.elements[i].options![0];
+                    }
                 }
 
                 // just replace the struct if all options are enabled
