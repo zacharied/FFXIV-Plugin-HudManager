@@ -1,6 +1,5 @@
 ﻿using Dalamud.Data;
 using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using Lumina.Excel.GeneratedSheets;
 using System.Collections.Generic;
 using System.Globalization;
@@ -33,23 +32,14 @@ namespace HUD_Manager
             }
         }
 
-        public static bool GamepadModeActive()
+        public static bool GamepadModeActive(Plugin plugin)
         {
-            unsafe {
-                var configModule = ConfigModule.Instance();
-                var option = configModule->GetIntValue((short)ConfigOption.PadMode);
-                return option > 0;
-            }
+            return plugin.GameConfig.UiConfig.TryGet("PadMode", out bool isPadMode) && isPadMode;
         }
 
-        public static bool FullScreen() // treats Borderless as Full Screen
+        public static bool FullScreen(Plugin plugin) // treats Borderless as Full Screen
         {
-            unsafe
-            {
-                var configModule = ConfigModule.Instance();
-                var option = configModule->GetIntValue((short)ConfigOption.ScreenMode);
-                return option > 0;
-            }
+            return plugin.GameConfig.System.TryGet("ScreenMode", out uint mode) && mode > 0;
         }
 
         public static bool IsCharacterConfigOpen()

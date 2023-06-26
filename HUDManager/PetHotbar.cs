@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Dalamud.Game;
-using Dalamud.Game.Config;
 using Dalamud.Hooking;
 using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using ClientFramework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
 
 namespace HUD_Manager;
@@ -84,13 +82,7 @@ public class PetHotbar : IDisposable
         if (plugin.ClientState.IsPvP && fixStage == FixingPvpPetBar.Off) {
             var hotbarPetType = unchecked((uint)Marshal.ReadInt32(hotbarPetTypePtr));
             if (hotbarPetType > 0) {
-                bool isPetOverlayEnabled;
-                unsafe {
-                    var configModule = ConfigModule.Instance();
-                    isPetOverlayEnabled = configModule->GetIntValue((short)ConfigOption.ExHotbarChangeHotbar1) > 0;
-                }
-
-                if (isPetOverlayEnabled) {
+                if (plugin.GameConfig.UiConfig.TryGet("ExHotbarChangeHotbar1", out bool isPetOverlayEnabled) && isPetOverlayEnabled) {
                     PluginLog.Debug("PetHotbarFix F0: Detected potentially broken pet hotbar overlay. Fixing...");
                     fixStage = FixingPvpPetBar.Setup;
                     fixPetType = hotbarPetType;

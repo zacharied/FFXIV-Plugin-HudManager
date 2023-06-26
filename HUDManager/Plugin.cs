@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Dalamud.Game.Config;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -36,6 +37,7 @@ namespace HUD_Manager
         public GameGui GameGui { get; init; }
         public ChatGui ChatGui { get; init; }
         public KeyState KeyState { get; init; }
+        public GameConfig GameConfig { get; init; }
 
         public Swapper Swapper { get; set; } = null!;
         private Commands Commands { get; set; } = null!;
@@ -61,7 +63,8 @@ namespace HUD_Manager
             [RequiredVersion("1.0")] SigScanner sigScanner,
             [RequiredVersion("1.0")] GameGui gameGui,
             [RequiredVersion("1.0")] ChatGui chatGui,
-            [RequiredVersion("1.0")] KeyState keyState)
+            [RequiredVersion("1.0")] KeyState keyState,
+            [RequiredVersion("1.0")] GameConfig gameConfig)
         {
             this.Interface = pluginInterface;
             this.CommandManager = commandManager;
@@ -73,6 +76,7 @@ namespace HUD_Manager
             this.GameGui = gameGui;
             this.ChatGui = chatGui;
             this.KeyState = keyState;
+            this.GameConfig = gameConfig;
 
             ClassJobCategoryIdExtensions.Initialize(this);
             ElementKindExt.Initialize(this.DataManager);
