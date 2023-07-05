@@ -63,8 +63,10 @@ namespace HUD_Manager
 
             // Skipping due to HUD swaps in cutscenes causing main menu to become visible
             if (Plugin.Condition[ConditionFlag.OccupiedInCutSceneEvent]
-                || Plugin.Condition[ConditionFlag.WatchingCutscene78]
-                || Plugin.Condition[ConditionFlag.BoundByDuty95]) {
+                || Plugin.Condition[ConditionFlag.WatchingCutscene78] // Used in Dalamud's cutscene check
+                || Plugin.Condition[ConditionFlag.BoundByDuty95] // GATE: Air Force One
+                || Plugin.Condition[ConditionFlag.PlayingLordOfVerminion]
+                || Plugin.Condition[ConditionFlag.BetweenAreas51]) { // Loading Lord of Verminion
                 return;
             }
 
