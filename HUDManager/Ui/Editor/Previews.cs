@@ -52,9 +52,13 @@ namespace HUD_Manager.Ui.Editor
 
                 ImGui.SetNextWindowSize(size);
                 ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0f, 0f, 0f, .5f));
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0);
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+                ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.Zero);
                 if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
                     continue;
                 }
+                ImGui.PopStyleVar(3);
                 ImGui.PopStyleColor();
 
                 ImGui.TextUnformatted(element.Id.LocalisedName(this.Plugin.DataManager));
