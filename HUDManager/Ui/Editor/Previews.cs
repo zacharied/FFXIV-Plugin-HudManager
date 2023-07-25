@@ -2,6 +2,7 @@
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace HUD_Manager.Ui.Editor
 {
@@ -40,7 +41,9 @@ namespace HUD_Manager.Ui.Editor
                     continue;
                 }
 
-                var (pos, size) = ImGuiExt.ConvertGameToImGui(element);
+                var (outer, inner) = ImGuiExt.ConvertGameToImGui(element);
+                var (pos, size) = outer;
+
                 if (this.Update.Remove(element.Id)) {
                     ImGui.SetNextWindowPos(pos);
                 } else {
@@ -48,10 +51,11 @@ namespace HUD_Manager.Ui.Editor
                 }
 
                 ImGui.SetNextWindowSize(size);
-
+                ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0f, 0f, 0f, .5f));
                 if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
                     continue;
                 }
+                ImGui.PopStyleColor();
 
                 ImGui.TextUnformatted(element.Id.LocalisedName(this.Plugin.DataManager));
 
@@ -61,6 +65,12 @@ namespace HUD_Manager.Ui.Editor
                     element.X = newPos.X;
                     element.Y = newPos.Y;
                     update = true;
+                }
+
+                if (inner != null) {
+                    var drawList = ImGui.GetWindowDrawList();
+                    var (innerPos, innerSize) = inner;
+                    drawList.AddRectFilled(innerPos, innerPos + innerSize, 0x40FFFFFF);
                 }
 
                 ImGui.End();
