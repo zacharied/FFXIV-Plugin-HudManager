@@ -18,8 +18,8 @@ namespace HUD_Manager
 {
     public class Hud : IDisposable
     {
-        // Updated 6.11a
-        public const int InMemoryLayoutElements = 98;
+        // Updated 6.45
+        public const int InMemoryLayoutElements = 99;
 
         // Updated 5.45
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
