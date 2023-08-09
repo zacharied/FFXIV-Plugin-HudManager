@@ -12,13 +12,14 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using HUD_Manager.Structs.Options;
 
 namespace HUD_Manager
 {
     public class Hud : IDisposable
     {
-        // Updated 6.11a
-        public const int InMemoryLayoutElements = 98;
+        // Updated 6.45
+        public const int InMemoryLayoutElements = 99;
 
         // Updated 5.45
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
@@ -52,7 +53,8 @@ namespace HUD_Manager
                 this._setHudLayout = Marshal.GetDelegateForFunctionPointer<SetHudLayoutDelegate>(setHudLayoutPtr);
             }
 
-            plugin.Framework.Update += RunRecurringTasks;
+            // Removed since this is not actually running anything currently.
+            // plugin.Framework.Update += RunRecurringTasks;
         }
 
         public IntPtr GetFilePointer(byte index)
@@ -162,9 +164,16 @@ namespace HUD_Manager
                 if (!dict.TryGetValue(slotLayout.elements[i].id, out var element))
                     continue;
 
-                if (element.Id == ElementKind.Minimap && reloadIfNecessary) {
-                    // Don't load minimap zoom/rotation from HUD settings but use current UI state instead
-                    element.Options = slotLayout.elements[i].options;
+                if (reloadIfNecessary) {
+                    if (element.Id is ElementKind.Minimap) {
+                        // Minimap: Don't load zoom/rotation from HUD settings but use current UI state instead
+                        element.Options = slotLayout.elements[i].options;
+                    }
+
+                    if (element.Id is ElementKind.Hotbar1 && reloadIfNecessary) {
+                        // Hotbar1: Keep cycling state
+                        element.Options![0] = slotLayout.elements[i].options![0];
+                    }
                 }
 
                 // just replace the struct if all options are enabled
@@ -340,7 +349,7 @@ namespace HUD_Manager
                 if (unit is null)
                     return;
 
-                var visibilityMask = Util.GamepadModeActive() ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
+                var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
                 if ((element.Visibility & visibilityMask) > 0) {
                     // Reveal element.
                     if (unit->UldManager.NodeListCount == 0)

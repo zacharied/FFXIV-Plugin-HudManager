@@ -80,7 +80,22 @@ namespace HUD_Manager.Ui
             ImGui.Text(text);
         }
 
-        public static Tuple<Vector2, Vector2> ConvertGameToImGui(Element element)
+        public record OverlayPosition(Tuple<Vector2, Vector2> Outer, Tuple<Vector2, Vector2>? Inner);
+
+        public static OverlayPosition ConvertGameToImGui(Element element)
+        {
+            var inner = element.Id switch
+            {
+                ElementKind.TargetInfoProgressBar => ConvertGameToImGui(element, 246, 10, 204, 24, 1),
+                ElementKind.TargetInfoStatus => ConvertGameToImGui(element, 13, 45, 375, 82, 1),
+                ElementKind.TargetInfoHp => ConvertGameToImGui(element, 0, 0, -1, -1, 0.5f),
+                _ => null
+            };
+
+            return new OverlayPosition(ConvertGameToImGui(element, 0, 0, -1, -1, 1), inner);
+        }
+
+        private static Tuple<Vector2, Vector2> ConvertGameToImGui(Element element, int offsetX, int offsetY, int innerWidth, int innerHeight, float heightScale)
         {
             // get X & Y coords from the element, which are percentages (0 - 100)
             var percentagePos = new Vector2(element.X, element.Y);
@@ -123,8 +138,18 @@ namespace HUD_Manager.Ui
             pixelPos.Y -= subY;
 
             // round the coords
-            pixelPos.X = (float)Math.Round(pixelPos.X);
-            pixelPos.Y = (float)Math.Round(pixelPos.Y);
+            pixelPos.X = (float)Math.Round(pixelPos.X) + offsetX * element.Scale;
+            pixelPos.Y = (float)Math.Round(pixelPos.Y) + offsetY * element.Scale;
+
+            if (innerWidth > 0) {
+                size.X = innerWidth * element.Scale;
+            }
+
+            if (innerHeight > 0) {
+                size.Y = innerHeight * element.Scale;
+            }
+
+            size.Y *= heightScale;
 
             return Tuple.Create(pixelPos, size);
         }

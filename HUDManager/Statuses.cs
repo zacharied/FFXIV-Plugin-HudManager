@@ -392,13 +392,13 @@ namespace HUD_Manager
                 case Status.ChatFocused:
                     return plugin.Statuses.IsChatFocused();
                 case Status.InputModeKbm:
-                    return !Util.GamepadModeActive();
+                    return !Util.GamepadModeActive(plugin);
                 case Status.InputModeGamepad:
-                    return Util.GamepadModeActive();
+                    return Util.GamepadModeActive(plugin);
                 case Status.Windowed:
-                    return !Util.FullScreen();
+                    return !Util.FullScreen(plugin);
                 case Status.FullScreen:
-                    return Util.FullScreen();
+                    return Util.FullScreen(plugin);
             }
 
             return false;
