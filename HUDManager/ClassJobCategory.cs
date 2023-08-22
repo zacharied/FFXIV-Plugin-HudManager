@@ -53,7 +53,8 @@ namespace HUDManager
             ActivationConditions = new();
             DisplayNames = new();
 
-            var classJobIds = plugin.DataManager.GetExcelSheet<ClassJob>()!.Select(j => j.RowId).ToList();
+            var classJobSheet = plugin.DataManager.GetExcelSheet<ClassJob>()!;
+            var classJobIds = classJobSheet.Select(j => j.RowId).ToList();
 
             foreach (var cat in Enum.GetValues(typeof(ClassJobCategoryId)).Cast<ClassJobCategoryId>()) {
                 // Display name
@@ -61,6 +62,29 @@ namespace HUDManager
 
                 // Activation conditions
                 ActivationConditions[cat] = cat.IsActivatedAll(sheet, classJobIds);
+            }
+
+            // Add special handling here since these categories don't contain the base classes.
+            foreach (var classJobId in classJobIds) {
+                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 197) {
+                    ActivationConditions[ClassJobCategoryId.Tank][classJobId] = true;
+                }
+
+                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 206) {
+                    ActivationConditions[ClassJobCategoryId.Healer][classJobId] = true;
+                }
+
+                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 200) {
+                    ActivationConditions[ClassJobCategoryId.MeleeDps][classJobId] = true;
+                }
+
+                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 4238) {
+                    ActivationConditions[ClassJobCategoryId.PhysicalRdps][classJobId] = true;
+                }
+
+                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 203) {
+                    ActivationConditions[ClassJobCategoryId.MagicalRdps][classJobId] = true;
+                }
             }
 
             // Sanity check, make sure the groupings list has all the categories.
