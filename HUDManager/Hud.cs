@@ -280,10 +280,17 @@ namespace HUD_Manager
             return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, crossUpConfig, Guid.Empty);
         }
 
+        private string GetDebugName(Guid id, List<Guid>? layers)
+        {
+            return
+                $"{Plugin.Config.Layouts[id].Name} [{(layers == null ? "" : string.Join(", ", layers.ConvertAll(layer => Plugin.Config.Layouts[layer].Name)))}]";
+        }
+
+
         public void WriteEffectiveLayoutIfChanged(HudSlot slot, Guid id, List<Guid> layers)
         {
             if (_stagingState != null && _stagingState.LayoutId == id && _stagingState.LayerIds.SequenceEqual(layers)) {
-                PluginLog.Debug($"Skipped writing {Plugin.Config.Layouts[id].Name} (state unchanged)");
+                PluginLog.Debug($"Skipped layout {GetDebugName(id, layers)} (state unchanged)");
                 return;
             }
 
@@ -297,7 +304,7 @@ namespace HUD_Manager
                 return;
             }
 
-            PluginLog.Debug($"Writing layout {Plugin.Config.Layouts[id].Name}");
+            PluginLog.Debug($"Writing layout {GetDebugName(id, layers)}");
 
             this.WriteLayout(slot, effective.Elements);
 
