@@ -36,6 +36,9 @@ namespace HUD_Manager
         private readonly SetHudLayoutDelegate? _setHudLayout;
 
         private List<(string name, ElementKind kind, Element e)> currentJobGauges = new();
+        private StagingState? _stagingState;
+
+        private record StagingState(Guid LayoutId, List<Guid> LayerIds);
 
         private Plugin Plugin { get; }
 
@@ -277,6 +280,16 @@ namespace HUD_Manager
             return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, crossUpConfig, Guid.Empty);
         }
 
+        public void WriteEffectiveLayoutIfChanged(HudSlot slot, Guid id, List<Guid> layers)
+        {
+            if (_stagingState != null && _stagingState.LayoutId == id && _stagingState.LayerIds.SequenceEqual(layers)) {
+                PluginLog.Debug($"Skipped writing {Plugin.Config.Layouts[id].Name} (state unchanged)");
+                return;
+            }
+
+            WriteEffectiveLayout(slot, id, layers);
+        }
+
         public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null)
         {
             var effective = this.GetEffectiveLayout(id, layers);
@@ -305,6 +318,8 @@ namespace HUD_Manager
             }
 
             effective.CrossUpConfig?.ApplyConfig(Plugin);
+
+            _stagingState = new StagingState(id, layers ?? new List<Guid>());
         }
 
         internal void ImportSlot(string name, HudSlot slot, bool save = true)

@@ -134,7 +134,7 @@ namespace HUD_Manager
                 return;
             }
 
-            this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
+            this.Plugin.Hud.WriteEffectiveLayoutIfChanged(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
             //this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
 
