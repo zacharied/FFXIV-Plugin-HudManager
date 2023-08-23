@@ -152,7 +152,7 @@ namespace HUD_Manager.Ui
 
                         foreach (var group in ClassJobCategoryIdExtensions.ClassJobCategoryGroupings) {
                             ImGui.Selectable($"⸻⸻", false, ImGuiSelectableFlags.Disabled);
-                            foreach (var classJobCat in group.OrderBy(c => c.DisplayName(Plugin)))
+                            foreach (var classJobCat in group)
                             {
                                 if (ImGui.Selectable($"{classJobCat.DisplayName(Plugin)}##condition-edit-job")) {
                                     this._editingCondition.ClassJobCategory = classJobCat;

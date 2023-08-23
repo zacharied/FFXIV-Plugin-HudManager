@@ -222,29 +222,30 @@ namespace HUDManager
             return res;
         }
 
+
         public static readonly List<List<ClassJobCategoryId>> ClassJobCategoryGroupings = new()
         {
             new()
             {
                 ClassJobCategoryId.GLA_PLD,
-                ClassJobCategoryId.PGL_MNK,
                 ClassJobCategoryId.MRD_WAR,
-                ClassJobCategoryId.LNC_DRG,
-                ClassJobCategoryId.ARC_BRD,
+                ClassJobCategoryId.DRK,
+                ClassJobCategoryId.GNB,
                 ClassJobCategoryId.CNJ_WHM,
+                ClassJobCategoryId.SCH,
+                ClassJobCategoryId.AST,
+                ClassJobCategoryId.SGE,
+                ClassJobCategoryId.PGL_MNK,
+                ClassJobCategoryId.LNC_DRG,
+                ClassJobCategoryId.ROG_NIN,
+                ClassJobCategoryId.SAM,
+                ClassJobCategoryId.RPR,
+                ClassJobCategoryId.ARC_BRD,
+                ClassJobCategoryId.MCH,
+                ClassJobCategoryId.DNC,
                 ClassJobCategoryId.THM_BLM,
                 ClassJobCategoryId.ACN_SMN,
-                ClassJobCategoryId.ROG_NIN,
-                ClassJobCategoryId.SCH,
-                ClassJobCategoryId.MCH,
-                ClassJobCategoryId.DRK,
-                ClassJobCategoryId.AST,
-                ClassJobCategoryId.SAM,
                 ClassJobCategoryId.RDM,
-                ClassJobCategoryId.GNB,
-                ClassJobCategoryId.DNC,
-                ClassJobCategoryId.RPR,
-                ClassJobCategoryId.SGE,
                 ClassJobCategoryId.BLU,
             },
             new()
@@ -298,8 +299,8 @@ namespace HUDManager
 
             DoW = 30,
             DoM = 31,
-            DoL = 32,
             DoH = 33,
+            DoL = 32,
             CombatJobs = 34,
             NonCombatJobs = 35,
             Tank = 156,
