@@ -64,26 +64,31 @@ namespace HUDManager
                 ActivationConditions[cat] = cat.IsActivatedAll(sheet, classJobIds);
             }
 
-            // Add special handling here since these categories don't contain the base classes.
             foreach (var classJobId in classJobIds) {
-                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 197) {
-                    ActivationConditions[ClassJobCategoryId.Tank][classJobId] = true;
+                var classJob = classJobSheet.GetRow(classJobId)!;
+
+                // Handle special category for base classes
+                if (classJob.JobIndex == 0) {
+                    ActivationConditions[ClassJobCategoryId.BaseClasses][classJobId] = true;
                 }
 
-                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 206) {
-                    ActivationConditions[ClassJobCategoryId.Healer][classJobId] = true;
-                }
-
-                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 200) {
-                    ActivationConditions[ClassJobCategoryId.MeleeDps][classJobId] = true;
-                }
-
-                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 4238) {
-                    ActivationConditions[ClassJobCategoryId.PhysicalRdps][classJobId] = true;
-                }
-
-                if (classJobSheet.GetRow(classJobId)!.LimitBreak1.Row == 203) {
-                    ActivationConditions[ClassJobCategoryId.MagicalRdps][classJobId] = true;
+                // Add base classes to roles
+                switch (classJob.LimitBreak1.Row) {
+                    case 197:
+                        ActivationConditions[ClassJobCategoryId.Tank][classJobId] = true;
+                        break;
+                    case 206:
+                        ActivationConditions[ClassJobCategoryId.Healer][classJobId] = true;
+                        break;
+                    case 200:
+                        ActivationConditions[ClassJobCategoryId.MeleeDps][classJobId] = true;
+                        break;
+                    case 4238:
+                        ActivationConditions[ClassJobCategoryId.PhysicalRdps][classJobId] = true;
+                        break;
+                    case 203:
+                        ActivationConditions[ClassJobCategoryId.MagicalRdps][classJobId] = true;
+                        break;
                 }
             }
 
@@ -101,6 +106,14 @@ namespace HUDManager
 
             if (Initialized && DisplayNames!.ContainsKey(cat))
                 return DisplayNames[cat];
+
+            if (cat < 0) {
+                return cat switch
+                {
+                    ClassJobCategoryId.BaseClasses => "Base classes",
+                    _ => nameof(cat)
+                };
+            }
 
             var row = plugin.DataManager.GetExcelSheet<ClassJobCategory>()!.GetRow((uint)cat)!;
 
@@ -137,9 +150,9 @@ namespace HUDManager
                     case ClassJobCategoryId.DoH:
                         return "DoH";
                     case ClassJobCategoryId.CombatJobs:
-                        return "Combat jobs";
+                        return "DoW/DoM";
                     case ClassJobCategoryId.NonCombatJobs: 
-                        return "Non-combat jobs";
+                        return "DoH/DoL";
                 };
             }
 
@@ -193,6 +206,12 @@ namespace HUDManager
             ExcelSheet<ClassJobCategory> sheet,
             List<uint> classJobIds)
         {
+            cat = cat switch
+            {
+                ClassJobCategoryId.BaseClasses => 0,
+                _ => cat
+            };
+
             Dictionary<uint, bool> res = new();
 
             var parser = sheet.GetRowParser((uint)cat) ?? throw new InvalidOperationException("cannot acquire parser");
@@ -246,6 +265,7 @@ namespace HUDManager
                 ClassJobCategoryId.MeleeDps,
                 ClassJobCategoryId.PhysicalRdps,
                 ClassJobCategoryId.MagicalRdps,
+                ClassJobCategoryId.BaseClasses,
             }
         };
     }
@@ -286,6 +306,8 @@ namespace HUDManager
             Healer = 157,
             MeleeDps = 188,
             PhysicalRdps = 189,
-            MagicalRdps = 159
+            MagicalRdps = 159,
+
+            BaseClasses = -1,
     }
 }
