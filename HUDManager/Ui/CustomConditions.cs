@@ -150,6 +150,22 @@ namespace HUDManager.Ui
 
             ImGui.SameLine();
 
+            if (ImGuiExt.IconButton(FontAwesomeIcon.ArrowUp) && ui.editIndex < 0 && ui.selectedIndex > 0) {
+                Plugin.Config.CustomConditions.Reverse(ui.selectedIndex - 1, 2);
+                ui.selectedIndex -= 1;
+                update = true;
+            }
+
+            ImGui.SameLine();
+
+            if (ImGuiExt.IconButton(FontAwesomeIcon.ArrowDown) && ui.editIndex < 0 && ui.selectedIndex < Plugin.Config.CustomConditions.Count - 1) {
+                Plugin.Config.CustomConditions.Reverse(ui.selectedIndex, 2);
+                ui.selectedIndex += 1;
+                update = true;
+            }
+
+            ImGui.SameLine();
+
             if (ImGuiExt.IconButton(FontAwesomeIcon.Trash) && ui.selectedIndex >= 0 && ui.selectedIndex < items.Length) {
                 if (Plugin.Config.HudConditionMatches.Exists(c => c.CustomCondition == activeCondition)) {
                     ImGui.OpenPopup(Popups.CannotRemoveCustomCondition);
