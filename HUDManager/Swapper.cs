@@ -74,9 +74,26 @@ namespace HUD_Manager
                 || this.Plugin.Keybinder.UpdateKeyState()
                 || this.Plugin.Statuses.CustomConditionStatus.IsUpdated();
 
+            updated |= this.CheckQoLBarConditions();
+
             if (updated || this.Plugin.Statuses.NeedsForceUpdate) {
                 this.Plugin.Statuses.SetHudLayout();
             }
+        }
+
+        private bool CheckQoLBarConditions()
+        {
+            var updated = false;
+            foreach (var cond in this.Plugin.Config.CustomConditions) {
+                if (cond.ConditionType == CustomConditionType.QoLBarCondition) {
+                    var state = this.Plugin.QoLBarIpc.GetConditionChange(cond.ExternalIndex, out var oldState);
+                    if (state != oldState) {
+                        // PluginLog.Warning($"changed! index={cond.ExternalIndex} old={oldState} new={state}");
+                        updated = true;
+                    }
+                }
+            }
+            return updated;
         }
     }
 }

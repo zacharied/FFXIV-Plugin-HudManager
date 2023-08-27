@@ -20,8 +20,10 @@ namespace HUDManager.Configuration
         public VirtualKey ModifierKeyCode { get; set; } = VirtualKey.NO_KEY;
         public VirtualKey KeyCode { get; set; } = VirtualKey.NO_KEY;
         public MultiCondition MultiCondition { get; set; } = new();
+        public int ExternalIndex { get; set; } = QoLBarIpc.IndexUnset;
+        public bool Negate { get; set; }
         public List<uint> MapIds { get; set; } = new();
-        public float HoldTime { get; set; } = 0;
+        public float HoldTime { get; set; }
 
         [JsonConstructor]
         private CustomCondition(string name)
@@ -50,11 +52,27 @@ namespace HUDManager.Configuration
                     var playerMap = Map.GetRootZoneId(plugin.DataManager, plugin.ClientState.TerritoryType);
                     return playerMap is not null ? this.MapIds.Contains(playerMap.Value) : false;
 
+                case CustomConditionType.QoLBarCondition:
+                    if (this.Negate) {
+                        return plugin.QoLBarIpc.GetConditionState(this.ExternalIndex) == ConditionState.False;
+                    }
+                    return plugin.QoLBarIpc.GetConditionState(this.ExternalIndex) == ConditionState.True;
+
                 case CustomConditionType.MultiCondition:
                     return MultiCondition!.IsActive(plugin);
 
                 default:
                     throw new InvalidOperationException("invalid condition type");
+            }
+        }
+
+        public ConditionState? IpcState(Plugin plugin)
+        {
+            switch (this.ConditionType) {
+                case CustomConditionType.QoLBarCondition:
+                    return plugin.QoLBarIpc.GetConditionState(this.ExternalIndex);
+                default:
+                    return null;
             }
         }
     }
@@ -145,6 +163,7 @@ namespace HUDManager.Configuration
         ConsoleToggle = 0,
         HoldToActivate = 1,
         InZone = 3,
+        QoLBarCondition = 4,
         MultiCondition = 2,
     }
 
@@ -156,6 +175,7 @@ namespace HUDManager.Configuration
                 CustomConditionType.ConsoleToggle => "Toggle by command",
                 CustomConditionType.HoldToActivate => "Hold key",
                 CustomConditionType.InZone => "In zone",
+                CustomConditionType.QoLBarCondition => "QoL Bar condition",
                 CustomConditionType.MultiCondition => "Multiple conditions",
                 _ => throw new ArgumentOutOfRangeException(nameof(type))
             };
@@ -166,6 +186,7 @@ namespace HUDManager.Configuration
                 CustomConditionType.ConsoleToggle => 0,
                 CustomConditionType.HoldToActivate => 1,
                 CustomConditionType.InZone => 2,
+                CustomConditionType.QoLBarCondition => 3,
                 CustomConditionType.MultiCondition => 99,
                 _ => throw new ArgumentOutOfRangeException(nameof(type))
             };

@@ -50,6 +50,7 @@ namespace HUD_Manager
         public GameFunctions GameFunctions { get; init; }
         public PetHotbar PetHotbar { get; init; }
         public Keybinder Keybinder { get; init; }
+        public QoLBarIpc QoLBarIpc { get; init; }
 
         public bool Ready;
 
@@ -98,6 +99,7 @@ namespace HUD_Manager
             this.Commands = new Commands(this);
             this.PetHotbar = new PetHotbar(this);
             this.Keybinder = new Keybinder(this);
+            this.QoLBarIpc = new QoLBarIpc(this);
 
             if (!this.Config.FirstRun) {
                 this.Ready = true;
@@ -124,6 +126,8 @@ namespace HUD_Manager
             this.Swapper.Dispose();
             this.PetHotbar.Dispose();
             this.Hud.Dispose();
+
+            this.QoLBarIpc.Dispose();
         }
     }
 }

@@ -208,10 +208,23 @@ namespace HUDManager.Ui
                 ImGui.Text("Current value:");
                 ImGui.SameLine();
 
-                if (activeCondition.IsMet(Plugin)) {
-                    ImGui.TextColored(ImGuiColors.ParsedGreen, "✓ TRUE");
+                var state = activeCondition.IpcState(Plugin);
+                if (state is >= ConditionState.ErrorPluginUnavailable) {
+                    var text = state switch
+                    {
+                        ConditionState.ErrorPluginUnavailable => "× QoL Bar not loaded",
+                        ConditionState.ErrorConditionRemoved => "× Condition removed",
+                        ConditionState.ErrorConditionNotFound => "× Condition not found",
+                        ConditionState.ErrorUnknown => "× Error getting condition state",
+                        _ => string.Empty,
+                    };
+                    ImGui.TextColored(ImGuiColors.ParsedPurple, text);
                 } else {
-                    ImGui.TextColored(ImGuiColors.DalamudRed, "× FALSE");
+                    if (activeCondition.IsMet(Plugin)) {
+                        ImGui.TextColored(ImGuiColors.ParsedGreen, "✓ TRUE");
+                    } else {
+                        ImGui.TextColored(ImGuiColors.DalamudRed, "× FALSE");
+                    }
                 }
 
                 ImGui.EndChild();
@@ -233,6 +246,9 @@ namespace HUDManager.Ui
                         break;
                     case CustomConditionType.InZone:
                         ZoneMenu.Draw(activeCondition, ref update);
+                        break;
+                    case CustomConditionType.QoLBarCondition:
+                        DrawConditionEditMenu_QoLBar(ref update);
                         break;
                     case CustomConditionType.MultiCondition:
                         MenuMulti.Draw(activeCondition!, ref update);
@@ -346,6 +362,62 @@ namespace HUDManager.Ui
             }
 
             ImGui.PopItemWidth();
+        }
+
+        private void DrawConditionEditMenu_QoLBar(ref bool update)
+        {
+            if (activeCondition is null)
+                return;
+
+            if (Plugin.QoLBarIpc.Enabled) {
+                ImGui.PushItemWidth(250 * ImGuiHelpers.GlobalScale);
+
+                var selected = activeCondition.ExternalIndex;
+                var conditions = Plugin.QoLBarIpc.GetConditionSets();
+
+                string selectedName;
+                if (selected >= conditions.Length) {
+                    selectedName = $"Invalid condition [{selected}]";
+                } else {
+                    selectedName = activeCondition.ExternalIndex < 0 ? "No condition" : $"[{selected}] {conditions[selected]}";
+                }
+
+                if (ImGui.BeginCombo("Condition##qol-bar-condition", selectedName)) {
+                    for (var i = 0; i < conditions.Length; i++) {
+                        var name = $"[{i}] {conditions[i]}";
+                        if (ImGui.Selectable($"{name}##custom-condition-modifier-key-op")) {
+                            activeCondition.ExternalIndex = i;
+                            Plugin.QoLBarIpc.ClearCache();
+                            update = true;
+                        }
+                    }
+                    ImGui.EndCombo();
+                }
+
+                var negate = activeCondition.Negate;
+                if (ImGui.Checkbox("NOT##qol-bar-condition-negation", ref negate)) {
+                    activeCondition.Negate = negate;
+                    Plugin.QoLBarIpc.ClearCache();
+                    update = true;
+                }
+
+                ImGui.PopItemWidth();
+            }
+
+            ImGuiExt.VerticalSpace();
+            ImGui.Separator();
+            ImGuiExt.VerticalSpace();
+
+            ImGui.PushTextWrapPos();
+
+            ImGui.TextUnformatted("QoL Bar conditions require that the \"QoL Bar\" plugin by UnknownX is installed and enabled.");
+            ImGuiExt.VerticalSpace();
+            ImGui.TextUnformatted("Please note that QoL Bar conditions are saved according to their index number. This means "
+                + "that if the order of QoL Bar conditions changes while HUD Manager is disabled, an incorrect index may be "
+                + "used the next time HUD Manager is enabled. Keep this in mind if your QoL Bar conditions seem to be behaving "
+                + "strangely. A broken condition can be repaired by selecting a new condition above.");
+
+            ImGui.PopTextWrapPos();
         }
 
         private class DrawConditionEditMenu_InZone
