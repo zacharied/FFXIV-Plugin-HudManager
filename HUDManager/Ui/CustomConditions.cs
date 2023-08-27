@@ -137,7 +137,10 @@ namespace HUDManager.Ui
                 ui.focusTextEdit = true;
 
                 update = true;
+            } else if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Add");
             }
+
 
             ImGui.SameLine();
 
@@ -146,6 +149,8 @@ namespace HUDManager.Ui
                 ui.editIndex = ui.selectedIndex;
                 ui.editBuf = ui.previousName;
                 ui.focusTextEdit = true;
+            } else if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Rename");
             }
 
             ImGui.SameLine();
@@ -154,6 +159,8 @@ namespace HUDManager.Ui
                 Plugin.Config.CustomConditions.Reverse(ui.selectedIndex - 1, 2);
                 ui.selectedIndex -= 1;
                 update = true;
+            } else if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Move up");
             }
 
             ImGui.SameLine();
@@ -162,6 +169,8 @@ namespace HUDManager.Ui
                 Plugin.Config.CustomConditions.Reverse(ui.selectedIndex, 2);
                 ui.selectedIndex += 1;
                 update = true;
+            } else if (ImGui.IsItemHovered()) {
+                ImGui.SetTooltip("Move down");
             }
 
             ImGui.SameLine();
