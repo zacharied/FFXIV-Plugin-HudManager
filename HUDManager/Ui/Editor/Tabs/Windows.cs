@@ -17,7 +17,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
             this.Plugin = plugin;
         }
 
-        internal void Draw(SavedLayout layout)
+        internal void Draw(SavedLayout layout, ref bool update)
         {
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "uimanager-add-window")) {
                 ImGui.OpenPopup(Popups.AddWindow);
@@ -44,6 +44,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     var pos = this.Plugin.GameFunctions.GetAddonPosition(window);
                     if (pos != null) {
                         layout.Windows.Add(window, new Window(pos));
+                        update = true;
                     }
                 }
 
@@ -83,19 +84,20 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
                 if (ImGuiExt.IconButtonEnabledWhen(ImGui.GetIO().KeyCtrl, FontAwesomeIcon.TrashAlt, $"uimanager-remove-window-{entry.Key}")) {
                     toRemove.Add(entry.Key);
+                    update = true;
                 }
                 ImGuiExt.HoverTooltip("Remove this window from this layout (hold Control to allow)");
 
                 ImGui.Separator();
 
-                void DrawEnabledCheckbox(string kind, WindowComponent component)
+                void DrawEnabledCheckbox(string kind, WindowComponent component, ref bool update)
                 {
                     ImGui.NextColumn();
 
                     var enabled = entry.Value[component];
                     if (ImGui.Checkbox($"###{component}-enabled-{kind}", ref enabled)) {
                         entry.Value[component] = enabled;
-                        this.Plugin.Config.Save();
+                        update = true;
                     }
 
                     ImGui.NextColumn();
@@ -103,7 +105,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
                 var pos = entry.Value.Position;
 
-                DrawEnabledCheckbox(entry.Key, WindowComponent.X);
+                DrawEnabledCheckbox(entry.Key, WindowComponent.X, ref update);
 
                 DrawSettingName("X");
 
@@ -111,9 +113,10 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 if (ImGui.InputInt($"##uimanager-x-window-{entry.Key}", ref x)) {
                     pos.X = (short)x;
                     this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
+                    update = true;
                 }
 
-                DrawEnabledCheckbox(entry.Key, WindowComponent.Y);
+                DrawEnabledCheckbox(entry.Key, WindowComponent.Y, ref update);
 
                 DrawSettingName("Y");
 
@@ -121,6 +124,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 if (ImGui.InputInt($"##uimanager-y-window-{entry.Key}", ref y)) {
                     pos.Y = (short)y;
                     this.Plugin.GameFunctions.SetAddonPosition(entry.Key, pos.X, pos.Y);
+                    update = true;
                 }
 
                 ImGui.SetColumnWidth(1, maxSettingWidth + ImGui.GetStyle().ItemSpacing.X * 2);

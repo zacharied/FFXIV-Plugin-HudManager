@@ -204,7 +204,7 @@ namespace HUD_Manager.Ui.Editor
                     }
 
                     if (ImGui.BeginTabItem("Windows")) {
-                        this.Windows.Draw(layout);
+                        this.Windows.Draw(layout, ref update);
 
                         ImGui.EndTabItem();
                     }
