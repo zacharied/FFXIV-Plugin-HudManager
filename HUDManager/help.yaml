@@ -112,6 +112,8 @@
           "Hold key" causes the State to be activated when a given key (combination) is held.
 
           "In zone" will only activate the State when you are in one of chosen list of locations.
+          
+          "QoL Bar condition" will allow you to use conditions from the QoL Bar plugin if you have it installed.
 
           Finally, "Multiple conditions" allows you to combine the result of several conditions using logical operations.
           For example, you could have a "Non-PvP Instance" condition that specifies being in an instance, but NOT being in PvP.
