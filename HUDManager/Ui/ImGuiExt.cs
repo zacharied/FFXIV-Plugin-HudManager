@@ -196,5 +196,16 @@ namespace HUD_Manager.Ui
 
             return pos;
         }
+
+        public static bool IconButtonEnabledWhen(bool enabled, FontAwesomeIcon icon, string? id = null)
+        {
+            if (!enabled)
+                ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.5f);
+            var result = IconButton(FontAwesomeIcon.TrashAlt, id);
+            if (!enabled)
+                ImGui.PopStyleVar();
+
+            return result && enabled;
+        }
     }
 }

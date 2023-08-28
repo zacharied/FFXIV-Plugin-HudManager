@@ -81,9 +81,10 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 ImGui.TextUnformatted("Control");
 
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
-                if (ImGuiExt.IconButton(FontAwesomeIcon.Trash, $"uimanager-remove-window-{entry.Key}")) {
+                if (ImGuiExt.IconButtonEnabledWhen(ImGui.GetIO().KeyCtrl, FontAwesomeIcon.TrashAlt, $"uimanager-remove-window-{entry.Key}")) {
                     toRemove.Add(entry.Key);
                 }
+                ImGuiExt.HoverTooltip("Remove this window from this layout (hold Control to allow)");
 
                 ImGui.Separator();
 

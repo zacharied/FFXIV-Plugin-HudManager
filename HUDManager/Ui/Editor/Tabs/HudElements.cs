@@ -1,4 +1,6 @@
 ﻿using Dalamud.Interface;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Style;
 using Dalamud.Logging;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
@@ -147,23 +149,28 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 ImGui.TableHeadersRow();
 
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemInnerSpacing.X - ImGui.GetStyle().ItemSpacing.X * 6);
+
+                var previewing = this.Editor.Previews.Elements.Contains(kind);
+                if (previewing)
+                    ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.ParsedGreen);
                 if (ImGuiExt.IconButton(FontAwesomeIcon.Search, $"uimanager-preview-element-{kind}")) {
-                    if (this.Editor.Previews.Elements.Contains(kind)) {
+                    if (previewing) {
                         this.Editor.Previews.Elements.Remove(kind);
                     } else {
                         this.Editor.Previews.Elements.Add(kind);
                     }
                 }
+                if (previewing)
+                    ImGui.PopStyleColor();
 
                 ImGuiExt.HoverTooltip("Toggle a movable preview for this element");
 
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
-                if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}")) {
+                if (ImGuiExt.IconButtonEnabledWhen(ImGui.GetIO().KeyCtrl, FontAwesomeIcon.TrashAlt, $"uimanager-remove-element-{kind}")) {
                     toRemove.Add(kind);
                     update = true;
                 }
-
-                ImGuiExt.HoverTooltip("Remove this element from this layout");
+                ImGuiExt.HoverTooltip("Remove this element from this layout (hold Control to allow)");
 
                 ImGui.TableNextRow();
 

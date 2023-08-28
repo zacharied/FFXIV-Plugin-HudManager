@@ -137,10 +137,8 @@ namespace HUDManager.Ui
                 ui.focusTextEdit = true;
 
                 update = true;
-            } else if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Add");
             }
-
+            ImGuiExt.HoverTooltip("Add");
 
             ImGui.SameLine();
 
@@ -149,9 +147,8 @@ namespace HUDManager.Ui
                 ui.editIndex = ui.selectedIndex;
                 ui.editBuf = ui.previousName;
                 ui.focusTextEdit = true;
-            } else if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Rename");
             }
+            ImGuiExt.HoverTooltip("Rename");
 
             ImGui.SameLine();
 
@@ -159,9 +156,8 @@ namespace HUDManager.Ui
                 Plugin.Config.CustomConditions.Reverse(ui.selectedIndex - 1, 2);
                 ui.selectedIndex -= 1;
                 update = true;
-            } else if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Move up");
             }
+            ImGuiExt.HoverTooltip("Move up");
 
             ImGui.SameLine();
 
@@ -169,29 +165,21 @@ namespace HUDManager.Ui
                 Plugin.Config.CustomConditions.Reverse(ui.selectedIndex, 2);
                 ui.selectedIndex += 1;
                 update = true;
-            } else if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Move down");
             }
+            ImGuiExt.HoverTooltip("Move down");
 
             ImGui.SameLine();
 
-            var deleteEnabled = ImGui.GetIO().KeyCtrl;
-            ImGui.PushStyleVar(ImGuiStyleVar.Alpha, deleteEnabled ? 1f : 0.5f);
-            var delete = ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt);
-            ImGui.PopStyleVar();
-            if (delete && deleteEnabled && ui.selectedIndex >= 0 && ui.selectedIndex < items.Length) {
+            if (ImGuiExt.IconButtonEnabledWhen(ImGui.GetIO().KeyCtrl, FontAwesomeIcon.TrashAlt) && ui.selectedIndex >= 0 && ui.selectedIndex < items.Length) {
                 if (Plugin.Config.HudConditionMatches.Exists(c => c.CustomCondition == activeCondition)) {
-                    PluginLog.Warning("cant-delete");
                     ImGui.OpenPopup(Popups.CannotRemoveCustomCondition);
                 } else {
-                    PluginLog.Warning("can-delete");
                     Plugin.Config.CustomConditions.RemoveAt(ui.selectedIndex);
                     ui.selectedIndex = -1;
                     update = true;
                 }
-            } else if (ImGui.IsItemHovered()) {
-                ImGui.SetTooltip("Delete (hold Control to allow deletion)");
             }
+            ImGuiExt.HoverTooltip("Delete (hold Control to allow)");
 
             bool _b = true;
             if (ImGui.BeginPopupModal($"{Popups.CannotRemoveCustomCondition}", ref _b, ImGuiWindowFlags.AlwaysAutoResize)) {
@@ -737,7 +725,7 @@ namespace HUDManager.Ui
                             }
 
                             ImGui.SameLine();
-                            if (ImGuiExt.IconButton(FontAwesomeIcon.Trash, $"{i}")) {
+                            if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"{i}")) {
                                 Ui.deleteCondition = i;
                             }
 

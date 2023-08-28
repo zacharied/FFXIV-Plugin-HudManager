@@ -63,13 +63,13 @@ internal partial class ExternalElements
                 ImGui.TableHeadersRow();
 
                 ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetStyle().ItemSpacing.X * 3);
-                if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"bw-overlay-remove-{i}"))
+                if (ImGuiExt.IconButtonEnabledWhen(ImGui.GetIO().KeyCtrl, FontAwesomeIcon.TrashAlt, $"bw-overlay-remove-{i}"))
                 {
                     toRemove.Add(overlay);
                     update = true;
                 }
 
-                ImGuiExt.HoverTooltip("Remove this element from this layout");
+                ImGuiExt.HoverTooltip("Remove this element from this layout (hold Control to allow)");
 
                 ImGui.TableNextRow();
 

@@ -269,7 +269,7 @@ namespace HUD_Manager.Ui
                     }
 
                     ImGui.SameLine();
-                    if (ImGuiExt.IconButton(FontAwesomeIcon.Trash, $"{item.i}")) {
+                    if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"{item.i}")) {
                         actionedItemIndex = item.i;
                     }
 

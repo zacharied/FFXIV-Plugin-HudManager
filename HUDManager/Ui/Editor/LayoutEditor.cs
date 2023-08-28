@@ -123,7 +123,7 @@ namespace HUD_Manager.Ui.Editor
             ImGuiExt.HoverTooltip("Delete the selected layout");
 
             ImGui.SameLine();
-            if (ImGuiExt.IconButton(FontAwesomeIcon.PencilAlt, "uimanager-rename-layout") && this.Ui.SelectedLayout != Guid.Empty) {
+            if (ImGuiExt.IconButton(FontAwesomeIcon.Edit, "uimanager-rename-layout") && this.Ui.SelectedLayout != Guid.Empty) {
                 this.RenameLayoutName = this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Name;
                 ImGui.OpenPopup(Popups.RenameLayout);
             }
