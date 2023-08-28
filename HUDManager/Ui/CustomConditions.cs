@@ -225,7 +225,8 @@ namespace HUDManager.Ui
             var valueChildBgColor = activeCondition.IsMet(Plugin) ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed;
             ImGui.PushStyleColor(ImGuiCol.ChildBg, valueChildBgColor - new Vector4(0, 0, 0, 0.82f));
             if (ImGui.BeginChild("##condition-edit-display-value-child", 
-                                 new Vector2(-1, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemInnerSpacing.Y * 2), true)) {
+                                 new Vector2(-1, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemInnerSpacing.Y * 2 + 4), true,
+                                 ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs)) {
                 ImGui.Text("Current value:");
                 ImGui.SameLine();
 
