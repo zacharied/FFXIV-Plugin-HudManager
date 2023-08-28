@@ -351,7 +351,7 @@ namespace HUD_Manager
         /// </summary>
         public void RunRecurringTasks(Framework _)
         {
-    //        ApplyAllJobGaugeVisibility();
+            ApplyAllJobGaugeVisibility();
         }
 
         private void ApplyAllJobGaugeVisibility()
@@ -388,7 +388,7 @@ namespace HUD_Manager
 
         public void Dispose()
         {
-            this.Plugin.Framework.Update -= RunRecurringTasks;
+            // this.Plugin.Framework.Update -= RunRecurringTasks;
         }
     }
 
