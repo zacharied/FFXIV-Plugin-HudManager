@@ -438,6 +438,10 @@ namespace HUDManager.Ui
                 + "that if the order of QoL Bar conditions changes while HUD Manager is disabled, an incorrect index may be "
                 + "used the next time HUD Manager is enabled. Keep this in mind if your QoL Bar conditions seem to be behaving "
                 + "strangely. A broken condition can be repaired by selecting a new condition above.");
+            ImGuiExt.VerticalSpace();
+            ImGui.TextUnformatted("There is a small performance penalty to fetching the QoL Bar condition state from another "
+                + "plugin, therefore it is recommended to create complex hybrid conditions on the QoL Bar side if possible, "
+                + "instead of checking many such conditions from HUD Manager.");
 
             ImGui.PopTextWrapPos();
         }

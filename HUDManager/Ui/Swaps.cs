@@ -110,7 +110,7 @@ namespace HUD_Manager.Ui
 
             if (advancedMode)
                 ImGui.TableSetupColumn("Layer", ImGuiTableColumnFlags.WidthFixed);
-            ImGui.TableSetupColumn("Job");
+            ImGui.TableSetupColumn("Class/Job");
             ImGui.TableSetupColumn("State");
             ImGui.TableSetupColumn("Layout");
             ImGui.TableSetupColumn("Options");
