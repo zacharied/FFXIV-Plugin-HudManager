@@ -201,7 +201,7 @@ namespace HUD_Manager.Ui
         {
             if (!enabled)
                 ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.5f);
-            var result = IconButton(FontAwesomeIcon.TrashAlt, id);
+            var result = IconButton(icon, id);
             if (!enabled)
                 ImGui.PopStyleVar();
 
