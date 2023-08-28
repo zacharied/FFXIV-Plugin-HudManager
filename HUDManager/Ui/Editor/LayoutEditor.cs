@@ -56,6 +56,7 @@ namespace HUD_Manager.Ui.Editor
             }
 
             var update = false;
+            var layoutChanged = false;
 
             if (Util.IsCharacterConfigOpen()) {
                 ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
@@ -76,8 +77,6 @@ namespace HUD_Manager.Ui.Editor
             var selectedName = selected?.Name ?? "<none>";
 
             if (ImGui.BeginCombo("##edit-layout", selectedName)) {
-                bool layoutChanged = false;
-
                 if (ImGui.Selectable("<none>")) {
                     this.Ui.SelectedLayout = Guid.Empty;
                     layoutChanged = true;
@@ -96,11 +95,6 @@ namespace HUD_Manager.Ui.Editor
                     }
                 }
 
-                if (layoutChanged) {
-                    // Kill all previews so they don't fuck up the new layout.
-                    Previews.Clear();
-                }
-
                 ImGui.EndCombo();
             }
 
@@ -111,14 +105,14 @@ namespace HUD_Manager.Ui.Editor
 
             ImGuiExt.HoverTooltip("Add a new layout");
 
-            this.SetUpAddLayoutPopup();
+            this.SetUpAddLayoutPopup(ref update, ref layoutChanged);
 
             ImGui.SameLine();
             if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, "uimanager-delete-layout") && this.Ui.SelectedLayout != Guid.Empty) {
                 ImGui.OpenPopup(Popups.DeleteVerify);
             }
 
-            this.SetUpDeleteVerifyPopup(nodes);
+            this.SetUpDeleteVerifyPopup(nodes, ref update, ref layoutChanged);
 
             ImGuiExt.HoverTooltip("Delete the selected layout");
 
@@ -130,7 +124,7 @@ namespace HUD_Manager.Ui.Editor
 
             ImGuiExt.HoverTooltip("Rename the selected layout");
 
-            this.SetUpRenameLayoutPopup();
+            this.SetUpRenameLayoutPopup(ref update);
 
             ImGui.SameLine();
             if (ImGuiExt.IconButton(FontAwesomeIcon.FileImport, "uimanager-import-layout")) {
@@ -139,7 +133,7 @@ namespace HUD_Manager.Ui.Editor
 
             ImGuiExt.HoverTooltip("Import a layout from an in-game HUD slot or the clipboard");
 
-            this.SetUpImportLayoutPopup();
+            this.SetUpImportLayoutPopup(ref update, ref layoutChanged);
 
             ImGui.SameLine();
             if (ImGuiExt.IconButton(FontAwesomeIcon.FileExport, "uimanager-export-layout")) {
@@ -221,7 +215,7 @@ namespace HUD_Manager.Ui.Editor
                 ImGui.EndChild();
             }
 
-            SetUpOptionsPopup();
+            this.SetUpOptionsPopup(ref update);
 
             ImGui.Indent();
             if (ImGuiExt.IconButton(FontAwesomeIcon.Cog)) {
@@ -231,12 +225,16 @@ namespace HUD_Manager.Ui.Editor
         EndTabItem:
             ImGui.EndTabItem();
 
+            if (layoutChanged) {
+                // Kill all previews so they don't fuck up the new layout.
+                Previews.Clear();
+            }
             if (update) {
                 this.Plugin.Config.Save();
             }
         }
 
-        private void SetUpAddLayoutPopup()
+        private void SetUpAddLayoutPopup(ref bool update, ref bool layoutChanged)
         {
             if (!ImGui.BeginPopup(Popups.AddLayout)) {
                 return;
@@ -263,12 +261,13 @@ namespace HUD_Manager.Ui.Editor
                 // generate a new id
                 var id = Guid.NewGuid();
 
-                // add the layout and save the config
+                // add the layout
                 this.Plugin.Config.Layouts[id] = saved;
-                this.Plugin.Config.Save();
-
                 // switch the editor to the new layout
                 this.Ui.SelectedLayout = id;
+
+                update = true;
+                layoutChanged = true;
 
                 ImGui.CloseCurrentPopup();
             }
@@ -276,7 +275,7 @@ namespace HUD_Manager.Ui.Editor
             ImGui.EndPopup();
         }
 
-        private void SetUpDeleteVerifyPopup(IEnumerable<Node<SavedLayout>> nodes)
+        private void SetUpDeleteVerifyPopup(IEnumerable<Node<SavedLayout>> nodes, ref bool update, ref bool layoutChanged)
         {
             if (!ImGui.BeginPopupModal(Popups.DeleteVerify)) {
                 return;
@@ -299,7 +298,8 @@ namespace HUD_Manager.Ui.Editor
 
                     this.Plugin.Config.Layouts.Remove(this.Ui.SelectedLayout);
                     this.Ui.SelectedLayout = Guid.Empty;
-                    this.Plugin.Config.Save();
+                    update = true;
+                    layoutChanged = true;
 
                     ImGui.CloseCurrentPopup();
                 }
@@ -313,7 +313,7 @@ namespace HUD_Manager.Ui.Editor
             ImGui.EndPopup();
         }
 
-        private void SetUpRenameLayoutPopup()
+        private void SetUpRenameLayoutPopup(ref bool update)
         {
             if (!ImGui.BeginPopup(Popups.RenameLayout)) {
                 return;
@@ -326,7 +326,7 @@ namespace HUD_Manager.Ui.Editor
 
             if (ImGui.Button("Rename") && this.RenameLayoutName != null) {
                 this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Name = this.RenameLayoutName;
-                this.Plugin.Config.Save();
+                update = true;
 
                 ImGui.CloseCurrentPopup();
             }
@@ -334,7 +334,7 @@ namespace HUD_Manager.Ui.Editor
             ImGui.EndPopup();
         }
 
-        private void SetUpImportLayoutPopup()
+        private void SetUpImportLayoutPopup(ref bool update, ref bool layoutChanged)
         {
             if (!ImGui.BeginPopup(Popups.ImportLayout)) {
                 return;
@@ -378,9 +378,9 @@ namespace HUD_Manager.Ui.Editor
                     var currentLayout = this.Plugin.Hud.ReadLayout(slot);
                     var newLayout = new SavedLayout(newName, currentLayout, windows);
                     this.Plugin.Config.Layouts[id] = newLayout;
-                    this.Plugin.Config.Save();
-
                     this.Ui.SelectedLayout = id;
+                    update = true;
+                    layoutChanged = true;
 
                     ReportImport($"slot {slot}");
 
@@ -405,9 +405,9 @@ namespace HUD_Manager.Ui.Editor
 
                     var id = Guid.NewGuid();
                     this.Plugin.Config.Layouts[id] = saved;
-                    this.Plugin.Config.Save();
-
                     this.Ui.SelectedLayout = id;
+                    update = true;
+                    layoutChanged = true;
 
                     ReportImport("the clipboard");
 
@@ -458,7 +458,7 @@ namespace HUD_Manager.Ui.Editor
             ImGui.EndPopup();
         }
 
-        private void SetUpOptionsPopup()
+        private void SetUpOptionsPopup(ref bool update)
         {
             if (!ImGui.BeginPopup(Popups.LayoutEditorOptions)) {
                 return;
@@ -473,7 +473,7 @@ namespace HUD_Manager.Ui.Editor
                     }
 
                     this.Plugin.Config.PositioningMode = mode;
-                    this.Plugin.Config.Save();
+                    update = true;
                 }
 
                 ImGui.EndCombo();
