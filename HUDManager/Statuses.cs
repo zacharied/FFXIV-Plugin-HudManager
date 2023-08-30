@@ -277,6 +277,18 @@ namespace HUD_Manager
             LastValue = newValue;
             return newValue;
         }
+
+        public HudConditionMatch Clone()
+        {
+            var clone = new HudConditionMatch();
+            clone.ClassJobCategory = this.ClassJobCategory;
+            clone.Status = this.Status;
+            clone.CustomCondition = this.CustomCondition;
+            clone.LayoutId = this.LayoutId;
+            clone.IsLayer = this.IsLayer;
+            clone.LastValue = this.LastValue;
+            return clone;
+        }
     }
 
     // Note: Changing the names of these is a breaking change

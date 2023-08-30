@@ -265,7 +265,7 @@ namespace HUD_Manager.Ui
 
                     if (ImGuiExt.IconButton(FontAwesomeIcon.PencilAlt, $"{item.i}")) {
                         this._editingConditionIndex = item.i;
-                        this._editingCondition = item.cond;
+                        this._editingCondition = item.cond.Clone();
                     }
 
                     ImGui.SameLine();
