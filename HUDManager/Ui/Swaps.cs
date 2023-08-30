@@ -133,9 +133,9 @@ namespace HUD_Manager.Ui
                     // Column: Layer
 
                     if (advancedMode) {
-                        bool applyLayer = item.cond.IsLayer;
+                        bool applyLayer = _editingCondition.IsLayer;
                         if (ImGui.Checkbox($"##condition-layered-{item.i}", ref applyLayer)) {
-                            item.cond.IsLayer = applyLayer;
+                            _editingCondition.IsLayer = applyLayer;
                             update = true;
                         }
 
