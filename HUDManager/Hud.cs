@@ -306,8 +306,9 @@ namespace HUD_Manager
             }
 
             if (Plugin.ClientState.LocalPlayer is not null) {
+                var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex;
                 currentJobGauges = effective.Elements
-                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex)
+                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == jobIndex)
                     .Select(kv => (kv.Key.GetJobGaugeAtkName()!, kv.Key, kv.Value))
                     .ToList();
                 ApplyAllJobGaugeVisibility();
@@ -326,8 +327,9 @@ namespace HUD_Manager
             this.WriteLayout(slot, effective.Elements);
 
             if (Plugin.ClientState.LocalPlayer is not null) {
+                var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex;
                 currentJobGauges = effective.Elements
-                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex)
+                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == jobIndex)
                     .Select(kv => (kv.Key.GetJobGaugeAtkName()!, kv.Key, kv.Value))
                     .ToList();
                 ApplyAllJobGaugeVisibility();
