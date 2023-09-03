@@ -291,10 +291,27 @@ namespace HUD_Manager
         {
             if (_stagingState != null && _stagingState.LayoutId == id && _stagingState.LayerIds.SequenceEqual(layers)) {
                 PluginLog.Debug($"Skipped layout {GetDebugName(id, layers)} (state unchanged)");
+                WriteEffectiveLayoutGaugesOnly(id, layers);
                 return;
             }
 
             WriteEffectiveLayout(slot, id, layers);
+        }
+
+        private void WriteEffectiveLayoutGaugesOnly(Guid id, List<Guid>? layers = null)
+        {
+            var effective = this.GetEffectiveLayout(id, layers);
+            if (effective == null) {
+                return;
+            }
+
+            if (Plugin.ClientState.LocalPlayer is not null) {
+                currentJobGauges = effective.Elements
+                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex)
+                    .Select(kv => (kv.Key.GetJobGaugeAtkName()!, kv.Key, kv.Value))
+                    .ToList();
+                ApplyAllJobGaugeVisibility();
+            }
         }
 
         public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null)
