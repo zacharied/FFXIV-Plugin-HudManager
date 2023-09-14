@@ -256,16 +256,9 @@ namespace HUD_Manager.Structs
 
             var name = data.GetExcelSheet<HudSheet>().GetRow((uint)id).Name;
 
-            uint? jobId = kind switch
-            {
-                ElementKind.AetherflowGaugeSmn => 27,
-                ElementKind.AetherflowGaugeSch => 28,
-                _ => null,
-            };
-
-            if (jobId != null) {
-                var abbr = data.GetExcelSheet<ClassJob>().GetRow(jobId.Value).Abbreviation;
-                name += $" ({abbr})";
+            var classJob = kind.ClassJob();
+            if (classJob != null) {
+                name += $" ({classJob.Abbreviation})";
             }
 
             return name;
