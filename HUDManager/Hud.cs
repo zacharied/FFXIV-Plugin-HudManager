@@ -38,9 +38,13 @@ namespace HUD_Manager
         private List<(string name, ElementKind kind, Element e)> currentJobGauges = new();
         private StagingState? _stagingState;
 
-        private record StagingState(Guid LayoutId, List<Guid> LayerIds);
-
         private Plugin Plugin { get; }
+
+        private record StagingState(uint JobId, Guid LayoutId, List<Guid> LayerIds)
+        {
+            public bool SameLayers(Guid layoutId, List<Guid> layerIds) => this.LayoutId == layoutId && this.LayerIds.SequenceEqual(layerIds);
+            public bool SameJob(uint playerJobId) => this.JobId == playerJobId;
+        }
 
         public Hud(Plugin plugin)
         {
@@ -289,9 +293,13 @@ namespace HUD_Manager
 
         public void WriteEffectiveLayoutIfChanged(HudSlot slot, Guid id, List<Guid> layers)
         {
-            if (_stagingState != null && _stagingState.LayoutId == id && _stagingState.LayerIds.SequenceEqual(layers)) {
-                PluginLog.Debug($"Skipped layout {GetDebugName(id, layers)} (state unchanged)");
-                WriteEffectiveLayoutGaugesOnly(id, layers);
+            if (_stagingState != null && _stagingState.SameLayers(id, layers)) {
+                if (_stagingState.SameJob(Util.GetPlayerJobId(Plugin))) {
+                    PluginLog.Debug($"Skipped layout {GetDebugName(id, layers)} (state unchanged)");
+                } else {
+                    PluginLog.Debug($"Skipped layout {GetDebugName(id, layers)} (gauge changes only)");
+                    WriteEffectiveLayoutGaugesOnly(id, layers);
+                }
                 return;
             }
 
@@ -313,6 +321,8 @@ namespace HUD_Manager
                     .ToList();
                 ApplyAllJobGaugeVisibility();
             }
+
+            _stagingState = new StagingState(Util.GetPlayerJobId(Plugin), id, layers ?? new List<Guid>());
         }
 
         public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null)
@@ -345,7 +355,7 @@ namespace HUD_Manager
 
             effective.CrossUpConfig?.ApplyConfig(Plugin);
 
-            _stagingState = new StagingState(id, layers ?? new List<Guid>());
+            _stagingState = new StagingState(Util.GetPlayerJobId(Plugin), id, layers ?? new List<Guid>());
         }
 
         internal void ImportSlot(string name, HudSlot slot, bool save = true)

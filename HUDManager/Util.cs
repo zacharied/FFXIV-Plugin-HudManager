@@ -51,6 +51,11 @@ namespace HUD_Manager
             }
         }
 
+        public static uint GetPlayerJobId(Plugin plugin)
+        {
+            return plugin.ClientState.LocalPlayer?.ClassJob.Id ?? uint.MaxValue;
+        }
+
         public readonly static Dictionary<uint, string> JobIdToEnglishAbbreviation = new Dictionary<uint, string>()
         {
             [0] = "ADV",
