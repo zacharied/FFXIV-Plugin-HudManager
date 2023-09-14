@@ -32,7 +32,8 @@ namespace HUD_Manager.Ui.Editor.Tabs
         private Interface Ui { get; }
         private LayoutEditor Editor { get; }
 
-        private string? Search { get; set; }
+        private string? SearchAdd { get; set; }
+        private string? SearchEdit { get; set; }
 
         public HudElements(Plugin plugin, Interface ui, LayoutEditor editor)
         {
@@ -52,32 +53,52 @@ namespace HUD_Manager.Ui.Editor.Tabs
             ImGuiExt.HoverTooltip("Add a new HUD element to this layout");
 
             if (ImGui.BeginPopup(Popups.AddElement)) {
+                var searchAdd = this.SearchAdd ?? string.Empty;
+                if (ImGui.InputTextWithHint("##ui-editor-search-add", "Search", ref searchAdd, 100)) {
+                    this.SearchAdd = string.IsNullOrWhiteSpace(searchAdd) ? null : searchAdd;
+                }
+                ImGui.BeginChild("##ui-editor-scrolling-search-add", ImGuiHelpers.ScaledVector2(0, 400), true,
+                    ImGuiWindowFlags.AlwaysVerticalScrollbar | ImGuiWindowFlags.NoBackground);
+
                 var kinds = ElementKindExt.All()
                     .Where(el => el.IsRealElement())
                     .OrderBy(el => el.LocalisedName(this.Plugin.DataManager));
                 foreach (var kind in kinds) {
                     var elementClassJob = kind.ClassJob();
                     var isForbiddenElement = elementClassJob != null && !Util.HasUnlockedClass(this.Plugin, elementClassJob);
-                    bool _selected = false;
-                    if (!ImGui.Selectable($"{kind.LocalisedName(this.Plugin.DataManager)}##{kind}", ref _selected,
-                            isForbiddenElement ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None)) {
-                        continue;
+                    var elementInConfig = this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Elements.ContainsKey(kind);
+                    var localisedName = kind.LocalisedName(this.Plugin.DataManager);
+
+                    if (searchAdd == string.Empty || localisedName.ToLowerInvariant().Contains(searchAdd.ToLowerInvariant())) {
+                        if (elementInConfig)
+                            ImGui.PushStyleColor(ImGuiCol.Text, ImGuiColors.ParsedGreen);
+                        var _selected = false;
+                        var selectableSelected = ImGui.Selectable($"{localisedName}##{kind}", ref _selected,
+                            isForbiddenElement || elementInConfig ? ImGuiSelectableFlags.Disabled : ImGuiSelectableFlags.None);
+                        if (elementInConfig)
+                            ImGui.PopStyleColor();
+
+                        if (selectableSelected) {
+                            try {
+                                var currentLayout = this.Plugin.Hud.ReadLayout(this.Plugin.Hud.GetActiveHudSlot());
+                                var element = currentLayout.elements.First(el => el.id == kind);
+                                this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Elements[kind] = new Element(element);
+                            }
+                            catch (InvalidOperationException) {
+                                ImGui.OpenPopup(Popups.ErrorAddingHudElement);
+                                if (elementInConfig)
+                                    ImGui.PopStyleColor();
+                                break;
+                            }
+
+                            update = true;
+
+                            ImGui.CloseCurrentPopup();
+                        }
                     }
-
-                    var currentLayout = this.Plugin.Hud.ReadLayout(this.Plugin.Hud.GetActiveHudSlot());
-                    try {
-                        var element = currentLayout.elements.First(el => el.id == kind);
-                        this.Plugin.Config.Layouts[this.Ui.SelectedLayout].Elements[kind] = new Element(element);
-                    } catch (InvalidOperationException) {
-                        ImGui.OpenPopup(Popups.ErrorAddingHudElement);
-                        break;
-                    }
-
-                    update = true;
-
-                    ImGui.CloseCurrentPopup();
                 }
 
+                ImGui.EndChild();
                 ImGui.EndPopup();
             }
 
@@ -91,9 +112,9 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 if (ImGui.Button("OK")) ImGui.CloseCurrentPopup();
             }
 
-            var search = this.Search ?? string.Empty;
-            if (ImGui.InputText("Search##ui-editor-search", ref search, 100)) {
-                this.Search = string.IsNullOrWhiteSpace(search) ? null : search;
+            var searchEdit = this.SearchEdit ?? string.Empty;
+            if (ImGui.InputText("Search##ui-editor-search-edit", ref searchEdit, 100)) {
+                this.SearchEdit = string.IsNullOrWhiteSpace(searchEdit) ? null : searchEdit;
             }
 
             if (!ImGui.BeginChild("uimanager-layout-editor-elements", new Vector2(0, 0))) {
@@ -107,7 +128,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 .Select(entry => Tuple.Create(entry.Key, entry.Value, entry.Key.LocalisedName(this.Plugin.DataManager)))
                 .OrderBy(tuple => tuple.Item3);
             foreach (var (kind, element, name) in sortedElements) {
-                if (this.Search != null && !name.ContainsIgnoreCase(this.Search)) {
+                if (this.SearchEdit != null && !name.ContainsIgnoreCase(this.SearchEdit)) {
                     continue;
                 }
 
