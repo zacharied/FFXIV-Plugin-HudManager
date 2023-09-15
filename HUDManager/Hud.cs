@@ -177,7 +177,7 @@ namespace HUD_Manager
                         element.Options = slotLayout.elements[i].options;
                     }
 
-                    if (element.Id is ElementKind.Hotbar1 && reloadIfNecessary) {
+                    if (element.Id is ElementKind.Hotbar1) {
                         // Hotbar1: Keep cycling state
                         element.Options![0] = slotLayout.elements[i].options![0];
                     }
