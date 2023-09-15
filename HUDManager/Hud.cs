@@ -1,6 +1,4 @@
-﻿using Dalamud.Game;
-using Dalamud.Hooking;
-using Dalamud.Logging;
+﻿using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
@@ -8,34 +6,30 @@ using HUD_Manager.Tree;
 using HUDManager.Structs.External;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using HUD_Manager.Structs.Options;
 
 namespace HUD_Manager
 {
     public class Hud : IDisposable
     {
-        // Updated 6.45
-        public const int InMemoryLayoutElements = 99;
-
-        // Updated 5.45
+        public const int InMemoryLayoutElements = 99; // Updated 6.45
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
-        private const int LayoutSize = InMemoryLayoutElements * 36;
+        private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 5.45
 
-        // Updated 6.4
-        private const int SlotOffset = 0x6408;
+        private const int FileDataPointerOffset = 0x50;
+        private const int FileSaveMarkerOffset = 0x3E; // Unused
+
+        private const int DataSlotOffset = 0x6408; // Updated 6.4
+        private const int DataBaseLayoutOffset = 0x2c58;
+        private const int DataDefaultLayoutOffset = 0x1c4; // Unused
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
-
         private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);
-
         private readonly GetFilePointerDelegate? _getFilePointer;
         private readonly SetHudLayoutDelegate? _setHudLayout;
 
-        private List<(string name, ElementKind kind, Element e)> currentJobGauges = new();
         private StagingState? _stagingState;
 
         private Plugin Plugin { get; }
@@ -59,9 +53,6 @@ namespace HUD_Manager
             if (setHudLayoutPtr != IntPtr.Zero) {
                 this._setHudLayout = Marshal.GetDelegateForFunctionPointer<SetHudLayoutDelegate>(setHudLayoutPtr);
             }
-
-            // Removed since this is not actually running anything currently.
-            // plugin.Framework.Update += RunRecurringTasks;
         }
 
         public IntPtr GetFilePointer(byte index)
@@ -71,7 +62,7 @@ namespace HUD_Manager
 
         public void SaveAddonData()
         {
-            var saveMarker = this.GetFilePointer(0) + 0x3E;
+            var saveMarker = this.GetFilePointer(0) + FileSaveMarkerOffset;
             Marshal.WriteByte(saveMarker, 1);
         }
 
@@ -88,7 +79,7 @@ namespace HUD_Manager
             }
 
             unsafe {
-                var currentSlotPtr = (uint*)(this.GetDataPointer() + SlotOffset);
+                var currentSlotPtr = (uint*)(this.GetDataPointer() + DataSlotOffset);
                 // read the current slot
                 var currentSlot = *currentSlotPtr;
                 // if the current slot is the slot we want to change to, we can force a reload by
@@ -115,30 +106,30 @@ namespace HUD_Manager
                 }
             }
 
-        Return:
+            Return:
             this._setHudLayout.Invoke(file, (uint)slot, 0, 1);
         }
 
         public IntPtr GetDataPointer()
         {
-            var dataPtr = this.GetFilePointer(0) + 0x50;
+            var dataPtr = this.GetFilePointer(0) + FileDataPointerOffset;
             return Marshal.ReadIntPtr(dataPtr);
         }
 
         internal IntPtr GetDefaultLayoutPointer()
         {
-            return this.GetDataPointer() + 0x1c4;
+            return this.GetDataPointer() + DataDefaultLayoutOffset;
         }
 
         internal IntPtr GetLayoutPointer(HudSlot slot)
         {
             var slotNum = (int)slot;
-            return this.GetDataPointer() + 0x2c58 + slotNum * LayoutSize;
+            return this.GetDataPointer() + DataBaseLayoutOffset + slotNum * LayoutSize;
         }
 
         public HudSlot GetActiveHudSlot()
         {
-            var slotVal = Marshal.ReadInt32(this.GetDataPointer() + SlotOffset);
+            var slotVal = Marshal.ReadInt32(this.GetDataPointer() + DataSlotOffset);
 
             if (!Enum.IsDefined(typeof(HudSlot), slotVal)) {
                 throw new IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
@@ -284,12 +275,8 @@ namespace HUD_Manager
             return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, crossUpConfig, Guid.Empty);
         }
 
-        private string GetDebugName(Guid id, List<Guid>? layers)
-        {
-            return
-                $"{Plugin.Config.Layouts[id].Name} [{(layers == null ? "" : string.Join(", ", layers.ConvertAll(layer => Plugin.Config.Layouts[layer].Name)))}]";
-        }
-
+        private string GetDebugName(Guid id, List<Guid>? layers) =>
+            $"{Plugin.Config.Layouts[id].Name} [{(layers == null ? "" : string.Join(", ", layers.ConvertAll(layer => Plugin.Config.Layouts[layer].Name)))}]";
 
         public void WriteEffectiveLayoutIfChanged(HudSlot slot, Guid id, List<Guid> layers)
         {
@@ -313,14 +300,7 @@ namespace HUD_Manager
                 return;
             }
 
-            if (Plugin.ClientState.LocalPlayer is not null) {
-                var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex;
-                currentJobGauges = effective.Elements
-                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == jobIndex)
-                    .Select(kv => (kv.Key.GetJobGaugeAtkName()!, kv.Key, kv.Value))
-                    .ToList();
-                ApplyAllJobGaugeVisibility();
-            }
+            ApplyAllJobGaugeVisibility(effective);
 
             _stagingState = new StagingState(Util.GetPlayerJobId(Plugin), id, layers ?? new List<Guid>());
         }
@@ -336,14 +316,7 @@ namespace HUD_Manager
 
             this.WriteLayout(slot, effective.Elements);
 
-            if (Plugin.ClientState.LocalPlayer is not null) {
-                var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex;
-                currentJobGauges = effective.Elements
-                    .Where(kv => kv.Key.IsJobGauge() && kv.Key.ClassJob()?.JobIndex == jobIndex)
-                    .Select(kv => (kv.Key.GetJobGaugeAtkName()!, kv.Key, kv.Value))
-                    .ToList();
-                ApplyAllJobGaugeVisibility();
-            }
+            ApplyAllJobGaugeVisibility(effective);
 
             foreach (var window in effective.Windows) {
                 this.Plugin.GameFunctions.SetAddonPosition(window.Key, window.Value.Position.X, window.Value.Position.Y);
@@ -374,50 +347,42 @@ namespace HUD_Manager
             }
         }
 
-        /// <summary>
-        /// Generic function meant to be added to the Framework.Update event.
-        /// Runs any cleanup or persistent code needed by this module.
-        /// </summary>
-        public void RunRecurringTasks(Framework _)
+        private void ApplyAllJobGaugeVisibility(SavedLayout effectiveLayout)
         {
-            ApplyAllJobGaugeVisibility();
-        }
+            if (Plugin.ClientState.LocalPlayer is null)
+                return;
 
-        private void ApplyAllJobGaugeVisibility()
-        {
-            foreach (var (atkName, kind, element) in currentJobGauges) {
-                if (element[ElementComponent.Visibility]) {
-                    ApplyJobGaugeVisibility(kind, element, atkName);
+            var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex ?? 0;
+            foreach (var (kind, element) in effectiveLayout.Elements) {
+                if (kind.IsJobGauge() && kind.ClassJob()?.JobIndex == jobIndex && element[ElementComponent.Visibility]) {
+                    ApplyJobGaugeVisibility(kind, element);
                 }
             }
         }
 
-        public unsafe void ApplyJobGaugeVisibility(ElementKind kind, Element element, string? atkName = null)
+        private unsafe void ApplyJobGaugeVisibility(ElementKind kind, Element element)
         {
-            var unitName = atkName ?? kind.GetJobGaugeAtkName()!;
-            unsafe {
-                var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName, 1);
-                if (unit is null)
-                    return;
+            var unitName = kind.GetJobGaugeAtkName()!;
+            var unit = (AtkUnitBase*)this.Plugin.GameGui.GetAddonByName(unitName, 1);
+            if (unit is null)
+                return;
 
-                var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
-                if ((element.Visibility & visibilityMask) > 0) {
-                    // Reveal element.
-                    if (unit->UldManager.NodeListCount == 0)
-                        unit->UldManager.UpdateDrawNodeList();
-                    unit->IsVisible = true;
-                } else {
-                    // Hide element.
-                    if (unit->UldManager.NodeListCount > 0)
-                        unit->UldManager.NodeListCount = 0;
-                    unit->IsVisible = false;
-                }
+            var visibilityMask = Util.GamepadModeActive(this.Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
+            if ((element.Visibility & visibilityMask) > 0) {
+                // Reveal element.
+                if (unit->UldManager.NodeListCount == 0)
+                    unit->UldManager.UpdateDrawNodeList();
+                unit->IsVisible = true;
+            } else {
+                // Hide element.
+                if (unit->UldManager.NodeListCount > 0)
+                    unit->UldManager.NodeListCount = 0;
+                unit->IsVisible = false;
             }
         }
 
         public void Dispose()
         {
-            // this.Plugin.Framework.Update -= RunRecurringTasks;
         }
     }
 
