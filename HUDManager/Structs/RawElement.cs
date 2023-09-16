@@ -89,7 +89,7 @@ namespace HUD_Manager.Structs
                    $"{nameof(visibility)}: {visibility}, " +
                    $"{nameof(unknown6)}: 0x{unknown6:X}, " +
                    $"{nameof(opacity)}: 0x{opacity:X}, " +
-                   $"{nameof(unknown8)}: {BitConverter.ToString(unknown8)}";
+                   $"{nameof(unknown8)}: {BitConverter.ToString(unknown8[..6])} ({BitConverter.ToString(unknown8[6..])})";
         }
     }
 }
