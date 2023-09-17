@@ -48,10 +48,15 @@ namespace HUD_Manager.Ui.Editor
                 return;
             }
 
-            if (Plugin.Swapper.SetEditLock(true)) {
-                // Lock enabled on this frame, so load the active layout if available
-                if (Plugin.Config.SwapsEnabled && Plugin.Statuses.ResultantLayout.activeLayout is not null)
-                    Ui.SelectedLayout = Plugin.Statuses.ResultantLayout.activeLayout.LayoutId;
+            // Lock enabled on this frame, so if swaps are enabled:
+            // - check the if the active layout changed,
+            // - set it and clear any left over previews if it did
+            if (this.Plugin.Swapper.SetEditLock(true)
+                && this.Plugin.Config.SwapsEnabled
+                && this.Plugin.Statuses.ResultantLayout.activeLayout is { LayoutId: var newLayout }
+                && this.Ui.SelectedLayout != newLayout) {
+                this.Ui.SelectedLayout = newLayout;
+                this.Previews.Clear();
             }
 
             var update = false;
