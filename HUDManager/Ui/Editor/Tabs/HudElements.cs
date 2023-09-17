@@ -57,6 +57,10 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 if (ImGui.InputTextWithHint("##ui-editor-search-add", "Search", ref searchAdd, 100)) {
                     this.SearchAdd = string.IsNullOrWhiteSpace(searchAdd) ? null : searchAdd;
                 }
+
+                if (ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows) && !ImGui.IsAnyItemActive() && !ImGui.IsMouseClicked(ImGuiMouseButton.Left))
+                    ImGui.SetKeyboardFocusHere(-1);
+
                 ImGui.BeginChild("##ui-editor-scrolling-search-add", ImGuiHelpers.ScaledVector2(0, 400), true,
                     ImGuiWindowFlags.AlwaysVerticalScrollbar | ImGuiWindowFlags.NoBackground);
 
