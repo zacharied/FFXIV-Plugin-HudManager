@@ -518,16 +518,30 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 if (kind.IsHotbar()) {
                     var hotbarOpts = new HotbarOptions(element);
 
-                    if (kind != ElementKind.PetHotbar) {
+                    if (kind == ElementKind.Hotbar1) {
                         NextColumnIfParent();
                         ImGui.TableNextColumn();
                         DrawSettingName("Hotbar number");
 
-                        ImGui.PushItemWidth(-1);
-                        var hotbarIndex = hotbarOpts.Index + 1;
-                        if (ImGui.InputInt($"##hotbar-number-{kind}", ref hotbarIndex)) {
-                            hotbarOpts.Index = (byte)Math.Max(0, Math.Min(9, hotbarIndex - 1));
+                        var overwriteCycling = (element.LayoutFlags & ElementLayoutFlags.ClobberTransientOptions) != 0;
+                        if (ImGui.Checkbox($"Overwrite cycling state##overwrite-cycling-{kind}", ref overwriteCycling)) {
+                            if (overwriteCycling) {
+                                element.LayoutFlags |= ElementLayoutFlags.ClobberTransientOptions;
+                            } else {
+                                element.LayoutFlags &= ~ElementLayoutFlags.ClobberTransientOptions;
+                            }
                             update = true;
+                        }
+
+                        if (overwriteCycling) {
+                            ImGui.SameLine();
+
+                            ImGui.PushItemWidth(-1);
+                            var hotbarIndex = hotbarOpts.Index + 1;
+                            if (ImGui.InputInt($"##hotbar-number-{kind}", ref hotbarIndex)) {
+                                hotbarOpts.Index = (byte)Math.Max(0, Math.Min(9, hotbarIndex - 1));
+                                update = true;
+                            }
                         }
 
                         ImGui.PopItemWidth();

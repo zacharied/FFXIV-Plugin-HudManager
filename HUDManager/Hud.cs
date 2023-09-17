@@ -165,11 +165,12 @@ namespace HUD_Manager
                 if (reloadIfNecessary) {
                     if (element.Id is ElementKind.Minimap) {
                         // Minimap: Don't load zoom/rotation from HUD settings but use current UI state instead
+                        element = element.Clone();
                         element.Options = slotLayout.elements[i].options;
-                    }
-
-                    if (element.Id is ElementKind.Hotbar1) {
+                    } else if (element.Id is ElementKind.Hotbar1
+                               && (element.LayoutFlags & ElementLayoutFlags.ClobberTransientOptions) == 0) { // Clobber flag is unset (default)
                         // Hotbar1: Keep cycling state
+                        element = element.Clone();
                         element.Options![0] = slotLayout.elements[i].options![0];
                     }
                 }

@@ -17,6 +17,8 @@ namespace HUD_Manager.Structs
 
         public ElementComponent Enabled { get; set; } = AllEnabled;
 
+        public ElementLayoutFlags LayoutFlags { get; set; } = ElementLayoutFlags.None;
+
         public float X { get; set; }
 
         public float Y { get; set; }
@@ -93,6 +95,7 @@ namespace HUD_Manager.Structs
             {
                 Enabled = this.Enabled,
                 Id = this.Id,
+                LayoutFlags = this.LayoutFlags,
                 X = this.X,
                 Y = this.Y,
                 Scale = this.Scale,
@@ -103,7 +106,7 @@ namespace HUD_Manager.Structs
                 Visibility = this.Visibility,
                 Unknown6 = this.Unknown6,
                 Opacity = this.Opacity,
-                Unknown8 = (byte[]?)this.Unknown8?.Clone()
+                Unknown8 = (byte[]?)this.Unknown8?.Clone(),
             };
         }
 
@@ -150,5 +153,12 @@ namespace HUD_Manager.Structs
         Visibility = 1 << 3,
         Opacity = 1 << 4,
         Options = 1 << 5,
+    }
+
+    [Flags]
+    public enum ElementLayoutFlags : uint
+    {
+        None = 0,
+        ClobberTransientOptions = 1 << 0,
     }
 }
