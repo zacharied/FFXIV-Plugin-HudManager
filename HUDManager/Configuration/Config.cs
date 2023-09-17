@@ -31,6 +31,8 @@ namespace HUD_Manager.Configuration
 
         public PositioningMode PositioningMode { get; set; } = PositioningMode.Percentage;
 
+        public float DragSpeed { get; set; } = 1f;
+
         public Dictionary<Guid, SavedLayout> Layouts { get; } = new();
 
         public List<HudConditionMatch> HudConditionMatches { get; } = new();

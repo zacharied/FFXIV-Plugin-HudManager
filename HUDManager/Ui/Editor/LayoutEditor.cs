@@ -463,7 +463,11 @@ namespace HUD_Manager.Ui.Editor
                 return;
             }
 
-            ImGui.DragFloat("Slider speed", ref this._dragSpeed, 0.01f, 0.01f, 10f);
+            var dragSpeed = this.Plugin.Config.DragSpeed;
+            if (ImGui.DragFloat("Slider speed", ref dragSpeed, 0.01f, 0.01f, 10f)) {
+                this.Plugin.Config.DragSpeed = dragSpeed;
+                update = true;
+            }
 
             if (ImGui.BeginCombo("Positioning mode", this.Plugin.Config.PositioningMode.ToString())) {
                 foreach (var mode in (PositioningMode[])Enum.GetValues(typeof(PositioningMode))) {

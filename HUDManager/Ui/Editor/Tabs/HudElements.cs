@@ -281,7 +281,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 if (this.Plugin.Config.PositioningMode == PositioningMode.Percentage) {
                     ImGui.PushItemWidth(-1);
                     var x = element.X;
-                    if (ImGui.DragFloat($"##x-{kind}", ref x, this.Editor.DragSpeed)) {
+                    if (ImGui.DragFloat($"##x-{kind}", ref x, this.Plugin.Config.DragSpeed)) {
                         element.X = x;
                         update = true;
 
@@ -300,7 +300,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
                     ImGui.PushItemWidth(-1);
                     var y = element.Y;
-                    if (ImGui.DragFloat($"##y-{kind}", ref y, this.Editor.DragSpeed)) {
+                    if (ImGui.DragFloat($"##y-{kind}", ref y, this.Plugin.Config.DragSpeed)) {
                         element.Y = y;
                         update = true;
 
@@ -570,7 +570,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     ImGui.TableNextRow();
                 }
 
-                if (kind.IsJobGauge()) { 
+                if (kind.IsJobGauge()) {
                     if (element.Options is null)
                         goto EndJobGauge;
 
