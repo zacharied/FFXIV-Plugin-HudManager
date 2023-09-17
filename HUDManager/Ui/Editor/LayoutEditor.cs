@@ -44,13 +44,12 @@ namespace HUD_Manager.Ui.Editor
         internal void Draw()
         {
             if (!ImGui.BeginTabItem("Layout Editor")) {
-                Plugin.Swapper.SwapsTemporarilyDisabled = false;
+                Plugin.Swapper.SetEditLock(false);
                 return;
             }
 
-            if (!Plugin.Swapper.SwapsTemporarilyDisabled) {
-                Plugin.Swapper.SwapsTemporarilyDisabled = true;
-
+            if (Plugin.Swapper.SetEditLock(true)) {
+                // Lock enabled on this frame, so load the active layout if available
                 if (Plugin.Config.SwapsEnabled && Plugin.Statuses.ResultantLayout.activeLayout is not null)
                     Ui.SelectedLayout = Plugin.Statuses.ResultantLayout.activeLayout.LayoutId;
             }

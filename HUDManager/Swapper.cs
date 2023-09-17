@@ -12,7 +12,7 @@ namespace HUD_Manager
     {
         private Plugin Plugin { get; }
 
-        public bool SwapsTemporarilyDisabled = false;
+        public bool EditLock = false;
 
         public Swapper(Plugin plugin)
         {
@@ -45,9 +45,20 @@ namespace HUD_Manager
             this.Plugin.Statuses.SetHudLayout();
         }
 
+        public bool SetEditLock(bool value)
+        {
+            if (EditLock && !value) {
+                // Lock was removed, so queue a force update
+                Plugin.Statuses.NeedsForceUpdate = true;
+            }
+            var oldValue = EditLock;
+            EditLock = value;
+            return oldValue != value; // Return true if the lock value changed
+        }
+
         public void OnFrameworkUpdate(Framework framework)
         {
-            if (!this.Plugin.Ready || !this.Plugin.Config.SwapsEnabled || SwapsTemporarilyDisabled || !this.Plugin.Config.UnderstandsRisks) {
+            if (!this.Plugin.Ready || !this.Plugin.Config.SwapsEnabled || EditLock || !this.Plugin.Config.UnderstandsRisks) {
                 return;
             }
 

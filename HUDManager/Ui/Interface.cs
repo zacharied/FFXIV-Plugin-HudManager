@@ -65,8 +65,6 @@ namespace HUD_Manager.Ui
         private void Draw()
         {
             if (!this.SettingsVisible) {
-                if (Plugin.Swapper is not null)
-                    Plugin.Swapper.SwapsTemporarilyDisabled = false;
                 return;
             }
 
@@ -75,7 +73,9 @@ namespace HUD_Manager.Ui
             ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(530, 530), ImGuiCond.FirstUseEver);
             ImGui.SetNextWindowSizeConstraints(ImGuiHelpers.ScaledVector2(530, 530), new Vector2(int.MaxValue, int.MaxValue));
 
-            if (!ImGui.Begin(this.Plugin.Name, ref this._settingsVisible)) {
+            var expanded = ImGui.Begin(this.Plugin.Name, ref _settingsVisible);
+            if (!expanded || !_settingsVisible) {
+                Plugin.Swapper.SetEditLock(false);
                 return;
             }
 

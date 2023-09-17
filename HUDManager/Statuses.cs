@@ -31,7 +31,7 @@ namespace HUD_Manager
 
         public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
 
-        public bool NeedsForceUpdate { get; private set; }
+        public bool NeedsForceUpdate { get; internal set; }
 
         private IntPtr InFateAreaPtr = IntPtr.Zero;
 
