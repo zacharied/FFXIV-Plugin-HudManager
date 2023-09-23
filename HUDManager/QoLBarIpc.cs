@@ -60,7 +60,7 @@ public class QoLBarIpc
             return _conditionList;
         }
         catch (Exception e) {
-            PluginLog.Warning(e, "Error fetching QoL Bar condition sets");
+            _plugin.Log.Warning(e, "Error fetching QoL Bar condition sets");
             return Array.Empty<string>();
         }
     }
@@ -105,7 +105,7 @@ public class QoLBarIpc
 
     private void OnMovedConditionSet(int from, int to)
     {
-        PluginLog.Debug($"QoL Bar conditions swapped: {from} <-> {to}");
+        _plugin.Log.Debug($"QoL Bar conditions swapped: {from} <-> {to}");
 
         var changed = false;
         foreach (var condition in _plugin.Config.CustomConditions) {
@@ -129,7 +129,7 @@ public class QoLBarIpc
 
     private void OnRemovedConditionSet(int removed)
     {
-        PluginLog.Debug($"QoL Bar condition removed: {removed}");
+        _plugin.Log.Debug($"QoL Bar condition removed: {removed}");
 
         var changed = false;
         foreach (var condition in _plugin.Config.CustomConditions) {
@@ -183,7 +183,7 @@ public class QoLBarIpc
             return;
         }
 
-        PluginLog.Debug("Enabling QoLBar IPC");
+        _plugin.Log.Debug("Enabling QoLBar IPC");
         this.Enabled = true;
         this.ClearCache();
     }
@@ -194,7 +194,7 @@ public class QoLBarIpc
             return;
         }
 
-        PluginLog.Debug("Disabling QoLBar IPC");
+        _plugin.Log.Debug("Disabling QoLBar IPC");
         this.Enabled = false;
         this.ClearCache();
     }

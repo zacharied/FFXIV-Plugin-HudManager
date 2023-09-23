@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using Dalamud.Game;
 using Dalamud.Hooking;
-using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using ClientFramework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework;
 
 namespace HUD_Manager;
@@ -42,8 +41,9 @@ public class PetHotbar : IDisposable
     private readonly IntPtr raptureHotbarModulePtr;
     private readonly IntPtr hotbarPetTypePtr;
 
-    private readonly SetupPetHotbarDelegate setupPetHotbar;
-    private readonly Hook<ResetPetHotbarDelegate> resetPetHotbarHook;
+    // We can safely set these to null because we exit the constructor before these can ever be used if either sig scan fails
+    private readonly SetupPetHotbarDelegate setupPetHotbar = null!;
+    private readonly Hook<ResetPetHotbarDelegate> resetPetHotbarHook = null!;
 
     private FixingPvpPetBar fixStage = FixingPvpPetBar.Off;
     private uint fixPetType;
@@ -58,20 +58,18 @@ public class PetHotbar : IDisposable
             hotbarPetTypePtr = raptureHotbarModulePtr + HotbarPetTypeOffset;
         }
 
-        var resetPetHotbarPtr =
-            plugin.SigScanner.ScanText(
-                "48 83 EC 28 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 1F 48 8B 10 48 8B C8");
+        var resetPetHotbarPtr = plugin.SigScanner.ScanText( "48 83 EC 28 48 8B 0D ?? ?? ?? ?? E8 ?? ?? ?? ?? 48 85 C0 74 1F 48 8B 10 48 8B C8");
         var setupPetHotbarRealPtr = plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? EB 40 83 FD 01");
 
         if (setupPetHotbarRealPtr == IntPtr.Zero || resetPetHotbarPtr == IntPtr.Zero) {
-            PluginLog.Error(
+            plugin.Log.Error(
                 "PetHotbar: unable to find one or more signatures. Pet hotbar functionality will be disabled.\n" +
                 $"setup: {setupPetHotbarRealPtr}\nreset: 0x{resetPetHotbarPtr:X}");
             return;
         }
 
         setupPetHotbar = Marshal.GetDelegateForFunctionPointer<SetupPetHotbarDelegate>(setupPetHotbarRealPtr);
-        resetPetHotbarHook = Hook<ResetPetHotbarDelegate>.FromAddress(resetPetHotbarPtr, ResetPetHotbarDetour);
+        resetPetHotbarHook = plugin.GameInteropProvider.HookFromAddress<ResetPetHotbarDelegate>(resetPetHotbarPtr, ResetPetHotbarDetour);
         resetPetHotbarHook.Enable();
 
         this.plugin.Framework.Update += CheckFixLoop;
@@ -83,27 +81,27 @@ public class PetHotbar : IDisposable
             var hotbarPetType = unchecked((uint)Marshal.ReadInt32(hotbarPetTypePtr));
             if (hotbarPetType > 0) {
                 if (plugin.GameConfig.UiConfig.TryGet("ExHotbarChangeHotbar1", out bool isPetOverlayEnabled) && isPetOverlayEnabled) {
-                    PluginLog.Debug("PetHotbarFix F0: Detected potentially broken pet hotbar overlay. Fixing...");
+                    plugin.Log.Debug($"PetHotbarFix F0: Detected potentially broken pet hotbar overlay (0x{hotbarPetType:X}). Fixing...");
                     fixStage = FixingPvpPetBar.Setup;
                     fixPetType = hotbarPetType;
                 }
             }
         }
 
-        resetPetHotbarHook.Original();
+        resetPetHotbarHook!.Original();
     }
 
-    private void CheckFixLoop(Framework _)
+    private void CheckFixLoop(IFramework _)
     {
         if (fixStage > FixingPvpPetBar.Off) {
             if (fixStage == FixingPvpPetBar.Setup) {
-                PluginLog.Debug("PetHotbarFix F1: Setting hotbar back to mounted state");
+                plugin.Log.Debug("PetHotbarFix F1: Setting hotbar back to mounted state");
                 setupPetHotbar(raptureHotbarModulePtr, fixPetType);
                 fixStage = FixingPvpPetBar.Reset;
                 return;
             }
 
-            PluginLog.Debug("PetHotbarFix F2: Resetting hotbar");
+            plugin.Log.Debug("PetHotbarFix F2: Resetting hotbar");
             resetPetHotbarHook.Original();
             fixStage++;
             fixStage = FixingPvpPetBar.Off;

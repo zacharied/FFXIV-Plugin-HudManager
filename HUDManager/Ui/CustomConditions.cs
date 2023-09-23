@@ -2,7 +2,9 @@
 using Dalamud.Game.ClientState.Keys;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility;
 using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager;
 using HUD_Manager.Ui;
@@ -49,7 +51,7 @@ namespace HUDManager.Ui
             string DefaultConditionPattern() => $"Condition{i}";
 
             while (Plugin.Config.CustomConditions.Exists(c => c.Name == DefaultConditionPattern())) {
-                PluginLog.Log($"{i}");
+                Plugin.Log.Information($"{i}");
                 i++;
             }
 
@@ -224,7 +226,7 @@ namespace HUDManager.Ui
 
             var valueChildBgColor = activeCondition.IsMet(Plugin) ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed;
             ImGui.PushStyleColor(ImGuiCol.ChildBg, valueChildBgColor - new Vector4(0, 0, 0, 0.82f));
-            if (ImGui.BeginChild("##condition-edit-display-value-child", 
+            if (ImGui.BeginChild("##condition-edit-display-value-child",
                                  new Vector2(-1, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemInnerSpacing.Y * 2 + 4), true,
                                  ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs)) {
                 ImGui.Text("Current value:");
@@ -457,7 +459,7 @@ namespace HUDManager.Ui
 
             private int SelectedZonesSelection = -1, AllZonesSelection = -1;
 
-            public DrawConditionEditMenu_InZone(DataManager data)
+            public DrawConditionEditMenu_InZone(IDataManager data)
             {
                 Sheet = data.GetExcelSheet<Lumina.Excel.GeneratedSheets.Map>()!;
                 AllZones = Map.GetZoneMaps(data).Select(map => new ZoneListData(map.RowId, map.Name)).ToList();
@@ -568,14 +570,14 @@ namespace HUDManager.Ui
                 ImGui.TableSetupColumn("Condition", ImGuiTableColumnFlags.WidthStretch);
                 ImGui.TableSetupColumn("Actions", ImGuiTableColumnFlags.WidthFixed, -1);//ImGuiTableColumnFlags.WidthFixed, 93 * ImGuiHelpers.GlobalScale);
                 ImGui.TableHeadersRow();
-                
+
                 var workingConditions = new List<MultiCondition.MultiConditionItem>(activeCondition.MultiCondition!.AllItems);
                 if (Ui.editingConditionIndex == workingConditions.Count)
                     workingConditions.Add(Ui.editingCondition!);
 
                 bool usedConditionLoopPopup = false;
 
-                foreach (var (cond, i) in workingConditions.Select((cond, i) => (cond, i))) { 
+                foreach (var (cond, i) in workingConditions.Select((cond, i) => (cond, i))) {
                     ImGui.TableNextRow();
                     ImGui.TableSetColumnIndex(0);
 
@@ -679,7 +681,7 @@ namespace HUDManager.Ui
 
                         // Column: Actions
 
-                        if (!(cond.Condition.CurrentType == typeof(ClassJobCategoryId) && cond.Condition.ClassJob!.Value == 0) 
+                        if (!(cond.Condition.CurrentType == typeof(ClassJobCategoryId) && cond.Condition.ClassJob!.Value == 0)
                             && ImGuiExt.IconButton(FontAwesomeIcon.Check, "multicond-confirm")) {
                             Ui.addCondition = true;
                         }
@@ -760,8 +762,8 @@ namespace HUDManager.Ui
                 if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "condition")) {
                     Ui.editingConditionIndex = activeCondition.MultiCondition.Count;
                     Ui.editingCondition = new MultiCondition.MultiConditionItem()
-                        { 
-                            Type = MultiConditionJunction.LogicalAnd, 
+                        {
+                            Type = MultiConditionJunction.LogicalAnd,
                             Condition = new CustomConditionUnion(Status.WeaponDrawn)
                         };
                 } else if (ImGui.IsItemHovered()) {

@@ -401,7 +401,7 @@ namespace HUD_Manager.Ui.Editor
                 } catch (Exception e) {
                     saved = null;
                     Plugin.ChatGui.PrintError("Failed to import layout from clipboard.");
-                    PluginLog.LogInformation(e, "failed to import from clipboard");
+                    Plugin.Log.Information(e, "failed to import from clipboard");
                 }
 
                 if (saved != null) {

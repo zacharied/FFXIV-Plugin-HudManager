@@ -261,7 +261,7 @@ namespace HUD_Manager.Configuration
                         MigrateV6(config, plugin);
                         break;
                     default:
-                        PluginLog.Warning($"Tried to migrate from an unknown version: {version}");
+                        plugin.Log.Warning($"Tried to migrate from an unknown version: {version}");
                         goto DefaultConfig;
                 }
 

@@ -2,11 +2,13 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using HUD_Manager;
 using HUD_Manager.Configuration;
 using HUD_Manager.Ui;
 using HUDManager.Structs.External;
 using ImGuiNET;
+using System.Linq;
 using static Dalamud.Interface.FontAwesomeIcon;
 using static HUDManager.Structs.External.CrossUpConfig;
 
@@ -26,7 +28,7 @@ internal partial class ExternalElements
         {
             try
             {
-                return Plugin.Interface.PluginNames.Contains("CrossUp") && Plugin.Interface.GetIpcSubscriber<bool>("CrossUp.Available").InvokeFunc();
+                return Plugin.Interface.InstalledPlugins.Any(state => state is { Name: "CrossUp", IsLoaded: true }) && Plugin.Interface.GetIpcSubscriber<bool>("CrossUp.Available").InvokeFunc();
             }
             catch
             {
@@ -58,11 +60,11 @@ internal partial class ExternalElements
             if (config == null || !ImGui.CollapsingHeader("CrossUp Settings##xup")) {return;}
 
             if (!ImGui.BeginTabBar("CrossUpTabs",ImGuiTabBarFlags.FittingPolicyDefault)) return;
-            
+
             Tabs.BarLayout(ref config, ref update);
             Tabs.Color(ref config, ref update);
             Tabs.Exhb(ref config, ref update);
-                
+
             ImGui.PushFont(UiBuilder.IconFont);
             ImGui.SetNextItemWidth(40f*Scale);
 
@@ -657,7 +659,7 @@ internal partial class ExternalElements
                 }
             }
         }
-     
+
         private static void SetUpColumns()
         {
             ImGui.TableSetupColumn("Enabled", ImGuiTableColumnFlags.WidthFixed, 50 * Scale);

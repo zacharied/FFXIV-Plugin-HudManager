@@ -84,7 +84,7 @@ namespace HUD_Manager.Ui
             var unknowns = GetUnknownElements();
             if (ImGui.Button("Find unknown IDs")) {
                 foreach (var v in unknowns) {
-                    PluginLog.Log($"Unknown ID: {v.id}");
+                    this.Plugin.Log.Information($"Unknown ID: {v.id}");
                 }
             }
 
@@ -98,7 +98,7 @@ namespace HUD_Manager.Ui
             if (ImGui.Button("Print layout")) {
                 var layout = this.Plugin.Hud.ReadLayout(Plugin.Hud.GetActiveHudSlot());
                 foreach (var e in layout.elements) {
-                    PluginLog.Log($"{e.id}, {e.x}");
+                    this.Plugin.Log.Information($"{e.id}, {e.x}");
                 }
             }
 
@@ -112,7 +112,7 @@ namespace HUD_Manager.Ui
                         continue;
                     }
 
-                    PluginLog.Log(currElem.id.ToString());
+                    this.Plugin.Log.Information(currElem.id.ToString());
                     this.Plugin.ChatGui.Print(currElem.id.ToString());
                 }
             }
@@ -133,8 +133,8 @@ namespace HUD_Manager.Ui
             }
 
             if (ImGui.Button("FATE Status")) {
-                ////PluginLog.Log($"{this.Plugin.Statuses.IsInFate(this.Plugin.ClientState.LocalPlayer)}");
-                PluginLog.Log($"{this.Plugin.Statuses.IsLevelSynced()}");
+                // this.Plugin.Log.Information($"{this.Plugin.Statuses.IsInFate()}");
+                this.Plugin.Log.Information($"{this.Plugin.Statuses.IsLevelSynced()}");
 
             }
 
@@ -143,7 +143,7 @@ namespace HUD_Manager.Ui
                 foreach (var row in Plugin.DataManager.GetExcelSheet<ClassJob>()!)
                     s += $"[{row.RowId}] = \"{row.Abbreviation}\",\n";
                 Plugin.ChatGui.Print(s);
-            }            
+            }
 
             ImGui.EndTabItem();
         }
@@ -176,10 +176,10 @@ namespace HUD_Manager.Ui
 
             foreach (var raw in list) {
                 var element = new Element(raw);
-                var (pos, size) = ImGuiExt.ConvertGameToImGui(element);
-                ImGui.SetNextWindowPos(pos, ImGuiCond.Appearing);
+                var pos = ImGuiExt.ConvertGameToImGui(element);
+                ImGui.SetNextWindowPos(pos.Outer.Item1, ImGuiCond.Appearing);
 
-                ImGui.SetNextWindowSize(size);
+                ImGui.SetNextWindowSize(pos.Outer.Item2);
 
                 if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
                     continue;

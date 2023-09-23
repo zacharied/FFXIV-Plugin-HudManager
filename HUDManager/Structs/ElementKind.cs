@@ -1,5 +1,6 @@
 ﻿using Dalamud.Data;
 using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using HUD_Manager.Lumina;
 using Lumina.Excel.GeneratedSheets;
 using System;
@@ -116,7 +117,7 @@ namespace HUD_Manager.Structs
 
         private static bool Initialized => GaugeJobs is not null && BarsPerJob is not null;
 
-        public static void Initialize(DataManager data)
+        public static void Initialize(IDataManager data)
         {
             InitializeBarsPerJob(data);
 
@@ -246,7 +247,7 @@ namespace HUD_Manager.Structs
             return kind.ElementKindRowId() >= 0;
         }
 
-        public static string LocalisedName(this ElementKind kind, DataManager data)
+        public static string LocalisedName(this ElementKind kind, IDataManager data)
         {
             int id = kind.ElementKindRowId();
 
@@ -308,7 +309,7 @@ namespace HUD_Manager.Structs
             return GaugeJobs!.GetValueOrDefault(kind);
         }
 
-        private static ClassJob? ClassJob(this ElementKind kind, DataManager data)
+        private static ClassJob? ClassJob(this ElementKind kind, IDataManager data)
         {
             if (Initialized)
                 throw new InvalidOperationException("already initialized");
@@ -411,7 +412,7 @@ namespace HUD_Manager.Structs
             return $"JobHud{gaugeName}";
         }
 
-        private static void InitializeBarsPerJob(DataManager data)
+        private static void InitializeBarsPerJob(IDataManager data)
         {
             if (Initialized)
                 throw new InvalidOperationException("already initialized");

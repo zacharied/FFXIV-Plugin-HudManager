@@ -20,7 +20,7 @@ internal partial class ExternalElements
             Plugin = plugin;
         }
 
-        public bool Available() => Plugin.Interface.PluginNames.Contains("Browsingway");
+        public bool Available() => Plugin.Interface.InstalledPlugins.Any(state => state is { Name: "Browsingway" });
 
         public void AddButtonToList(SavedLayout layout, ref bool update, bool avail)
         {

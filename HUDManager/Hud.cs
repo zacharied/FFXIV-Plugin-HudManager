@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Component.GUI;
+﻿using FFXIVClientStructs.FFXIV.Component.GUI;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Tree;
@@ -243,7 +242,7 @@ namespace HUD_Manager
 
                     var findOverlay = bwOverlays.Find(o => o.CommandName == overlay.CommandName);
                     if (findOverlay is null) {
-                        PluginLog.Error("Unable to find overlay during ancestor search");
+                        Plugin.Log.Error("Unable to find overlay during ancestor search");
                         continue;
                     }
                     findOverlay.UpdateEnabled(overlay);
@@ -265,7 +264,7 @@ namespace HUD_Manager
                 foreach (var layerId in layers.Reverse<Guid>()) {
                     var layer = nodes.Find(layerId);
                     if (layer == null) {
-                        PluginLog.Error("unable to find layered condition by ID");
+                        Plugin.Log.Error("unable to find layered condition by ID");
                         break;
                     }
 
@@ -283,9 +282,9 @@ namespace HUD_Manager
         {
             if (_stagingState != null && _stagingState.SameLayers(id, layers)) {
                 if (_stagingState.SameJob(Util.GetPlayerJobId(Plugin))) {
-                    PluginLog.Debug($"Skipped layout {GetDebugName(id, layers)} (state unchanged)");
+                    Plugin.Log.Debug($"Skipped layout {GetDebugName(id, layers)} (state unchanged)");
                 } else {
-                    PluginLog.Debug($"Skipped layout {GetDebugName(id, layers)} (gauge changes only)");
+                    Plugin.Log.Debug($"Skipped layout {GetDebugName(id, layers)} (gauge changes only)");
                     WriteEffectiveLayoutGaugesOnly(id, layers);
                 }
                 return;
@@ -313,7 +312,7 @@ namespace HUD_Manager
                 return;
             }
 
-            PluginLog.Debug($"Writing layout {GetDebugName(id, layers)}");
+            Plugin.Log.Debug($"Writing layout {GetDebugName(id, layers)}");
 
             this.WriteLayout(slot, effective.Elements);
 

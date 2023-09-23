@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Dalamud.Game.Config;
+using Dalamud.Plugin.Services;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -28,16 +29,18 @@ namespace HUD_Manager
         public string Name => "HUD Manager";
 
         public DalamudPluginInterface Interface { get; init; }
-        public CommandManager CommandManager { get; init; }
-        public DataManager DataManager { get; init; }
-        public ClientState ClientState { get; init; }
-        public Condition Condition { get; init; }
-        public Framework Framework { get; init; }
-        public SigScanner SigScanner { get; init; }
-        public GameGui GameGui { get; init; }
-        public ChatGui ChatGui { get; init; }
-        public KeyState KeyState { get; init; }
-        public GameConfig GameConfig { get; init; }
+        public IPluginLog Log { get; init; }
+        public ICommandManager CommandManager { get; init; }
+        public IDataManager DataManager { get; init; }
+        public IClientState ClientState { get; init; }
+        public ICondition Condition { get; init; }
+        public IFramework Framework { get; init; }
+        public ISigScanner SigScanner { get; init; }
+        public IGameInteropProvider GameInteropProvider { get; set; }
+        public IGameGui GameGui { get; init; }
+        public IChatGui ChatGui { get; init; }
+        public IKeyState KeyState { get; init; }
+        public IGameConfig GameConfig { get; init; }
 
         public Swapper Swapper { get; set; } = null!;
         private Commands Commands { get; set; } = null!;
@@ -56,24 +59,28 @@ namespace HUD_Manager
 
         public Plugin(
             [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
-            [RequiredVersion("1.0")] CommandManager commandManager,
-            [RequiredVersion("1.0")] DataManager dataManager,
-            [RequiredVersion("1.0")] ClientState clientState,
-            [RequiredVersion("1.0")] Dalamud.Game.ClientState.Conditions.Condition condition,
-            [RequiredVersion("1.0")] Framework framework,
-            [RequiredVersion("1.0")] SigScanner sigScanner,
-            [RequiredVersion("1.0")] GameGui gameGui,
-            [RequiredVersion("1.0")] ChatGui chatGui,
-            [RequiredVersion("1.0")] KeyState keyState,
-            [RequiredVersion("1.0")] GameConfig gameConfig)
+            [RequiredVersion("1.0")] IPluginLog pluginLog,
+            [RequiredVersion("1.0")] ICommandManager commandManager,
+            [RequiredVersion("1.0")] IDataManager dataManager,
+            [RequiredVersion("1.0")] IClientState clientState,
+            [RequiredVersion("1.0")] ICondition condition,
+            [RequiredVersion("1.0")] IFramework framework,
+            [RequiredVersion("1.0")] ISigScanner sigScanner,
+            [RequiredVersion("1.0")] IGameInteropProvider gameInteropProvider,
+            [RequiredVersion("1.0")] IGameGui gameGui,
+            [RequiredVersion("1.0")] IChatGui chatGui,
+            [RequiredVersion("1.0")] IKeyState keyState,
+            [RequiredVersion("1.0")] IGameConfig gameConfig)
         {
             this.Interface = pluginInterface;
+            this.Log = pluginLog;
             this.CommandManager = commandManager;
             this.DataManager = dataManager;
             this.ClientState = clientState;
             this.Condition = condition;
             this.Framework = framework;
             this.SigScanner = sigScanner;
+            this.GameInteropProvider = gameInteropProvider;
             this.GameGui = gameGui;
             this.ChatGui = chatGui;
             this.KeyState = keyState;

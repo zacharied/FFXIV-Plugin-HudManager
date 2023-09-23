@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Gui;
+﻿using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using System;
 
@@ -11,7 +11,7 @@ namespace HUD_Manager
             public NoAtkUnitFoundException(string? message) : base(message) { }
         }
 
-        public static AtkUnitBase? GetAtkUnitByName(this GameGui gameGui, string name, int index)
+        public static AtkUnitBase? GetAtkUnitByName(this IGameGui gameGui, string name, int index)
         {
             var addon = gameGui.GetAddonByName(name, index);
             if (addon == IntPtr.Zero) {

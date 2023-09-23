@@ -35,8 +35,8 @@ namespace HUDManager
         };
         private static readonly ClassJobCategoryId[] ParenthesesNameCategories = new ClassJobCategoryId[]
         {
-            ClassJobCategoryId.Tank, 
-            ClassJobCategoryId.Healer, 
+            ClassJobCategoryId.Tank,
+            ClassJobCategoryId.Healer,
             ClassJobCategoryId.MeleeDps,
             ClassJobCategoryId.PhysicalRdps,
             ClassJobCategoryId.MagicalRdps
@@ -129,7 +129,7 @@ namespace HUDManager
                     return row.Name;
                 return $"{nameSplit[0]}/{nameSplit[1]}";
             }
-            
+
             // Try to remove parenthesized text, as in "(excluding limited jobs)"
             if (ParenthesesNameCategories.Contains(cat)) {
                 var nameSplit = row.Name.ToString().Split("(");
@@ -151,7 +151,7 @@ namespace HUDManager
                         return "DoH";
                     case ClassJobCategoryId.CombatJobs:
                         return "DoW/DoM";
-                    case ClassJobCategoryId.NonCombatJobs: 
+                    case ClassJobCategoryId.NonCombatJobs:
                         return "DoH/DoL";
                 };
             }
@@ -160,7 +160,7 @@ namespace HUDManager
         }
 
         public static bool IsActivated(this ClassJobCategoryId cat, ClassJob classJob)
-            => cat == 0 ? false : ActivationConditions?[cat][classJob.RowId] 
+            => cat == 0 ? false : ActivationConditions?[cat][classJob.RowId]
             ?? throw new InvalidOperationException("call `Initialize` first");
 
         public static ClassJobCategoryId CategoryForClassJob(ClassJob classJob)
@@ -184,8 +184,8 @@ namespace HUDManager
                         break;
                     } else if (ActivationConditions![cat].Count(kv => kv.Value is true) == 1) {
                         // This is the only true condition in the category
-                        if (categoryOnly)
-                            PluginLog.Warning($"too many fitting categories discovered for {classJob.Abbreviation}");
+                        // if (categoryOnly)
+                        //     PluginLog.Warning($"too many fitting categories discovered for {classJob.Abbreviation}");
                         best = cat;
                         categoryOnly = true;
                     }
@@ -202,7 +202,7 @@ namespace HUDManager
         }
 
         private static Dictionary<uint, bool> IsActivatedAll(
-            this ClassJobCategoryId cat, 
+            this ClassJobCategoryId cat,
             ExcelSheet<ClassJobCategory> sheet,
             List<uint> classJobIds)
         {

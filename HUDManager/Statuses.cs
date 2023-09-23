@@ -55,7 +55,7 @@ namespace HUD_Manager
                 var sig = this.Plugin.SigScanner.ScanText("80 3D ?? ?? ?? ?? ?? 0F 84 ?? ?? ?? ?? 48 8B 42 20");
                 InFateAreaPtr = sig + Marshal.ReadInt32(sig, 2) + 7;
             } catch {
-                PluginLog.Error("Failed loading 'inFateAreaPtr'");
+                Plugin.Log.Error("Failed loading 'inFateAreaPtr'");
             }
         }
 
@@ -102,7 +102,7 @@ namespace HUD_Manager
                 var startTimer = (!isActivated && transitioned && match.CustomCondition?.HoldTime > 0);
                 if (isActivated || startTimer) {
                     if (startTimer) {
-                        PluginLog.Debug($"Starting timer for \"{match.CustomCondition?.Name}\" ({match.CustomCondition?.HoldTime}s)");
+                        Plugin.Log.Debug($"Starting timer for \"{match.CustomCondition?.Name}\" ({match.CustomCondition?.HoldTime}s)");
                         ConditionHoldTimers[match] = match.CustomCondition?.HoldTime ?? 0;
                     }
 
@@ -130,7 +130,7 @@ namespace HUD_Manager
             }
 
             if (!this.Plugin.Config.Layouts.ContainsKey(ResultantLayout.activeLayout.LayoutId)) {
-                PluginLog.Error($"Attempt to set nonexistent layout \"{ResultantLayout.activeLayout.LayoutId}\".");
+                Plugin.Log.Error($"Attempt to set nonexistent layout \"{ResultantLayout.activeLayout.LayoutId}\".");
                 return;
             }
 
@@ -187,7 +187,7 @@ namespace HUD_Manager
             foreach (var (k, v) in ConditionHoldTimers) {
                 ConditionHoldTimers[k] -= (float)((double)(newTimestamp - LastUpdateTime) / 1000);
                 if (ConditionHoldTimers[k] < 0) {
-                    PluginLog.Debug($"Condition timer for \"{k.CustomCondition?.Name}\" finished");
+                    Plugin.Log.Debug($"Condition timer for \"{k.CustomCondition?.Name}\" finished");
                     removeKeys.Add(k);
                 }
             }
@@ -260,7 +260,7 @@ namespace HUD_Manager
 
             var player = plugin.ClientState.LocalPlayer;
             if (player is null) {
-                PluginLog.Warning("can't check job activation when player is null");
+                plugin.Log.Warning("can't check job activation when player is null");
                 return false;
             }
 

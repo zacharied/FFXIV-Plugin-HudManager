@@ -5,6 +5,7 @@ using HUDManager.Configuration;
 using System;
 using System.Collections.Generic;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Plugin.Services;
 
 namespace HUD_Manager
 {
@@ -30,12 +31,12 @@ namespace HUD_Manager
             this.Plugin.ClientState.TerritoryChanged -= this.OnTerritoryChange;
         }
 
-        public void OnLogin(object? sender, EventArgs e)
+        public void OnLogin()
         {
             // Player object is null here, not much to do
         }
 
-        public void OnTerritoryChange(object? sender, ushort tid)
+        public void OnTerritoryChange(ushort tid)
         {
             if (!this.Plugin.Ready) {
                 return;
@@ -56,7 +57,7 @@ namespace HUD_Manager
             return oldValue != value; // Return true if the lock value changed
         }
 
-        public void OnFrameworkUpdate(Framework framework)
+        public void OnFrameworkUpdate(IFramework framework)
         {
             if (!this.Plugin.Ready || !this.Plugin.Config.SwapsEnabled || EditLock || !this.Plugin.Config.UnderstandsRisks) {
                 return;
@@ -99,7 +100,7 @@ namespace HUD_Manager
                 if (cond.ConditionType == CustomConditionType.QoLBarCondition) {
                     var state = this.Plugin.QoLBarIpc.GetConditionChange(cond.ExternalIndex, out var oldState);
                     if (state != oldState) {
-                        // PluginLog.Warning($"changed! index={cond.ExternalIndex} old={oldState} new={state}");
+                        // Plugin.Log.Warning($"changed! index={cond.ExternalIndex} old={oldState} new={state}");
                         updated = true;
                     }
                 }

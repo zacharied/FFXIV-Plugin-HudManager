@@ -38,7 +38,7 @@ namespace HUD_Manager.Configuration
             this.BrowsingwayOverlays = overlays;
             this.CrossUpConfig = xup;
         }
-        
+
 public SavedLayout(string name, Layout hud, Dictionary<string, Window> windows)
         {
             this.Name = name;
