@@ -1,5 +1,4 @@
-﻿using Dalamud.Logging;
-using FFXIVClientStructs.FFXIV.Client.System.Framework;
+﻿using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using HUD_Manager.Structs;
 using ImGuiNET;
 using Lumina.Excel.GeneratedSheets;
@@ -32,51 +31,77 @@ namespace HUD_Manager.Ui
 
             ImGui.TextUnformatted("Print layout pointer address");
 
-            if (ImGui.Button("1")) {
+            if (ImGui.Button("1##ptr1")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
-                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
             }
 
             ImGui.SameLine();
 
-            if (ImGui.Button("2")) {
+            if (ImGui.Button("2##ptr2")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Two);
-                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
             }
 
             ImGui.SameLine();
 
-            if (ImGui.Button("3")) {
+            if (ImGui.Button("3##ptr3")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Three);
-                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
             }
 
             ImGui.SameLine();
 
-            if (ImGui.Button("4")) {
+            if (ImGui.Button("4##ptr4")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.Four);
-                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
             }
 
             ImGui.SameLine();
 
-            if (ImGui.Button("Default")) {
+            if (ImGui.Button("Default##ptrDefault")) {
                 var ptr = this.Plugin.Hud.GetDefaultLayoutPointer();
-                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
+            }
+
+            ImGui.TextUnformatted("Log layout to console");
+            void LogLayout(HudSlot slot)
+            {
+                var layout = this.Plugin.Hud.ReadLayout(slot);
+                Plugin.Log.Information($"===== Layout START (slot={slot}) =====");
+                for (var i = 0; i < layout.elements.Length; i++) {
+                    Plugin.Log.Information($"  i={i:000} {layout.elements[i]}");
+                }
+                Plugin.Log.Information("===== Layout END =====");
+            }
+            if (ImGui.Button("1##print1")) {
+                LogLayout(HudSlot.One);
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("2##print2")) {
+                LogLayout(HudSlot.Two);
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("3##print3")) {
+                LogLayout(HudSlot.Three);
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("4##print4")) {
+                LogLayout(HudSlot.Four);
             }
 
             if (ImGui.Button("File pointer 0")) {
                 var ptr = this.Plugin.Hud.GetFilePointer(0);
-                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
             }
 
             if (ImGui.Button("Data pointer")) {
                 var ptr = this.Plugin.Hud.GetDataPointer();
-                this.Plugin.ChatGui.Print($"{ptr.ToInt64():x}");
+                this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
             }
 
             if (ImGui.Button("Save layout")) {
-                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
+                var ptr = this.Plugin.Hud.GetLayoutPointer(Plugin.Hud.GetActiveHudSlot());
                 var layout = Marshal.PtrToStructure<Layout>(ptr);
                 this.PreviousLayout = layout;
             }
@@ -95,15 +120,8 @@ namespace HUD_Manager.Ui
                 DrawUnknownIdElements(unknowns);
             }
 
-            if (ImGui.Button("Print layout")) {
-                var layout = this.Plugin.Hud.ReadLayout(Plugin.Hud.GetActiveHudSlot());
-                foreach (var e in layout.elements) {
-                    this.Plugin.Log.Information($"{e.id}, {e.x}");
-                }
-            }
-
             if (ImGui.Button("Find difference") && this.PreviousLayout != null) {
-                var ptr = this.Plugin.Hud.GetLayoutPointer(HudSlot.One);
+                var ptr = this.Plugin.Hud.GetLayoutPointer(Plugin.Hud.GetActiveHudSlot());
                 var layout = Marshal.PtrToStructure<Layout>(ptr);
 
                 foreach (var prevElem in this.PreviousLayout.Value.elements) {
@@ -119,23 +137,22 @@ namespace HUD_Manager.Ui
 
             if (ImGui.Button("Print current slot")) {
                 var slot = this.Plugin.Hud.GetActiveHudSlot();
-                this.Plugin.ChatGui.Print($"{slot}");
+                this.Plugin.ChatGui.Print($"{slot} ({(int)slot})");
             }
 
             if (ImGui.Button("Print player status address")) {
-                this.Plugin.ChatGui.Print($"{this.Plugin.ClientState.LocalPlayer:x}");
+                this.Plugin.ChatGui.Print($"{this.Plugin.ClientState.LocalPlayer:X}");
             }
 
             if (ImGui.Button("Print Config")) {
                 unsafe {
-                    this.Plugin.ChatGui.Print($"{(IntPtr)Framework.Instance()->SystemConfig.CommonSystemConfig.ConfigBase.ConfigEntry:x}");
+                    this.Plugin.ChatGui.Print($"{(IntPtr)Framework.Instance()->SystemConfig.CommonSystemConfig.ConfigBase.ConfigEntry:X}");
                 }
             }
 
             if (ImGui.Button("FATE Status")) {
-                // this.Plugin.Log.Information($"{this.Plugin.Statuses.IsInFate()}");
-                this.Plugin.Log.Information($"{this.Plugin.Statuses.IsLevelSynced()}");
-
+                this.Plugin.Log.Information($"IsInFate: {this.Plugin.Statuses.IsInFate()}");
+                this.Plugin.Log.Information($"IsLevelSynced: {this.Plugin.Statuses.IsLevelSynced()}");
             }
 
             if (ImGui.Button("Print ClassJob dict values")) {

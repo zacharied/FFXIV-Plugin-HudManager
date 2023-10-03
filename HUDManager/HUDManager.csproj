@@ -11,10 +11,11 @@
 		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     </PropertyGroup>
 
-	<PropertyGroup>
-		<DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev</DalamudLibPath>
-		<DebugType>full</DebugType>
-	</PropertyGroup>
+    <PropertyGroup>
+        <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev</DalamudLibPath>
+        <DebugType>full</DebugType>
+        <!--<DefineConstants>READONLY;DEBUG</DefineConstants>-->
+    </PropertyGroup>
 
 	<ItemGroup>
         <Reference Include="Dalamud">

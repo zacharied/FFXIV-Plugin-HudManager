@@ -13,16 +13,16 @@ namespace HUD_Manager
 {
     public class Hud : IDisposable
     {
-        public const int InMemoryLayoutElements = 99; // Updated 6.45
+        public const int InMemoryLayoutElements = 102; // Updated 6.5
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
         private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 5.45
 
         private const int FileDataPointerOffset = 0x50;
         private const int FileSaveMarkerOffset = 0x3E; // Unused
 
-        private const int DataSlotOffset = 0x6408; // Updated 6.4
-        private const int DataBaseLayoutOffset = 0x2c58;
-        private const int DataDefaultLayoutOffset = 0x1c4; // Unused
+        private const int DataSlotOffset = 0x9E88; // Updated 6.5
+        private const int DataBaseLayoutOffset = 0x64BC; // Updated 6.5
+        private const int DataDefaultLayoutOffset = 0x5210; // Updated 6.5 (note: not used except in debug window)
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
         private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);
@@ -123,11 +123,13 @@ namespace HUD_Manager
         internal IntPtr GetLayoutPointer(HudSlot slot)
         {
             var slotNum = (int)slot;
+            // Plugin.Log.Debug($"layoutPointer({slot}) 0x{this.GetDataPointer():X} + offset 0x{DataBaseLayoutOffset:X} + 0x{slotNum * LayoutSize:X} = 0x{this.GetDataPointer() + DataBaseLayoutOffset + slotNum * LayoutSize:X}");
             return this.GetDataPointer() + DataBaseLayoutOffset + slotNum * LayoutSize;
         }
 
         public HudSlot GetActiveHudSlot()
         {
+            // Plugin.Log.Debug($"dataPointer(0x{this.GetDataPointer():X} + offset 0x{DataSlotOffset:X} = 0x{this.GetDataPointer() + DataSlotOffset:X}");
             var slotVal = Marshal.ReadInt32(this.GetDataPointer() + DataSlotOffset);
 
             if (!Enum.IsDefined(typeof(HudSlot), slotVal)) {
@@ -154,6 +156,7 @@ namespace HUD_Manager
 
             // update existing elements with saved data instead of wholesale overwriting
             var slotLayout = this.ReadLayout(slot);
+#if !READONLY
             for (var i = 0; i < slotLayout.elements.Length; i++) {
                 if (!slotLayout.elements[i].id.IsRealElement())
                     continue;
@@ -197,6 +200,7 @@ namespace HUD_Manager
             if (currentSlot == slot) {
                 this.SelectSlot(currentSlot, true);
             }
+#endif
         }
 
         private SavedLayout? GetEffectiveLayout(Guid id, List<Guid>? layers = null)
