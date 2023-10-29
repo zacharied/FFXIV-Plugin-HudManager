@@ -50,7 +50,7 @@ namespace HUD_Manager
         {
             if (EditLock && !value) {
                 // Lock was removed, so queue a force update
-                Plugin.Statuses.NeedsForceUpdate = true;
+                Plugin.Statuses.NeedsForceUpdate = Statuses.ForceState.EditLockRemoved;
             }
             var oldValue = EditLock;
             EditLock = value;
@@ -88,7 +88,7 @@ namespace HUD_Manager
 
             updated |= this.CheckQoLBarConditions();
 
-            if (updated || this.Plugin.Statuses.NeedsForceUpdate) {
+            if (updated || this.Plugin.Statuses.NeedsForceUpdate != Statuses.ForceState.None) {
                 this.Plugin.Statuses.SetHudLayout();
             }
         }

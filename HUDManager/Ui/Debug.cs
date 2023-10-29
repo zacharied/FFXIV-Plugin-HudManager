@@ -100,6 +100,13 @@ namespace HUD_Manager.Ui
                 this.Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
             }
 
+            if (ImGui.Button("CS Addon Config")) {
+                unsafe {
+                    var ptr = Framework.Instance()->GetUiModule()->GetAddonConfig();
+                    this.Plugin.ChatGui.Print($"{(nint)ptr:X}");
+                }
+            }
+
             if (ImGui.Button("Save layout")) {
                 var ptr = this.Plugin.Hud.GetLayoutPointer(Plugin.Hud.GetActiveHudSlot());
                 var layout = Marshal.PtrToStructure<Layout>(ptr);

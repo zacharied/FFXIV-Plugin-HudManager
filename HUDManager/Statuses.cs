@@ -31,11 +31,19 @@ namespace HUD_Manager
 
         public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
 
-        public bool NeedsForceUpdate { get; internal set; }
+        public ForceState NeedsForceUpdate { get; internal set; }
 
         private IntPtr InFateAreaPtr = IntPtr.Zero;
 
         private long LastUpdateTime = 0;
+
+        public enum ForceState
+        {
+            None,
+            NoActiveLayout,
+            SwapSettingChanged,
+            EditLockRemoved,
+        }
 
         public Statuses(Plugin plugin)
         {
@@ -121,11 +129,12 @@ namespace HUD_Manager
 
         public void SetHudLayout()
         {
-            NeedsForceUpdate = false;
+            var forceState = NeedsForceUpdate;
+            NeedsForceUpdate = ForceState.None;
 
             ResultantLayout = this.CalculateResultantLayout();
             if (ResultantLayout.activeLayout is null) {
-                NeedsForceUpdate = true;
+                NeedsForceUpdate = ForceState.NoActiveLayout;
                 return;
             }
 
@@ -134,7 +143,12 @@ namespace HUD_Manager
                 return;
             }
 
-            this.Plugin.Hud.WriteEffectiveLayoutIfChanged(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
+            if (forceState != ForceState.None) {
+                Plugin.Log.Debug($"Forcing full layout write (reason={forceState})");
+                this.Plugin.Hud.WriteEffectiveLayout(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
+            } else {
+                this.Plugin.Hud.WriteEffectiveLayoutIfChanged(this.Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
+            }
             //this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
         }
 
@@ -195,7 +209,7 @@ namespace HUD_Manager
             // If any conditions finished their timers, we update the HUD layout.
             removeKeys.ForEach(k => ConditionHoldTimers.Remove(k));
             if (removeKeys.Any()) {
-                SetHudLayout();
+                this.SetHudLayout();
             }
 
             LastUpdateTime = newTimestamp;

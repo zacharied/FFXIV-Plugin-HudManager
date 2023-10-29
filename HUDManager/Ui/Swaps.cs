@@ -39,6 +39,7 @@ namespace HUD_Manager.Ui
                 this.Plugin.Config.SwapsEnabled = enabled;
                 this.Plugin.Config.Save();
 
+                this.Plugin.Statuses.NeedsForceUpdate = Statuses.ForceState.SwapSettingChanged;
                 this.Plugin.Statuses.Update();
                 this.Plugin.Statuses.SetHudLayout();
             }
