@@ -8,11 +8,11 @@ using System.Numerics;
 
 namespace HUD_Manager.Ui.Editor.Tabs
 {
-    public class Windows
+    public class WindowElements
     {
         private Plugin Plugin { get; }
 
-        public Windows(Plugin plugin)
+        public WindowElements(Plugin plugin)
         {
             this.Plugin = plugin;
         }

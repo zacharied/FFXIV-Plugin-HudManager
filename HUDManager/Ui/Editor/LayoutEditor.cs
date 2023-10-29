@@ -20,7 +20,7 @@ namespace HUD_Manager.Ui.Editor
         private Interface Ui { get; }
         internal Previews Previews { get; }
         private HudElements HudElements { get; }
-        private Windows Windows { get; }
+        private WindowElements Windows { get; }
         private ExternalElements ExternalElements { get; }
 
         private string? RenameLayoutName { get; set; }
@@ -37,7 +37,7 @@ namespace HUD_Manager.Ui.Editor
 
             this.Previews = new Previews(plugin, ui);
             this.HudElements = new HudElements(plugin, ui, this);
-            this.Windows = new Windows(plugin);
+            this.Windows = new WindowElements(plugin);
             this.ExternalElements = new ExternalElements(plugin, ui);
         }
 
