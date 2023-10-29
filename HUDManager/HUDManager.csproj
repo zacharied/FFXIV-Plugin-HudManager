@@ -14,7 +14,8 @@
     <PropertyGroup>
         <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev</DalamudLibPath>
         <DebugType>full</DebugType>
-        <!--<DefineConstants>READONLY;DEBUG</DefineConstants>-->
+<!--        <DefineConstants>DEBUG</DefineConstants>-->
+<!--        <DefineConstants>READONLY</DefineConstants>-->
     </PropertyGroup>
 
 	<ItemGroup>
