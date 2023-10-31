@@ -102,7 +102,11 @@ namespace HUD_Manager.Structs
         CrystallineConflictMap = 3282875858,
         CrystallineConflictEnemyInfo = 3805361436,
         CrystallineConflictProgressGauge = 812941873,
-        FrontlineScoreInfo = 758283662
+        FrontlineScoreInfo = 758283662,
+        BlundervilleObjective = 992402298,
+        BlundervilleScore = 3686833642,
+        BlundervilleStatus = 2668343374,
+        BlundervilleShowLog = 3627724794,
     }
 
     public static class ElementKindExt
@@ -238,6 +242,10 @@ namespace HUD_Manager.Structs
                 ElementKind.CrystallineConflictBattleLog => 96,
                 ElementKind.CrystallineConflictMap => 97,
                 ElementKind.FrontlineScoreInfo => 98,
+                ElementKind.BlundervilleObjective => 99,
+                ElementKind.BlundervilleScore => 100,
+                ElementKind.BlundervilleStatus => 101,
+                ElementKind.BlundervilleShowLog => 102,
                 _ => -1
             };
         }

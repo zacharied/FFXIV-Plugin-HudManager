@@ -13,7 +13,7 @@ namespace HUD_Manager
 {
     public class Hud : IDisposable
     {
-        public const int InMemoryLayoutElements = 102; // Updated 6.5
+        public const int InMemoryLayoutElements = 103; // Updated 6.51
         // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
         private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 5.45
 
@@ -21,8 +21,8 @@ namespace HUD_Manager
         private const int FileSaveMarkerOffset = 0x3E; // Unused
 
         private const int DataSlotOffset = 0x9E88; // Updated 6.5
-        private const int DataBaseLayoutOffset = 0x64BC; // Updated 6.5
-        private const int DataDefaultLayoutOffset = 0x5210; // Updated 6.5 (note: not used except in debug window)
+        private const int DataBaseLayoutOffset = 0x6498; // Updated 6.51
+        private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: not used except in debug window, not sure of exact structure)
 
         private delegate IntPtr GetFilePointerDelegate(byte index);
         private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);

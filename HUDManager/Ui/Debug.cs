@@ -74,6 +74,7 @@ namespace HUD_Manager.Ui
                 }
                 Plugin.Log.Information("===== Layout END =====");
             }
+
             if (ImGui.Button("1##print1")) {
                 LogLayout(HudSlot.One);
             }
@@ -88,6 +89,15 @@ namespace HUD_Manager.Ui
             ImGui.SameLine();
             if (ImGui.Button("4##print4")) {
                 LogLayout(HudSlot.Four);
+            }
+            ImGui.SameLine();
+            if (ImGui.Button("Default?##printDefault")) {
+                var layout = Marshal.PtrToStructure<Layout>(this.Plugin.Hud.GetDefaultLayoutPointer());
+                Plugin.Log.Information($"===== Layout START (slot=DEFAULT) =====");
+                for (var i = 0; i < layout.elements.Length; i++) {
+                    Plugin.Log.Information($"  i={i:000} {layout.elements[i]}");
+                }
+                Plugin.Log.Information("===== Layout END =====");
             }
 
             if (ImGui.Button("File pointer 0")) {
