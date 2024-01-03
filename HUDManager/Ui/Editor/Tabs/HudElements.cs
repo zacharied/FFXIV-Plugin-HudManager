@@ -7,7 +7,6 @@ using Dalamud.Logging;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Structs.Options;
-using HUDManager.Structs.Options;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
