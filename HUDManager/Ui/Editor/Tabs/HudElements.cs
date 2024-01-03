@@ -17,13 +17,6 @@ namespace HUD_Manager.Ui.Editor.Tabs
 {
     public class HudElements
     {
-        private static ElementKind[] AdjustableLayoutKinds = {
-            ElementKind.StatusInfoEnhancements,
-            ElementKind.StatusInfoEnfeeblements,
-            ElementKind.StatusInfoOther,
-            ElementKind.StatusInfoConditionalEnhancements
-        };
-
         private static readonly float[] ScaleOptions = {
             2.0f,
             1.8f,
