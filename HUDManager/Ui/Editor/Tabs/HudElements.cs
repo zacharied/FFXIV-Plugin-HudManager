@@ -1,11 +1,13 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Style;
 using Dalamud.Interface.Utility;
 using Dalamud.Logging;
 using HUD_Manager.Configuration;
 using HUD_Manager.Structs;
 using HUD_Manager.Structs.Options;
+using HUDManager.Structs.Options;
 using ImGuiNET;
 using System;
 using System.Collections.Generic;
@@ -16,6 +18,13 @@ namespace HUD_Manager.Ui.Editor.Tabs
 {
     public class HudElements
     {
+        private static ElementKind[] AdjustableLayoutKinds = {
+            ElementKind.StatusInfoEnhancements,
+            ElementKind.StatusInfoEnfeeblements,
+            ElementKind.StatusInfoOther,
+            ElementKind.StatusInfoConditionalEnhancements
+        };
+
         private static readonly float[] ScaleOptions = {
             2.0f,
             1.8f,
@@ -156,6 +165,13 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 static void DrawSettingName(string name)
                 {
                     ImGui.TextUnformatted(name);
+                    ImGui.TableNextColumn();
+                }
+
+                static void DrawSettingNameWithHelp(string name, string help)
+                {
+                    ImGui.TextUnformatted(name);
+                    ImGuiComponents.HelpMarker(help);
                     ImGui.TableNextColumn();
                 }
 
@@ -426,20 +442,38 @@ namespace HUD_Manager.Ui.Editor.Tabs
                 if (kind == ElementKind.StatusEffects) {
                     if (element.Options is null)
                         goto EndStatusEffects;
-                    var statusOpts = new StatusOptions(element.Options);
+                    var statusOpts = new StatusBaseOptions(element.Options);
 
                     NextColumnIfParent();
                     ImGui.TableNextColumn();
-                    DrawSettingName("Style");
+                    DrawSettingNameWithHelp("Alignment", "Only applies if grouping (set below) is set to single element.");
 
                     ImGui.PushItemWidth(-1);
-                    if (ImGui.BeginCombo($"##style-{kind}", statusOpts.Style.Name())) {
-                        foreach (var style in (StatusStyle[])Enum.GetValues(typeof(StatusStyle))) {
-                            if (!ImGui.Selectable($"{style.Name()}##{kind}", style == statusOpts.Style)) {
+                    if (ImGui.BeginCombo($"##alignment-{kind}", statusOpts.Alignment.Name())) {
+                        foreach (var alignment in (StatusBaseAlignment[])Enum.GetValues(typeof(StatusBaseAlignment))) {
+                            if (!ImGui.Selectable($"{alignment.Name()}##{kind}", alignment == statusOpts.Alignment)) {
                                 continue;
                             }
 
-                            statusOpts.Style = style;
+                            statusOpts.Alignment = alignment;
+                            update = true;
+                        }
+
+                        ImGui.EndCombo();
+                    }
+
+                    NextColumnIfParent();
+                    ImGui.TableNextColumn();
+                    DrawSettingName("Grouping");
+
+                    ImGui.PushItemWidth(-1);
+                    if (ImGui.BeginCombo($"##grouping-{kind}", statusOpts.Grouping.Name())) {
+                        foreach (var grouping in StatusBaseExt.StatusGroupingOrder) {
+                            if (!ImGui.Selectable($"{grouping.Name()}##{kind}", grouping == statusOpts.Grouping)) {
+                                continue;
+                            }
+
+                            statusOpts.Grouping = grouping;
                             update = true;
                         }
 
@@ -452,11 +486,11 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     EndStatusEffects:;
                 }
 
-                if (kind is ElementKind.StatusInfoEnhancements or ElementKind.StatusInfoEnfeeblements or ElementKind.StatusInfoOther) {
+                if (kind is ElementKind.StatusInfoEnhancements or ElementKind.StatusInfoEnfeeblements or ElementKind.StatusInfoOther or ElementKind.StatusInfoConditionalEnhancements) {
                     if (element.Options is null)
                         goto EndStatusInfo;
 
-                    var statusOpts = new StatusInfoOptions(kind, element.Options);
+                    var statusOpts = new StatusSplitOptions(element);
 
                     NextColumnIfParent();
                     ImGui.TableNextColumn();
@@ -464,7 +498,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo($"##layout-{kind}", statusOpts.Layout.Name())) {
-                        foreach (var sLayout in (StatusLayout[])Enum.GetValues(typeof(StatusLayout))) {
+                        foreach (var sLayout in (StatusSplitLayout[])Enum.GetValues(typeof(StatusSplitLayout))) {
                             if (!ImGui.Selectable($"{sLayout.Name()}##{kind}", sLayout == statusOpts.Layout)) {
                                 continue;
                             }
@@ -485,7 +519,7 @@ namespace HUD_Manager.Ui.Editor.Tabs
 
                     ImGui.PushItemWidth(-1);
                     if (ImGui.BeginCombo($"##alignment-{kind}", statusOpts.Alignment.Name())) {
-                        foreach (var alignment in (StatusAlignment[])Enum.GetValues(typeof(StatusAlignment))) {
+                        foreach (var alignment in (StatusSplitAlignment[])Enum.GetValues(typeof(StatusSplitAlignment))) {
                             if (!ImGui.Selectable($"{alignment.Name()}##{kind}", alignment == statusOpts.Alignment)) {
                                 continue;
                             }
@@ -505,9 +539,9 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     DrawSettingName("Focusable by gamepad");
 
                     ImGui.PushItemWidth(-1);
-                    var focusable = statusOpts.Gamepad == StatusGamepad.Focusable;
+                    var focusable = statusOpts.Gamepad == StatusSplitGamepad.Focusable;
                     if (ImGui.Checkbox($"##focusable-by-gamepad-{kind}", ref focusable)) {
-                        statusOpts.Gamepad = focusable ? StatusGamepad.Focusable : StatusGamepad.NonFocusable;
+                        statusOpts.Gamepad = focusable ? StatusSplitGamepad.Focusable : StatusSplitGamepad.NonFocusable;
                         update = true;
                     }
 
