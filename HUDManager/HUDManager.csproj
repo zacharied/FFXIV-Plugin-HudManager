@@ -14,8 +14,7 @@
     <PropertyGroup>
         <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev</DalamudLibPath>
         <DebugType>full</DebugType>
-<!--        <DefineConstants>DEBUG</DefineConstants>-->
-<!--        <DefineConstants>READONLY</DefineConstants>-->
+        <DefineConstants>xDEBUG;xREADONLY;xLOCALCS</DefineConstants>
     </PropertyGroup>
 
 	<ItemGroup>
@@ -23,10 +22,6 @@
             <HintPath>$(DalamudLibPath)\Dalamud.dll</HintPath>
             <Private>False</Private>
         </Reference>
-		<Reference Include="FFXIVClientStructs">
-			<HintPath>$(DalamudLibPath)\FFXIVClientStructs.dll</HintPath>
-			<Private>false</Private>
-		</Reference>
         <Reference Include="ImGui.NET">
             <HintPath>$(DalamudLibPath)\ImGui.NET.dll</HintPath>
             <Private>False</Private>
@@ -48,6 +43,25 @@
             <Private>False</Private>
         </Reference>
     </ItemGroup>
+
+    <Choose>
+        <When Condition="$(DefineConstants.Contains(';LOCALCS'))">
+            <ItemGroup>
+                <Reference Include="FFXIVClientStructs">
+                    <HintPath>$(ProjectDir)\..\..\FFXIVClientStructs\bin\Release\FFXIVClientStructs.dll</HintPath>
+                    <Private>true</Private>
+                </Reference>
+            </ItemGroup>
+        </When>
+        <Otherwise>
+            <ItemGroup>
+                <Reference Include="FFXIVClientStructs">
+                    <HintPath>$(DalamudLibPath)\FFXIVClientStructs.dll</HintPath>
+                    <Private>false</Private>
+                </Reference>
+            </ItemGroup>
+        </Otherwise>
+    </Choose>
 
     <ItemGroup>
         <PackageReference Include="Costura.Fody" Version="5.7.0" PrivateAssets="all" />
