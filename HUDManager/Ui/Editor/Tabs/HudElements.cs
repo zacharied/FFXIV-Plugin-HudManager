@@ -621,6 +621,29 @@ namespace HUD_Manager.Ui.Editor.Tabs
                     EndJobGauge:;
                 }
 
+                if (kind is ElementKind.PartyList && element.Options is not null) {
+                    NextColumnIfParent();
+                    ImGui.TableNextColumn();
+                    DrawSettingName("Alignment");
+
+                    ImGui.PushItemWidth(-1);
+
+                    var partyListOpts = new PartyListOptions(element.Options);
+
+                    if (ImGui.BeginCombo($"##partylist-alignment-{kind}", partyListOpts.Alignment.ToString())) {
+                        foreach (var alignment in (PartyListAlignment[])Enum.GetValues(typeof(PartyListAlignment))) {
+                            if (ImGui.Selectable($"{alignment.ToString()}##{kind}", partyListOpts.Alignment == alignment)) {
+                                partyListOpts.Alignment = alignment;
+                                update = true;
+                            }
+                        }
+                        ImGui.EndCombo();
+                    }
+
+                    ImGui.PopItemWidth();
+                    ImGui.TableNextRow();
+                }
+
                 ImGui.EndTable();
             }
 
