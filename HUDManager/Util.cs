@@ -1,7 +1,9 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.GeneratedSheets;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Runtime.CompilerServices;
 
 namespace HUDManager;
 
@@ -29,16 +31,19 @@ public static class Util
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool GamepadModeActive(Plugin plugin)
     {
         return plugin.GameConfig.UiConfig.TryGet("PadMode", out bool isPadMode) && isPadMode;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool FullScreen(Plugin plugin) // treats Borderless as Full Screen
     {
         return plugin.GameConfig.System.TryGet("ScreenMode", out uint mode) && mode > 0;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsCharacterConfigOpen()
     {
         unsafe {

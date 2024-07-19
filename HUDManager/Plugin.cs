@@ -92,7 +92,8 @@ public sealed class Plugin : IDalamudPlugin
                     .WithNamingConvention(UnderscoredNamingConvention.Instance)
                     .Build();
                 Help = deserializer.Deserialize<HelpFile>(reader);
-            } else {
+            }
+            else {
                 Log.Warning($"Unable to find {resourceName}");
             }
         }
@@ -110,20 +111,17 @@ public sealed class Plugin : IDalamudPlugin
         Keybinder = new Keybinder(this);
         QoLBarIpc = new QoLBarIpc(this);
 
-        if (!Config.FirstRun) {
-            Ready = true;
-            return;
-        }
-
-        Config.FirstRun = false;
-        if (Config.Layouts.Count == 0) {
-            foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                Hud.ImportSlot(
-                    $"Auto-import {(int)slot + 1} ({DateTime.Now.ToString(@"yyyy-MM-dd HH\:mm\:ss", CultureInfo.InvariantCulture)})", slot, false);
+        if (Config.FirstRun) {
+            Config.FirstRun = false;
+            if (Config.Layouts.Count == 0) {
+                foreach (var slot in Enum.GetValues<HudSlot>()) {
+                    Hud.ImportSlot(
+                        $"Auto-import {(int)slot + 1} ({DateTime.Now.ToString(@"yyyy-MM-dd HH\:mm\:ss", CultureInfo.InvariantCulture)})",
+                        slot, false);
+                }
             }
+            Config.Save();
         }
-
-        Config.Save();
 
         Ready = true;
     }

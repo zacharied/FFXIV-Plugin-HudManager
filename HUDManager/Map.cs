@@ -34,7 +34,11 @@ internal class Map
     public static uint? GetRootZoneId(IDataManager data, uint territoryType)
     {
         var territorySheet = data.GetExcelSheet<Lumina.Excel.GeneratedSheets.TerritoryType>()!;
-        var territory = territorySheet.First(t => t.RowId == territoryType);
+        var territory = territorySheet.FirstOrDefault(t => t.RowId == territoryType);
+        if (territory == null) {
+            // territoryType can be 0 when Dalamud is loaded mid-game
+            return null;
+        }
         try {
             return GetSheet(data).First(map => map.PlaceName.RawRow!.RowId == territory.PlaceName.RawRow!.RowId).RowId;
         } catch (InvalidOperationException) {

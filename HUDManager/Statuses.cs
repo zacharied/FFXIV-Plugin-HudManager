@@ -9,11 +9,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
-// TODO: Zone swaps?
 
 namespace HUDManager;
 
@@ -22,7 +19,7 @@ public class Statuses
     private Plugin Plugin { get; }
 
     public readonly Dictionary<Status, bool> Condition = new();
-    private readonly IEnumerable<Status> _statusTypes = Enum.GetValues(typeof(Status)).Cast<Status>();
+    private readonly Status[] _statusTypes = Enum.GetValues<Status>();
     private uint _lastJobId = uint.MaxValue;
 
     public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, []);
@@ -85,9 +82,18 @@ public class Statuses
         _lastJobId = currentJobId;
 
         foreach (var status in _statusTypes) {
-            var old = Condition.ContainsKey(status) && Condition[status];
-            Condition[status] = status.Active(Plugin, player);
-            anyChanged |= old != Condition[status];
+            if (Condition.TryGetValue(status, out var oldVal)) {
+                var newVal = status.Active(Plugin, player);
+                if (newVal != oldVal) {
+                    anyChanged = true;
+                    Condition[status] = newVal;
+                }
+            }
+            else {
+                var newVal = status.Active(Plugin, player);
+                anyChanged |= newVal != oldVal;
+                Condition[status] = newVal;
+            }
         }
 
         return anyChanged;
@@ -151,11 +157,13 @@ public class Statuses
         //this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsInFate()
     {
         return Marshal.ReadByte(_inFateAreaPtr) == 1;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsLevelSynced()
     {
         unsafe {
@@ -164,14 +172,34 @@ public class Statuses
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsInSanctuary()
     {
         return GameMain.IsInSanctuary();
     }
 
-    public unsafe static bool IsChatFocused()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool IsChatFocused()
     {
         return RaptureAtkModule.Instance()->AtkModule.IsTextInputActive();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool IsRoleplaying(Plugin plugin, IPlayerCharacter? player)
+    {
+        player ??= plugin.ClientState.LocalPlayer;
+        if (player == null)
+            return false;
+        return ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address)->OnlineStatus == 22;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsWeaponOut(Plugin plugin, IPlayerCharacter? player)
+    {
+        player ??= plugin.ClientState.LocalPlayer;
+        if (player == null)
+            return false;
+        return (player.StatusFlags & StatusFlags.WeaponOut) != 0;
     }
 
     private void UpdateConditionHoldTimers()
@@ -179,17 +207,22 @@ public class Statuses
         // Update the timers on all ticking conditions.
         var newTimestamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
         var removeKeys = new List<HudConditionMatch>();
-        foreach (var (k, _) in _conditionHoldTimers) {
-            _conditionHoldTimers[k] -= (float)((double)(newTimestamp - _lastUpdateTime) / 1000);
-            if (_conditionHoldTimers[k] < 0) {
+        foreach (var (k, v) in _conditionHoldTimers) {
+            var newVal = v - (float)((double)(newTimestamp - _lastUpdateTime) / 1000);
+            if (newVal < 0) {
                 Plugin.Log.Debug($"Condition timer for \"{k.CustomCondition?.Name}\" finished");
                 removeKeys.Add(k);
+            }
+            else {
+                _conditionHoldTimers[k] = newVal;
             }
         }
 
         // If any conditions finished their timers, we update the HUD layout.
-        removeKeys.ForEach(k => _conditionHoldTimers.Remove(k));
         if (removeKeys.Count != 0) {
+            foreach (var k in removeKeys) {
+                _conditionHoldTimers.Remove(k);
+            }
             SetHudLayout();
         }
 
@@ -339,27 +372,15 @@ public static class StatusExtensions
 
     public static bool Active(this Status status, Plugin plugin, IPlayerCharacter? player = null)
     {
-        // Temporary stopgap until we remove the argument entirely
-        player ??= plugin.ClientState.LocalPlayer;
-
-        // Player being null is a common enough edge case that callers of this function shouldn't have
-        //  to catch an exception on their own. We can't really do anything useful if it's null so we
-        //  might as well just return false here; it makes no difference to the caller.
-        if (player == null) {
-            if (RequiresPlayer.Contains(status))
-                return false;
-        }
-
         if (status > 0) {
-            var flag = (ConditionFlag)status;
-            return plugin.Condition[flag];
+            return plugin.Condition[(ConditionFlag)status];
         }
 
         switch (status) {
             case Status.WeaponDrawn:
-                return (player!.StatusFlags & StatusFlags.WeaponOut) != 0;
+                return Statuses.IsWeaponOut(plugin, player);
             case Status.Roleplaying:
-                return player!.OnlineStatus.Id == 22;
+                return Statuses.IsRoleplaying(plugin, player);
             case Status.PlayingMusic:
                 return plugin.Condition[ConditionFlag.Performing];
             case Status.InPvp:
@@ -389,10 +410,4 @@ public static class StatusExtensions
                 return false;
         }
     }
-
-    private static readonly ReadOnlyCollection<Status> RequiresPlayer = new(new List<Status>
-    {
-        Status.WeaponDrawn,
-        Status.Roleplaying,
-    });
 }

@@ -169,6 +169,7 @@ public class Debug
         }
 
         if (ImGui.Button("FATE Status")) {
+            Plugin.Log.Information($"Level: {Plugin.ClientState.LocalPlayer?.Level}");
             Plugin.Log.Information($"IsInFate: {Plugin.Statuses.IsInFate()}");
             Plugin.Log.Information($"IsLevelSynced: {Statuses.IsLevelSynced()}");
         }
