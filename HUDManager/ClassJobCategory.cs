@@ -224,12 +224,14 @@ public static class ClassJobCategoryIdExtensions
             ClassJobCategoryId.ROG_NIN,
             ClassJobCategoryId.SAM,
             ClassJobCategoryId.RPR,
+            ClassJobCategoryId.VPR,
             ClassJobCategoryId.ARC_BRD,
             ClassJobCategoryId.MCH,
             ClassJobCategoryId.DNC,
             ClassJobCategoryId.THM_BLM,
             ClassJobCategoryId.ACN_SMN,
             ClassJobCategoryId.RDM,
+            ClassJobCategoryId.PCT,
             ClassJobCategoryId.BLU,
         ],
         [
@@ -275,6 +277,8 @@ public enum ClassJobCategoryId
     DNC = 150,
     RPR = 180,
     SGE = 181,
+    VPR = 196,
+    PCT = 197,
     BLU = 129,
 
     MIN_BTN = 154,
