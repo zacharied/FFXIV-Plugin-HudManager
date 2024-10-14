@@ -2,6 +2,7 @@
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using HUDManager.Configuration;
@@ -10,7 +11,6 @@ using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace HUDManager;
 
@@ -29,8 +29,6 @@ public class Statuses
 
     public ForceState NeedsForceUpdate { get; internal set; }
 
-    private IntPtr _inFateAreaPtr = IntPtr.Zero;
-
     private long _lastUpdateTime;
 
     public enum ForceState
@@ -47,19 +45,6 @@ public class Statuses
 
         foreach (var cond in Plugin.Config.CustomConditions) {
             CustomConditionStatus[cond] = false;
-        }
-
-        InitializePointers();
-    }
-
-    private void InitializePointers()
-    {
-        // FATE pointer (thanks to Pohky#8008)
-        try {
-            var sig = Plugin.SigScanner.ScanText("80 3D ?? ?? ?? ?? ?? 0F 84 ?? ?? ?? ?? 48 8B 42 20");
-            _inFateAreaPtr = sig + Marshal.ReadInt32(sig, 2) + 7;
-        } catch {
-            Plugin.Log.Error("Failed loading 'inFateAreaPtr'");
         }
     }
 
@@ -158,18 +143,16 @@ public class Statuses
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsInFate()
+    public static unsafe bool IsInFate()
     {
-        return Marshal.ReadByte(_inFateAreaPtr) == 1;
+        return FateManager.Instance()->CurrentFate != null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsLevelSynced()
+    public static unsafe bool IsLevelSynced()
     {
-        unsafe {
-            var uiPlayerState = UIState.Instance()->PlayerState;
-            return (uiPlayerState.IsLevelSynced & 1) > 0;
-        }
+        var uiPlayerState = UIState.Instance()->PlayerState;
+        return (uiPlayerState.IsLevelSynced & 1) > 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -320,12 +303,12 @@ public class HudConditionMatch
 public enum Status
 {
     InCombat = ConditionFlag.InCombat,
-    WeaponDrawn = -1,
     InInstance = ConditionFlag.BoundByDuty,
     Crafting = ConditionFlag.Crafting,
     Gathering = ConditionFlag.Gathering,
     Fishing = ConditionFlag.Fishing,
     Mounted = ConditionFlag.Mounted,
+    WeaponDrawn = -1,
     Roleplaying = -2,
     PlayingMusic = -3,
     InPvp = -4,
@@ -390,9 +373,9 @@ public static class StatusExtensions
                     | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
                     | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
             case Status.InFate:
-                return plugin.Statuses.IsInFate();
+                return Statuses.IsInFate();
             case Status.InFateLevelSynced:
-                return plugin.Statuses.IsInFate() && Statuses.IsLevelSynced();
+                return Statuses.IsInFate() && Statuses.IsLevelSynced();
             case Status.InSanctuary:
                 return Statuses.IsInSanctuary();
             case Status.ChatFocused:
