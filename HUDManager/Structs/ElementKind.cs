@@ -1,7 +1,6 @@
 ﻿using Dalamud.Plugin.Services;
-using HUDManager.Sheets;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
@@ -268,10 +267,9 @@ public static class ElementKindExt
             return kind.ToString();
         }
 
-        var name = data.GetExcelSheet<HudSheet>()!.GetRow((uint)id)?.Name ?? kind.ToString();
+        var name = data.GetExcelSheet<Lumina.Excel.Sheets.Hud>().GetRowOrDefault((uint)id)?.Unknown0.ExtractText() ?? kind.ToString();
 
-        var classJob = kind.ClassJob();
-        if (classJob != null) {
+        if (kind.ClassJob() is {} classJob) {
             name += $" ({classJob.Abbreviation})";
         }
 
@@ -280,7 +278,10 @@ public static class ElementKindExt
 
     public static ClassJob? ClassJob(this ElementKind kind)
     {
-        return _gaugeJobs.GetValueOrDefault(kind);
+        if (_gaugeJobs.TryGetValue(kind, out var classJob)) {
+            return classJob;
+        }
+        return null;
     }
 
     private static ClassJob? ClassJob(this ElementKind kind, ExcelSheet<ClassJob> sheet)

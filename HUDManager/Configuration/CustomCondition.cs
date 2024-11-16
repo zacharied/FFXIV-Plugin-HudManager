@@ -132,9 +132,10 @@ public struct CustomConditionUnion
             return Game!.Value.Active(plugin);
         } else if (CurrentType == typeof(ClassJobCategoryId)) {
             var player = plugin.ClientState.LocalPlayer;
-            if (player?.ClassJob.GameData is null)
-                return false;
-            return ClassJob!.Value.IsActivated(player.ClassJob.GameData);
+            if (player is { ClassJob: { IsValid: true } playerClassJob }) {
+                return ClassJob!.Value.IsActivated(playerClassJob.Value);
+            }
+            return false;
         }
         throw new CustomConditionUnionUndefinedException();
     }

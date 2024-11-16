@@ -14,16 +14,15 @@ namespace HUDManager;
 
 public sealed class Hud : IDisposable
 {
-    public const int InMemoryLayoutElements = 108; // Updated 7.0
+    public const int InMemoryLayoutElements = 109; // Updated 7.1
     // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
-    private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 5.45
+    private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.1 (same since 5.45)
 
-    private const int FileDataPointerOffset = 0x50;
     private const int FileSaveMarkerOffset = 0x3E; // Unused
 
-    private const int DataSlotOffset = 0xC8E0; // Updated 7.0
-    private const int DataBaseLayoutOffset = 0x6498; // Updated 6.51
-    private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: not used except in debug window, not sure of exact structure)
+    private const int DataSlotOffset = 0xCBD0; // Updated 7.1
+    private const int DataBaseLayoutOffset = 0x8E80; // Updated 7.1
+    private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: unused except in debug window, not sure of exact structure)
 
     private delegate IntPtr GetFilePointerDelegate(byte index);
     private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);
@@ -129,16 +128,13 @@ public sealed class Hud : IDisposable
     unsafe internal static IntPtr GetLayoutPointer(HudSlot slot)
     {
         var slotNum = (int)slot;
-        // Plugin.Log.Debug($"layoutPointer({slot}) 0x{this.GetDataPointer():X} + offset 0x{DataBaseLayoutOffset:X} + 0x{slotNum * LayoutSize:X} = 0x{this.GetDataPointer() + DataBaseLayoutOffset + slotNum * LayoutSize:X}");
-        // return this.GetDataPointer() + DataBaseLayoutOffset + slotNum * LayoutSize;
-        return (nint)AddonConfig.Instance()->ModuleData + 0x8C20 + slotNum * LayoutSize;
+        return (nint)AddonConfig.Instance()->ModuleData + DataBaseLayoutOffset + slotNum * LayoutSize;
     }
 
     public static HudSlot GetActiveHudSlot()
     {
-        // Plugin.Log.Debug($"dataPointer(0x{this.GetDataPointer():X} + offset 0x{DataSlotOffset:X} = 0x{this.GetDataPointer() + DataSlotOffset:X}");
-        // Plugin.Log.Debug($"dataPointer2(0x{this.GetDataPointer():X} + offset 0x{DataSlotOffset:X} = 0x{this.GetDataPointer() + DataSlotOffset:X}");
         var slotVal = Marshal.ReadInt32(GetDataPointer() + DataSlotOffset);
+        // Plugin.SLog.Debug($"dataPointer(0x{GetDataPointer():X} + offset 0x{DataSlotOffset:X} = 0x{GetDataPointer() + DataSlotOffset:X} = {slotVal}");
 
         if (!Enum.IsDefined(typeof(HudSlot), slotVal)) {
             throw new IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
@@ -364,7 +360,7 @@ public sealed class Hud : IDisposable
         if (Plugin.ClientState.LocalPlayer is null)
             return;
 
-        var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.GameData?.JobIndex ?? 0;
+        var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.ValueNullable?.JobIndex ?? 0;
         foreach (var (kind, element) in effectiveLayout.Elements) {
             if (kind.ClassJob() is { } classJob && classJob.JobIndex == jobIndex && element[ElementComponent.Visibility]) {
                 ApplyJobGaugeVisibility(kind, element);

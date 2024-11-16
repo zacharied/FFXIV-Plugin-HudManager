@@ -70,7 +70,7 @@ public class HudElements
                 .OrderBy(el => el.LocalisedName(Plugin.DataManager));
             foreach (var kind in kinds) {
                 var elementClassJob = kind.ClassJob();
-                var isForbiddenElement = elementClassJob != null && !Util.HasUnlockedClass(elementClassJob);
+                var isForbiddenElement = elementClassJob != null && !Util.HasUnlockedClass(elementClassJob.Value);
                 var elementInConfig = Plugin.Config.Layouts[Ui.SelectedLayout].Elements.ContainsKey(kind);
                 var localisedName = kind.LocalisedName(Plugin.DataManager);
 

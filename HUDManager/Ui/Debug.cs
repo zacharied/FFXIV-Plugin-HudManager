@@ -2,7 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using HUDManager.Structs;
 using ImGuiNET;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -176,7 +176,7 @@ public class Debug
 
         if (ImGui.Button("Print ClassJob dict values")) {
             var s = "";
-            foreach (var row in Plugin.DataManager.GetExcelSheet<ClassJob>()!)
+            foreach (var row in Plugin.DataManager.GetExcelSheet<ClassJob>())
                 s += $"[{row.RowId}] = \"{row.Abbreviation}\",\n";
             Plugin.ChatGui.Print(s);
         }

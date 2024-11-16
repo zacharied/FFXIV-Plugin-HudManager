@@ -1,5 +1,5 @@
 ﻿using HUDManager.Structs;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -151,7 +151,7 @@ public static class Migrator
 
             if (classJob.Type == JTokenType.Null)
                 continue;
-            var sheet = plugin.DataManager.GetExcelSheet<ClassJob>()!;
+            var sheet = plugin.DataManager.GetExcelSheet<ClassJob>();
 
             oldCond["ClassJob"] = sheet.First(job => job.Abbreviation == (string)oldCond["ClassJob"]).RowId;
             var match = oldCond.ToObject<HudConditionMatch>();
@@ -164,7 +164,7 @@ public static class Migrator
     {
         foreach (var cond in (JArray)old["HudConditionMatches"]!) {
             if (cond["ClassJob"]!.Type is not JTokenType.Null) {
-                var classJob = plugin.DataManager.GetExcelSheet<ClassJob>()!.GetRow((uint)cond["ClassJob"]!)!;
+                var classJob = plugin.DataManager.GetExcelSheet<ClassJob>().GetRow((uint)cond["ClassJob"]!)!;
                 ((JObject)cond).Property("ClassJob")!.Remove();
                 cond["ClassJobCategory"] = (int)ClassJobCategoryIdExtensions.CategoryForClassJob(classJob);
             }

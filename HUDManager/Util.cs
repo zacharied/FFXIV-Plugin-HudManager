@@ -1,6 +1,5 @@
 ﻿using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using Lumina.Excel.GeneratedSheets;
-using System;
+using Lumina.Excel.Sheets;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -54,7 +53,7 @@ public static class Util
 
     public static uint GetPlayerJobId(Plugin plugin)
     {
-        return plugin.ClientState.LocalPlayer?.ClassJob.Id ?? uint.MaxValue;
+        return plugin.ClientState.LocalPlayer?.ClassJob.RowId ?? uint.MaxValue;
     }
 
     private static readonly Dictionary<uint, string> JobIdToEnglishAbbreviation = new()

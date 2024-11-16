@@ -1,6 +1,6 @@
 ﻿using Dalamud.Game;
 using Lumina.Excel;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -37,12 +37,12 @@ public static class ClassJobCategoryIdExtensions
 
     public static void Initialize(Plugin plugin)
     {
-        var sheet = plugin.DataManager.GetExcelSheet<ClassJobCategory>()!;
+        var sheet = plugin.DataManager.GetExcelSheet<RawRow>(name: "ClassJobCategory");
 
         _activationConditions = new Dictionary<ClassJobCategoryId, Dictionary<uint, bool>>();
         _displayNames = new Dictionary<ClassJobCategoryId, string>();
 
-        var classJobSheet = plugin.DataManager.GetExcelSheet<ClassJob>()!;
+        var classJobSheet = plugin.DataManager.GetExcelSheet<ClassJob>();
         var classJobIds = classJobSheet.Select(j => j.RowId).ToList();
 
         foreach (var cat in Enum.GetValues(typeof(ClassJobCategoryId)).Cast<ClassJobCategoryId>()) {
@@ -54,7 +54,7 @@ public static class ClassJobCategoryIdExtensions
         }
 
         foreach (var classJobId in classJobIds) {
-            var classJob = classJobSheet.GetRow(classJobId)!;
+            var classJob = classJobSheet.GetRow(classJobId);
 
             // Handle special category for base classes
             if (classJob.JobIndex == 0) {
@@ -62,7 +62,7 @@ public static class ClassJobCategoryIdExtensions
             }
 
             // Add base classes to roles
-            switch (classJob.LimitBreak1.Row) {
+            switch (classJob.LimitBreak1.RowId) {
                 case 197:
                     _activationConditions[ClassJobCategoryId.Tank][classJobId] = true;
                     break;
@@ -110,12 +110,12 @@ public static class ClassJobCategoryIdExtensions
             var nameSplit = row.Name.ToString().Split(' ');
             if (nameSplit.Length != 2)
                 // IDK what langauge, bail out
-                return row.Name;
+                return row.Name.ExtractText();
             return $"{nameSplit[1]}/{nameSplit[0]}";
         } else if (cat is ClassJobCategoryId.MIN_BTN) {
             var nameSplit = row.Name.ToString().Split(", ");
             if (nameSplit.Length != 2)
-                return row.Name;
+                return row.Name.ExtractText();
             return $"{nameSplit[0]}/{nameSplit[1]}";
         }
 
@@ -123,7 +123,7 @@ public static class ClassJobCategoryIdExtensions
         if (ParenthesesNameCategories.Contains(cat)) {
             var nameSplit = row.Name.ToString().Split("(");
             if (nameSplit.Length != 2)
-                return row.Name;
+                return row.Name.ExtractText();
             return nameSplit[0].Trim();
         }
 
@@ -137,11 +137,11 @@ public static class ClassJobCategoryIdExtensions
                 ClassJobCategoryId.DoH => "DoH",
                 ClassJobCategoryId.CombatJobs => "DoW/DoM",
                 ClassJobCategoryId.NonCombatJobs => "DoH/DoL",
-                _ => row.Name,
+                _ => row.Name.ExtractText(),
             };
         }
 
-        return row.Name;
+        return row.Name.ExtractText();
     }
 
     public static bool IsActivated(this ClassJobCategoryId cat, ClassJob classJob)
@@ -188,7 +188,7 @@ public static class ClassJobCategoryIdExtensions
 
     private static Dictionary<uint, bool> IsActivatedAll(
         this ClassJobCategoryId cat,
-        ExcelSheet<ClassJobCategory> sheet,
+        ExcelSheet<RawRow> sheet,
         List<uint> classJobIds)
     {
         cat = cat switch
@@ -199,9 +199,8 @@ public static class ClassJobCategoryIdExtensions
 
         Dictionary<uint, bool> res = new();
 
-        var parser = sheet.GetRowParser((uint)cat) ?? throw new InvalidOperationException("cannot acquire parser");
         foreach (var id in classJobIds) {
-            res[id] = parser.ReadColumn<bool>((int)id + 1);
+            res[id] = sheet.GetRow((uint)cat).ReadBool(sheet.Columns[(int)id + 1].Offset);
         }
 
         return res;

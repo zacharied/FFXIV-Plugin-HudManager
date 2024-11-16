@@ -59,7 +59,7 @@ public class Statuses
 
         var anyChanged = false;
 
-        var currentJobId = player.ClassJob.Id;
+        var currentJobId = player.ClassJob.RowId;
         if (_lastJobId != currentJobId) {
             anyChanged = true;
         }
@@ -156,9 +156,10 @@ public class Statuses
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsInSanctuary()
+    public static unsafe bool IsInSanctuary()
     {
-        return GameMain.IsInSanctuary();
+        var ti = TerritoryInfo.Instance();
+        return ti != null && ti->InSanctuary;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -273,7 +274,7 @@ public class HudConditionMatch
         var statusMet = !Status.HasValue || plugin.Statuses.Condition[Status.Value];
         var customConditionMet = CustomCondition?.IsMet(plugin) ?? true;
         var jobMet = ClassJobCategory is null
-            || ClassJobCategory.Value.IsActivated(plugin.ClientState.LocalPlayer!.ClassJob.GameData!);
+            || ClassJobCategory.Value.IsActivated(plugin.ClientState.LocalPlayer!.ClassJob.Value);
 
         var newValue = statusMet && customConditionMet && jobMet;
         if (LastValue != newValue) {
