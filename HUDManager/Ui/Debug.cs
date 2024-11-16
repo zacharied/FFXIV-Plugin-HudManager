@@ -101,11 +101,6 @@ public class Debug
             Plugin.Log.Information("===== Layout END =====");
         }
 
-        if (ImGui.Button("File pointer 0")) {
-            var ptr = Plugin.Hud.GetFilePointer(0);
-            Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
-        }
-
         if (ImGui.Button("Data pointer")) {
             var ptr = Hud.GetDataPointer();
             Plugin.ChatGui.Print($"{ptr.ToInt64():X}");

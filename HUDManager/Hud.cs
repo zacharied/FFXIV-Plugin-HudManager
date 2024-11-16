@@ -18,16 +18,9 @@ public sealed class Hud : IDisposable
     // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
     private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.1 (same since 5.45)
 
-    private const int FileSaveMarkerOffset = 0x3E; // Unused
-
     private const int DataSlotOffset = 0xCBD0; // Updated 7.1
     private const int DataBaseLayoutOffset = 0x8E80; // Updated 7.1
     private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: unused except in debug window, not sure of exact structure)
-
-    private delegate IntPtr GetFilePointerDelegate(byte index);
-    private delegate uint SetHudLayoutDelegate(IntPtr filePtr, uint hudLayout, byte unk0, byte unk1);
-    private readonly GetFilePointerDelegate? _getFilePointer;
-    private readonly SetHudLayoutDelegate? _setHudLayout;
 
     private StagingState? _stagingState;
 
@@ -42,81 +35,47 @@ public sealed class Hud : IDisposable
     public Hud(Plugin plugin)
     {
         Plugin = plugin;
-
-        var getFilePointerPtr = Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 48 85 C0 74 14 83 7B 44 00");
-        var setHudLayoutPtr = Plugin.SigScanner.ScanText("E8 ?? ?? ?? ?? 33 C0 EB 12"); // Client::UI::Misc::AddonConfig_ChangeHudLayout
-        if (getFilePointerPtr != IntPtr.Zero) {
-            _getFilePointer = Marshal.GetDelegateForFunctionPointer<GetFilePointerDelegate>(getFilePointerPtr);
-        }
-
-        if (setHudLayoutPtr != IntPtr.Zero) {
-            _setHudLayout = Marshal.GetDelegateForFunctionPointer<SetHudLayoutDelegate>(setHudLayoutPtr);
-        }
     }
 
-    public IntPtr GetFilePointer(byte index)
+    public unsafe void SelectSlot(HudSlot slot, bool force = false)
     {
-        return _getFilePointer?.Invoke(index) ?? IntPtr.Zero;
-    }
-
-    public void SaveAddonData()
-    {
-        var saveMarker = GetFilePointer(0) + FileSaveMarkerOffset;
-        Marshal.WriteByte(saveMarker, 1);
-    }
-
-    public void SelectSlot(HudSlot slot, bool force = false)
-    {
-        if (_setHudLayout == null) {
-            return;
-        }
-
-        var file = GetFilePointer(0);
         // change the current slot so the game lets us pick one that's currently in use
         if (!force) {
             goto Return;
         }
 
-        unsafe {
-            var currentSlotPtr = (uint*)(GetDataPointer() + DataSlotOffset);
-            // read the current slot
-            var currentSlot = *currentSlotPtr;
-            // if the current slot is the slot we want to change to, we can force a reload by
-            // telling the game it's on a different slot and swapping back to the desired slot
-            if (currentSlot == (uint)slot) {
-                var backupSlot = currentSlot;
-                if (backupSlot < 3) {
-                    backupSlot += 1;
-                } else {
-                    backupSlot = 0;
-                }
-
-                // back up this different slot
-                var backup = ReadLayout((HudSlot)backupSlot);
-                // change the current slot in memory
-                *currentSlotPtr = backupSlot;
-
-                // ask the game to change slot to our desired slot
-                // for some reason, this overwrites the current slot, so this is why we back up
-                _setHudLayout.Invoke(file, (uint)slot, 0, 1);
-                // restore the backup
-                WriteLayout((HudSlot)backupSlot, backup, false);
-                return;
+        var currentSlotPtr = (uint*)(GetDataPointer() + DataSlotOffset);
+        // read the current slot
+        var currentSlot = *currentSlotPtr;
+        // if the current slot is the slot we want to change to, we can force a reload by
+        // telling the game it's on a different slot and swapping back to the desired slot
+        if (currentSlot == (uint)slot) {
+            var backupSlot = currentSlot;
+            if (backupSlot < 3) {
+                backupSlot += 1;
+            } else {
+                backupSlot = 0;
             }
+
+            // back up this different slot
+            var backup = ReadLayout((HudSlot)backupSlot);
+            // change the current slot in memory
+            *currentSlotPtr = backupSlot;
+
+            // ask the game to change slot to our desired slot
+            // for some reason, this overwrites the current slot, so this is why we back up
+            AddonConfig.Instance()->ChangeHudLayout((uint)slot);
+            // restore the backup
+            WriteLayout((HudSlot)backupSlot, backup, false);
+            return;
         }
 
         Return:
-        _setHudLayout.Invoke(file, (uint)slot, 0, 1);
+        AddonConfig.Instance()->ChangeHudLayout((uint)slot);
     }
 
-    public unsafe static IntPtr GetDataPointer()
+    public static unsafe IntPtr GetDataPointer()
     {
-        // Plugin.Log.Debug($"1 filePointer(0) 0x{this.GetFilePointer(0):X} + offset 0x{FileDataPointerOffset:X} = 0x{(this.GetFilePointer(0) + FileDataPointerOffset):X}");
-        // unsafe {
-        //     Plugin.Log.Debug($"2 filePointer(0) 0x{(nint)AddonConfig.Instance():X} + offset = 0x{(nint)AddonConfig.Instance()->ModuleData:X}");
-        // }
-        // var dataPtr = this.GetFilePointer(0) + FileDataPointerOffset;
-        // return Marshal.ReadIntPtr(dataPtr);
         return (nint)AddonConfig.Instance()->ModuleData;
     }
 
@@ -125,7 +84,7 @@ public sealed class Hud : IDisposable
         return GetDataPointer() + DataDefaultLayoutOffset;
     }
 
-    unsafe internal static IntPtr GetLayoutPointer(HudSlot slot)
+    internal static unsafe IntPtr GetLayoutPointer(HudSlot slot)
     {
         var slotNum = (int)slot;
         return (nint)AddonConfig.Instance()->ModuleData + DataBaseLayoutOffset + slotNum * LayoutSize;
