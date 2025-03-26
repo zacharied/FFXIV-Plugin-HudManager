@@ -112,6 +112,7 @@ public enum ElementKind : uint
     BlundervilleScore                 = 0xDBC09DEA, // FGSHudScore_a
     BlundervilleStatus                = 0x9F0BB04E, // FGSHudStatus_a
     BlundervilleShowLog               = 0xD83AAFFA, // FGSHudRaceLog_a
+    // WKSAnnounce                       = 0x9B927370, // WKSAnnounce_a
     Timers                            = 0x99B6AD5B, // ??? (removed in ???)
     // @formatter:on
 }
