@@ -69,7 +69,6 @@ public enum ElementKind : uint
     AetherflowGaugeSmn                = 0x3BF3453A, // JobHudSMN0_a (SMN)
     TranceGauge                       = 0x3A312F0D, // JobHudSMN1_a (SMN)
     FaerieGauge                       = 0xA1A8A487, // JobHudSCH0_a (SCH)
-    HutonGauge                        = 0x70F99888, // JobHudNIN1_a (NIN) (removed in 7.0)
     Kazematoi                         = 0x6CD4313E, // JobHudNIN1v70_a (NIN)
     NinkiGauge                        = 0x713BF2BF, // JobHudNIN0_a (NIN)
     HeatGauge                         = 0x9874C76C, // JobHudMCH0_a (MCH)
@@ -91,8 +90,8 @@ public enum ElementKind : uint
     Canvases                          = 0x7A6A6A42, // JobHudRPM0_a (PCT)
     PaletteGauge                      = 0x7BA80075, // JobHudRPM1_a (PCT)
     TheFeastScore                     = 0xD7F058DF, // PvPColosseumHeader_a
-    TheFeastEnemyInfo                 = 0x366A4D0B, // PvPColosseumPartyList1_a
     TheFeastAllyInfo                  = 0x37A8273C, // PvPColosseumPartyList0_a
+    TheFeastEnemyInfo                 = 0x366A4D0B, // PvPColosseumPartyList1_a
     CrystallineConflictProgressGauge  = 0x30748231, // PvPMKSHeader_a
     CrystallineConflictAllyInfo       = 0xE155E172, // PvPMKSPartyList1_a
     CrystallineConflictEnemyInfo      = 0xE2D1351C, // PvPMKSPartyList3_a
@@ -100,6 +99,7 @@ public enum ElementKind : uint
     CrystallineConflictMap            = 0xC3ACB5D2, // PvPMap_a
     FrontlineScoreInfo                = 0x2D327D8E, // PvPFrontlineHeader_a
     BattleHighGauge                   = 0x34BF98AF, // PvPFrontlineGauge_a
+    FrontlineCampaignInfo             = 0xCE06BF94, // PvPFrontlineInfo
     RivalWingsGauges                  = 0x1047F0E1, // ManeuversHeader_a
     RivalWingsAllianceList            = 0xE69D30D2, // ManeuversAllianceList_a
     RivalWingsTeamInfo                = 0x465E2306, // ManeuversTeamInfo_a
@@ -112,7 +112,10 @@ public enum ElementKind : uint
     BlundervilleScore                 = 0xDBC09DEA, // FGSHudScore_a
     BlundervilleStatus                = 0x9F0BB04E, // FGSHudStatus_a
     BlundervilleShowLog               = 0xD83AAFFA, // FGSHudRaceLog_a
-    // WKSAnnounce                       = 0x9B927370, // WKSAnnounce_a
+    CosmicExplorationInfo             = 0x9B927370, // WKSAnnounce_a
+
+    // Removed
+    HutonGauge                        = 0x70F99888, // JobHudNIN1_a (NIN) (removed in 7.0)
     Timers                            = 0x99B6AD5B, // ??? (removed in ???)
     // @formatter:on
 }
@@ -252,6 +255,8 @@ public static class ElementKindExt
             ElementKind.SerpentOfferingsGauge => 105,
             ElementKind.Canvases => 106,
             ElementKind.PaletteGauge => 107,
+            ElementKind.FrontlineCampaignInfo => 108,
+            ElementKind.CosmicExplorationInfo => 109,
             _ => -1,
         };
     }
