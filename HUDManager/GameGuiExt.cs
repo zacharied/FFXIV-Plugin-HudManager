@@ -14,7 +14,7 @@ internal static class GameGuiExt
         }
 
         unsafe {
-            return *(AtkUnitBase*)addon;
+            return *(AtkUnitBase*)addon.Address;
         }
     }
 }

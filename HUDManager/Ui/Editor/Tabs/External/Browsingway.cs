@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface;
 using HUDManager.Configuration;
 using HUDManager.Structs.External;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +27,11 @@ public sealed class Browsingway : IExternalElement
 
         ImGui.SameLine();
 
-        ((Action<string>)(avail ? ImGui.Text : ImGui.TextDisabled)).Invoke(avail ? "Browsingway" : "Browsingway (not installed)");
+        if (avail) {
+            ImGui.Text("Browsingway");
+        } else {
+            ImGui.TextDisabled("Browsingway (not installed)");
+        }
 
         ImGui.SameLine();
         ImGuiExt.HelpMarker("Install the Browsingway plugin before use. You can set up changes to Browsingway overlays using this menu.");

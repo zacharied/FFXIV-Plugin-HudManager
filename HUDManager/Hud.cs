@@ -18,8 +18,8 @@ public sealed class Hud : IDisposable
     // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
     private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.2 (same since 5.45)
 
-    private const int DataSlotOffset = 0xD078; // Updated 7.2
-    private const int DataBaseLayoutOffset = 0x9298; // Updated 7.2
+    private const int DataSlotOffset = 0xD270; // Updated 7.2
+    private const int DataBaseLayoutOffset = 0x9490; // Updated 7.2
     private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: unused except in debug window, not sure of exact structure)
 
     private StagingState? _stagingState;
@@ -330,7 +330,7 @@ public sealed class Hud : IDisposable
     private unsafe void ApplyJobGaugeVisibility(ElementKind kind, Element element)
     {
         var unitName = kind.GetJobGaugeAtkName()!;
-        var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName);
+        var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName).Address;
         if (unit is null)
             return;
 

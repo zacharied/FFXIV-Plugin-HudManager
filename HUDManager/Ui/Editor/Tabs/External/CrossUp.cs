@@ -4,7 +4,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using HUDManager.Configuration;
 using HUDManager.Structs.External;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Linq;
 using static Dalamud.Interface.FontAwesomeIcon;
@@ -44,7 +44,11 @@ public sealed class CrossUp : IExternalElement
         }
 
         ImGui.SameLine();
-        ((Action<string>)(avail ? ImGui.Text : ImGui.TextDisabled)).Invoke(avail ? "CrossUp" : "CrossUp (not installed)");
+        if (avail) {
+            ImGui.Text("CrossUp");
+        } else {
+            ImGui.TextDisabled("CrossUp (not installed)");
+        }
 
         ImGui.SameLine();
         ImGuiExt.HelpMarker("CrossUp is a plugin that enables additional customization and features for the Cross Hotbar. If you have the CrossUp plugin installed, you can use HUD Manager layouts to manipulate your CrossUp settings.");

@@ -1,89 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Dalamud.NET.Sdk/13.0.0">
     <PropertyGroup>
-        <OutputType>Library</OutputType>
-        <TargetFramework>net9.0-windows</TargetFramework>
-        <Version>2.5.22.0</Version>
+        <Version>2.5.22.1</Version>
         <LangVersion>latest</LangVersion>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Nullable>enable</Nullable>
-        <Platforms>AnyCPU;x64</Platforms>
-		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     </PropertyGroup>
 
     <PropertyGroup>
-        <DalamudLibPath>$(AppData)\XIVLauncher\addon\Hooks\dev</DalamudLibPath>
-        <DebugType>full</DebugType>
-        <DefineConstants>DEBUG;xREADONLY;xLOCALCS</DefineConstants>
+        <DefineConstants>DEBUG;xREADONLY</DefineConstants>
     </PropertyGroup>
 
-	<ItemGroup>
-        <Reference Include="Dalamud">
-            <HintPath>$(DalamudLibPath)\Dalamud.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="ImGui.NET">
-            <HintPath>$(DalamudLibPath)\ImGui.NET.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="ImGuiScene">
-            <HintPath>$(DalamudLibPath)\ImGuiScene.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Lumina">
-            <HintPath>$(DalamudLibPath)\Lumina.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Lumina.Excel">
-            <HintPath>$(DalamudLibPath)\Lumina.Excel.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="Newtonsoft.Json">
-            <HintPath>$(DalamudLibPath)\Newtonsoft.Json.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
+    <ItemGroup>
+        <PackageReference Include="YamlDotNet" Version="12.3.1" GeneratePathProperty="true"/>
+        <None Include="$(PkgYamlDotNet)\lib\net45\YamlDotNet.dll">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
-    <Choose>
-        <When Condition="$(DefineConstants.Contains(';LOCALCS'))">
-            <ItemGroup>
-                <Reference Include="FFXIVClientStructs">
-                    <HintPath>$(ProjectDir)\..\..\FFXIVClientStructs\bin\Release\FFXIVClientStructs.dll</HintPath>
-                    <Private>true</Private>
-                </Reference>
-                <Reference Include="InteropGenerator.Runtime">
-                    <HintPath>$(ProjectDir)\..\..\FFXIVClientStructs\bin\Release\InteropGenerator.Runtime.dll</HintPath>
-                    <Private>true</Private>
-                </Reference>
-            </ItemGroup>
-        </When>
-        <Otherwise>
-            <ItemGroup>
-                <Reference Include="FFXIVClientStructs">
-                    <HintPath>$(DalamudLibPath)\FFXIVClientStructs.dll</HintPath>
-                    <Private>false</Private>
-                </Reference>
-                <Reference Include="InteropGenerator.Runtime">
-                    <HintPath>$(DalamudLibPath)\InteropGenerator.Runtime.dll</HintPath>
-                    <Private>false</Private>
-                </Reference>
-            </ItemGroup>
-        </Otherwise>
-    </Choose>
-
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="12.0.0" />
-        <PackageReference Include="YamlDotNet" Version="12.3.1" GeneratePathProperty="true" />
-    </ItemGroup>
-
-	<ItemGroup>
-		<None Include="$(PkgYamlDotNet)\lib\net45\YamlDotNet.dll">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
-    <ItemGroup>
-        <EmbeddedResource Include="help.yaml" />
+        <EmbeddedResource Include="help.yaml"/>
     </ItemGroup>
 </Project>

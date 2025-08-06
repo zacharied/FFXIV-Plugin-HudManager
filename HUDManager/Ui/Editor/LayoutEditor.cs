@@ -3,7 +3,7 @@ using HUDManager.Configuration;
 using HUDManager.Structs;
 using HUDManager.Tree;
 using HUDManager.Ui.Editor.Tabs;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

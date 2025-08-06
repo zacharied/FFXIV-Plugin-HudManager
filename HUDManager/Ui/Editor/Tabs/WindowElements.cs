@@ -1,7 +1,7 @@
 ﻿using Dalamud.Interface;
 using HUDManager.Configuration;
 using HUDManager.Structs;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Collections.Generic;
 using System.Numerics;

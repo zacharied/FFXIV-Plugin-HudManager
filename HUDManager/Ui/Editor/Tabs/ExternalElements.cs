@@ -1,6 +1,6 @@
 ﻿using HUDManager.Configuration;
 using HUDManager.Ui.Editor.Tabs.External;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System.Numerics;
 
 namespace HUDManager.Ui.Editor.Tabs;

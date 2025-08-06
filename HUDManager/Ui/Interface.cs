@@ -1,6 +1,6 @@
 ﻿using Dalamud.Interface.Utility;
 using HUDManager.Ui.Editor;
-using ImGuiNET;
+using Dalamud.Bindings.ImGui;
 using System;
 using System.Numerics;
 

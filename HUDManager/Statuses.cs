@@ -152,7 +152,7 @@ public class Statuses
     public static unsafe bool IsLevelSynced()
     {
         var uiPlayerState = UIState.Instance()->PlayerState;
-        return (uiPlayerState.IsLevelSynced & 1) > 0;
+        return uiPlayerState.IsLevelSynced;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
