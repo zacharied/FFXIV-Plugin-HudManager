@@ -14,12 +14,12 @@ namespace HUDManager;
 
 public sealed class Hud : IDisposable
 {
-    public const int InMemoryLayoutElements = 110; // Updated 7.2
+    public const int InMemoryLayoutElements = 111; // Updated 7.4
     // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
-    private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.2 (same since 5.45)
+    private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.4 (same since 5.45)
 
-    private const int DataSlotOffset = 0xD270; // Updated 7.2
-    private const int DataBaseLayoutOffset = 0x9490; // Updated 7.2
+    private const int DataSlotOffset = 0xD4B0; // Updated 7.4
+    private const int DataBaseLayoutOffset = 0x9490+(0x36*8); // Updated 7.4
     private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: unused except in debug window, not sure of exact structure)
 
     private StagingState? _stagingState;
@@ -76,7 +76,7 @@ public sealed class Hud : IDisposable
 
     public static unsafe IntPtr GetDataPointer()
     {
-        return (nint)AddonConfig.Instance()->ModuleData;
+        return (nint)AddonConfig.Instance()->ActiveDataSet;
     }
 
     internal static IntPtr GetDefaultLayoutPointer()
@@ -87,7 +87,7 @@ public sealed class Hud : IDisposable
     internal static unsafe IntPtr GetLayoutPointer(HudSlot slot)
     {
         var slotNum = (int)slot;
-        return (nint)AddonConfig.Instance()->ModuleData + DataBaseLayoutOffset + slotNum * LayoutSize;
+        return (nint)AddonConfig.Instance()->ActiveDataSet + DataBaseLayoutOffset + slotNum * LayoutSize;
     }
 
     public static HudSlot GetActiveHudSlot()
@@ -316,10 +316,10 @@ public sealed class Hud : IDisposable
 
     private void ApplyAllJobGaugeVisibility(SavedLayout effectiveLayout)
     {
-        if (Plugin.ClientState.LocalPlayer is null)
+        if (!Plugin.PlayerState.IsLoaded)
             return;
 
-        var jobIndex = Plugin.ClientState.LocalPlayer!.ClassJob.ValueNullable?.JobIndex ?? 0;
+        var jobIndex = Plugin.PlayerState.ClassJob.ValueNullable?.JobIndex ?? 0;
         foreach (var (kind, element) in effectiveLayout.Elements) {
             if (kind.ClassJob() is { } classJob && classJob.JobIndex == jobIndex && element[ElementComponent.Visibility]) {
                 ApplyJobGaugeVisibility(kind, element);

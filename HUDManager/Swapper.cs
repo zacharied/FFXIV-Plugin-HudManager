@@ -52,7 +52,7 @@ public sealed class Swapper : IDisposable
             return;
         }
 
-        var player = Plugin.ClientState.LocalPlayer;
+        var player = Plugin.ObjectTable.LocalPlayer; // TODO: Was ClientState.LocalPlayer, consider alternatives
         if (player == null) {
             return;
         }

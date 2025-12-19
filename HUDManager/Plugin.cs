@@ -22,6 +22,8 @@ public sealed class Plugin : IDalamudPlugin
     public ICommandManager CommandManager { get; }
     public IDataManager DataManager { get; }
     public IClientState ClientState { get; }
+    public IPlayerState PlayerState { get; }
+    public IObjectTable ObjectTable { get; }
     public ICondition Condition { get; }
     public IFramework Framework { get; }
     public ISigScanner SigScanner { get; }
@@ -52,6 +54,8 @@ public sealed class Plugin : IDalamudPlugin
         ICommandManager commandManager,
         IDataManager dataManager,
         IClientState clientState,
+        IPlayerState playerState,
+        IObjectTable objectTable,
         ICondition condition,
         IFramework framework,
         ISigScanner sigScanner,
@@ -66,6 +70,8 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager = commandManager;
         DataManager = dataManager;
         ClientState = clientState;
+        PlayerState = playerState;
+        ObjectTable = objectTable;
         Condition = condition;
         Framework = framework;
         SigScanner = sigScanner;

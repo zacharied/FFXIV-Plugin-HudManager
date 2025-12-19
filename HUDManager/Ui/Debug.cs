@@ -154,7 +154,7 @@ public class Debug
         }
 
         if (ImGui.Button("Print player status address")) {
-            Plugin.ChatGui.Print($"{Plugin.ClientState.LocalPlayer:X}");
+            Plugin.ChatGui.Print($"{Plugin.ObjectTable.LocalPlayer:X}");
         }
 
         if (ImGui.Button("Print Config")) {
@@ -164,7 +164,7 @@ public class Debug
         }
 
         if (ImGui.Button("FATE Status")) {
-            Plugin.Log.Information($"Level: {Plugin.ClientState.LocalPlayer?.Level}");
+            Plugin.Log.Information($"Level: {Plugin.ObjectTable.LocalPlayer?.Level}");
             Plugin.Log.Information($"IsInFate: {Statuses.IsInFate()}");
             Plugin.Log.Information($"IsLevelSynced: {Statuses.IsLevelSynced()}");
         }

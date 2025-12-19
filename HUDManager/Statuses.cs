@@ -52,7 +52,7 @@ public class Statuses
     {
         UpdateConditionHoldTimers();
 
-        var player = Plugin.ClientState.LocalPlayer;
+        var player = Plugin.ObjectTable.LocalPlayer; // TODO: Was ClientState.LocalPlayer, consider alternatives
         if (player is null) {
             return false;
         }
@@ -90,7 +90,7 @@ public class Statuses
     private (HudConditionMatch? layoutId, List<HudConditionMatch> layers) CalculateResultantLayout()
     {
         List<HudConditionMatch> layers = [];
-        var player = Plugin.ClientState.LocalPlayer;
+        var player = Plugin.ObjectTable.LocalPlayer; // TODO: Was ClientState.LocalPlayer, consider alternatives
         if (player == null) {
             return (null, layers);
         }
@@ -171,7 +171,7 @@ public class Statuses
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool IsRoleplaying(Plugin plugin, IPlayerCharacter? player)
     {
-        player ??= plugin.ClientState.LocalPlayer;
+        player ??= plugin.ObjectTable.LocalPlayer;
         if (player == null)
             return false;
         return ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address)->OnlineStatus == 22;
@@ -180,7 +180,7 @@ public class Statuses
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsWeaponOut(Plugin plugin, IPlayerCharacter? player)
     {
-        player ??= plugin.ClientState.LocalPlayer;
+        player ??= plugin.ObjectTable.LocalPlayer;
         if (player == null)
             return false;
         return (player.StatusFlags & StatusFlags.WeaponOut) != 0;
@@ -265,8 +265,8 @@ public class HudConditionMatch
     {
         transitioned = false;
 
-        var player = plugin.ClientState.LocalPlayer;
-        if (player is null) {
+
+        if (plugin.PlayerState.ClassJob.ValueNullable is not { } classJob) {
             plugin.Log.Warning("can't check job activation when player is null");
             return false;
         }
@@ -274,7 +274,7 @@ public class HudConditionMatch
         var statusMet = !Status.HasValue || plugin.Statuses.Condition[Status.Value];
         var customConditionMet = CustomCondition?.IsMet(plugin) ?? true;
         var jobMet = ClassJobCategory is null
-            || ClassJobCategory.Value.IsActivated(plugin.ClientState.LocalPlayer!.ClassJob.Value);
+            || ClassJobCategory.Value.IsActivated(classJob);
 
         var newValue = statusMet && customConditionMet && jobMet;
         if (LastValue != newValue) {

@@ -362,8 +362,7 @@ public class Swaps
             return;
         }
 
-        var player = Plugin.ClientState.LocalPlayer;
-        if (player == null || !Plugin.Config.SwapsEnabled) {
+        if (Plugin.ObjectTable.LocalPlayer == null || !Plugin.Config.SwapsEnabled) {
             return;
         }
 

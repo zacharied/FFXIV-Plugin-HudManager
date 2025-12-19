@@ -53,7 +53,7 @@ public static class Util
 
     public static uint GetPlayerJobId(Plugin plugin)
     {
-        return plugin.ClientState.LocalPlayer?.ClassJob.RowId ?? uint.MaxValue;
+        return plugin.PlayerState.ClassJob.ValueNullable?.RowId ?? uint.MaxValue;
     }
 
     private static readonly Dictionary<uint, string> JobIdToEnglishAbbreviation = new()
