@@ -33,7 +33,7 @@ public sealed class Commands : IDisposable
     private void OnCommand(string command, string args)
     {
         if (string.IsNullOrWhiteSpace(args)) {
-            Plugin.Ui.OpenConfig();
+            Plugin.Ui.Open();
             return;
         }
 

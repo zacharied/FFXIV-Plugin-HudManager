@@ -1,4 +1,5 @@
 ﻿using Dalamud.Game;
+using Dalamud.Interface.Windowing;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using HUDManager.Configuration;
@@ -36,6 +37,7 @@ public sealed class Plugin : IDalamudPlugin
     public Swapper Swapper { get; }
     private Commands Commands { get; }
 
+    public WindowSystem WindowSystem { get; set; }
     public Interface Ui { get; }
     public Hud Hud { get; }
     public Statuses Statuses { get; }
@@ -107,6 +109,7 @@ public sealed class Plugin : IDalamudPlugin
             Log.Warning("Unable to read help file");
         }
 
+        WindowSystem = new WindowSystem("HUD Manager");
         Ui = new Interface(this);
         Hud = new Hud(this);
         Statuses = new Statuses(this);
@@ -129,13 +132,16 @@ public sealed class Plugin : IDalamudPlugin
             Config.Save();
         }
 
+        WindowSystem.AddWindow(Ui);
+        Interface.UiBuilder.Draw += WindowSystem.Draw;
+        Interface.UiBuilder.OpenConfigUi += Ui.Open;
+
         Ready = true;
     }
 
     public void Dispose()
     {
         Commands.Dispose();
-        Ui.Dispose();
         Swapper.Dispose();
         PetHotbar.Dispose();
         Hud.Dispose();

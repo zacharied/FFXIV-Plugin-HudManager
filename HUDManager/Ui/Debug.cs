@@ -2,6 +2,7 @@
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using HUDManager.Structs;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,6 @@ using System.Runtime.InteropServices;
 
 namespace HUDManager.Ui;
 
-#if DEBUG
 public class Debug
 {
     private Plugin Plugin { get; }
@@ -24,11 +24,9 @@ public class Debug
         Plugin = plugin;
     }
 
-    internal void Draw()
-    {
-        if (!ImGui.BeginTabItem("Debug")) {
-            return;
-        }
+    internal void Draw() {
+        using var tab = ImRaii.TabItem("Debug");
+        if (!tab) return;
 
         ImGui.TextUnformatted("Print layout pointer address");
 
@@ -175,8 +173,6 @@ public class Debug
                 s += $"[{row.RowId}] = \"{row.Abbreviation}\",\n";
             Plugin.ChatGui.Print(s);
         }
-
-        ImGui.EndTabItem();
     }
 
     private static List<RawElement> GetUnknownElements()
@@ -222,4 +218,3 @@ public class Debug
         }
     }
 }
-#endif
