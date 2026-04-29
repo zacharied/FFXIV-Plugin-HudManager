@@ -25,7 +25,7 @@ public sealed class Swapper : IDisposable
         Plugin.ClientState.TerritoryChanged -= OnTerritoryChange;
     }
 
-    private void OnTerritoryChange(ushort tid)
+    private void OnTerritoryChange(uint u)
     {
         if (!Plugin.Ready) {
             return;

@@ -14,12 +14,12 @@ namespace HUDManager;
 
 public sealed class Hud : IDisposable
 {
-    public const int InMemoryLayoutElements = 111; // Updated 7.4
+    public const int InMemoryLayoutElements = 112; // Updated 7.5
     // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
     private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.4 (same since 5.45)
 
-    private const int DataSlotOffset = 0xD4B0; // Updated 7.4
-    private const int DataBaseLayoutOffset = 0x9490+(0x36*8); // Updated 7.4
+    private const int DataSlotOffset = 0xDC20;          // Updated 7.5
+    private const int DataBaseLayoutOffset = 0x9D20;    // Updated 7.5
     private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: unused except in debug window, not sure of exact structure)
 
     private StagingState? _stagingState;
