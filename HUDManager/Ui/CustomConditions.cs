@@ -501,7 +501,7 @@ public class CustomConditions
             ImGui.BeginListBox("All zones", listBoxSize);
             foreach (var (zone, i) in _allZones
                          .Select((z, i) => (z, i))
-                         .Where(zi => zi.z.Name.StartsWith(_zoneNameFilterInput, StringComparison.InvariantCultureIgnoreCase))
+                         .Where(zi => zi.z.Name.Contains(_zoneNameFilterInput, StringComparison.InvariantCultureIgnoreCase))
                          .ExceptBy(activeCondition.MapIds, zi => zi.z.MapId)) {
                 if (ImGui.Selectable($"{zone.Name}##selected-all-{i}", _allZonesSelection == i)) {
                     _allZonesSelection = i;

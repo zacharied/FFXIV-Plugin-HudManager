@@ -24,12 +24,27 @@ internal class Map
 
     public static List<Map> GetZoneMaps(IDataManager data)
         => GetSheet(data)
-            .Where(map => string.IsNullOrWhiteSpace(map.PlaceNameSub.Value.Name.ToString()))
-            .Where(map => !string.IsNullOrWhiteSpace(map.PlaceName.Value.ToString()))
+            .Where(IsCandidateMap)
             .DistinctBy(map => map.PlaceName.Value!.Name.ToString())
             .Select(map => new Map(map.PlaceName.Value!.Name.ExtractText(), map.RowId))
-            .Skip(1)
             .ToList();
+
+    private static bool IsCandidateMap(Lumina.Excel.Sheets.Map map) {
+        if (map.RowId == 0)
+            return false;
+
+        var placeName = map.PlaceName.Value.Name.ToString();
+        if (string.IsNullOrWhiteSpace(placeName))
+            return false;
+
+        var placeNameSub = map.PlaceNameSub.Value.Name.ToString();
+        if (string.IsNullOrWhiteSpace(placeNameSub))
+            return true;
+        if (placeName == placeNameSub)
+            return true;
+
+        return false;
+    }
 
     public static uint? GetRootZoneId(IDataManager data, uint territoryType)
     {
