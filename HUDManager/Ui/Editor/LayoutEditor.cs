@@ -4,6 +4,7 @@ using HUDManager.Structs;
 using HUDManager.Tree;
 using HUDManager.Ui.Editor.Tabs;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Components;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -217,7 +218,7 @@ public class LayoutEditor
         SetUpOptionsPopup(ref update);
 
         ImGui.Indent();
-        if (ImGuiExt.IconButton(FontAwesomeIcon.Cog)) {
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Cog, "Positioning settings")) {
             ImGui.OpenPopup(Popups.LayoutEditorOptions);
         }
 

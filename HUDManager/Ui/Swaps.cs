@@ -1,5 +1,6 @@
 ﻿using Dalamud.Interface;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Components;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -312,7 +313,7 @@ public class Swaps
 
         ImGui.Indent();
 
-        if (ImGuiExt.IconButton(FontAwesomeIcon.Flag, "customconditions")) {
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Flag, "Custom conditions")) {
             _customConditionsMenu.isOpen = true;
         } else if (ImGui.IsItemHovered()) {
             ImGui.SetTooltip("Open the Custom Conditions menu");

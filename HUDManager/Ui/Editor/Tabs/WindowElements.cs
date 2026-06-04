@@ -2,6 +2,7 @@
 using HUDManager.Configuration;
 using HUDManager.Structs;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Components;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -19,7 +20,7 @@ public class WindowElements
 
     internal void Draw(SavedLayout layout, ref bool update)
     {
-        if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "uimanager-add-window")) {
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, "Add window##uimanager-add-window")) {
             ImGui.OpenPopup(Popups.AddWindow);
         }
 

@@ -45,7 +45,7 @@ public class HudElements
 
     internal void Draw(SavedLayout layout, ref bool update)
     {
-        if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "uimanager-add-hud-element")) {
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, "Add element##uimanager-add-hud-element")) {
             ImGui.OpenPopup(Popups.AddElement);
         }
 
