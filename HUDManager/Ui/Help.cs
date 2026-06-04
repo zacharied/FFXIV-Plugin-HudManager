@@ -1,4 +1,5 @@
 ﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 
 namespace HUDManager.Ui;
 
@@ -13,9 +14,8 @@ public class Help
 
     internal void Draw(ref bool update)
     {
-        if (!ImGui.BeginTabItem("Help")) {
-            return;
-        }
+        using var tab = ImRaii.TabItem("Help");
+        if (!tab) return;
 
         var hideHelpPanels = Plugin.Config.DisableHelpPanels;
         if (ImGui.Checkbox("Hide help text in plugin menus", ref hideHelpPanels)) {
@@ -23,21 +23,20 @@ public class Help
             update = true;
         }
 
-        ImGui.PushTextWrapPos();
+        using var wrapPos = ImRaii.TextWrapPos(0f);
 
         void DrawHelp(HelpEntry help)
         {
             if (ImGui.CollapsingHeader(help.Name)) {
                 if (help.Description is not null) {
-                    ImGui.TextUnformatted(help.Description.Replace("\n", "\n\n"));
+                    ImGui.Text(help.Description.Replace("\n", "\n\n"));
                 }
 
                 if (help.Help is not null) {
                     ImGui.Spacing();
                     foreach (var subHelp in help.Help) {
-                        ImGui.Indent();
+                        using var indent = ImRaii.PushIndent();
                         DrawHelp(subHelp);
-                        ImGui.Unindent();
                     }
                     ImGui.Spacing();
                 }
@@ -47,9 +46,5 @@ public class Help
         foreach (var entry in Plugin.Help.Help) {
             DrawHelp(entry);
         }
-
-        ImGui.PopTextWrapPos();
-
-        ImGui.EndTabItem();
     }
 }

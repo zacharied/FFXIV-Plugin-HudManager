@@ -5,6 +5,8 @@ using Dalamud.Interface.Utility;
 using Dalamud.Plugin.Services;
 using HUDManager.Configuration;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
+using Dalamud.Interface.Windowing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +14,7 @@ using System.Numerics;
 
 namespace HUDManager.Ui;
 
-public class CustomConditions
+public class CustomConditions : Dalamud.Interface.Windowing.Window
 {
     private static uint SwapperSettingsPaneHeight => (uint)(120 * ImGuiHelpers.GlobalScale);
 
@@ -29,11 +31,17 @@ public class CustomConditions
     private readonly DrawConditionEditMenu_InZone _zoneMenu;
     private readonly DrawConditionEditMenu_MultiCondition _menuMulti;
 
-    public CustomConditions(Plugin plugin)
-    {
+    public CustomConditions(Plugin plugin) : base("[HUD Manager] Custom Conditions", ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking) {
         Plugin = plugin;
         _zoneMenu = new DrawConditionEditMenu_InZone(Plugin.DataManager);
         _menuMulti = new DrawConditionEditMenu_MultiCondition(Plugin);
+
+        Size = new Vector2(605, 700);
+        SizeCondition = ImGuiCond.FirstUseEver;
+        SizeConstraints = new WindowSizeConstraints {
+            MinimumSize = new Vector2(605, 700),
+            MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
+        };
     }
 
     private string DefaultConditionName()
@@ -50,25 +58,15 @@ public class CustomConditions
         return DefaultConditionPattern();
     }
 
-    public void Draw(ref bool windowOpen)
+    public override void Draw()
     {
         var update = false;
-
-        ImGui.SetNextWindowSize(ImGuiHelpers.ScaledVector2(605, 700), ImGuiCond.FirstUseEver);
-        ImGui.SetNextWindowSizeConstraints(ImGuiHelpers.ScaledVector2(605, 700), new Vector2(int.MaxValue, int.MaxValue));
-
-        if (!ImGui.Begin("[HUD Manager] Custom Conditions", ref windowOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoDocking)) {
-            ImGui.End();
-            return;
-        }
 
         DrawConditionSelectorPane(ref update);
 
         ImGui.SameLine();
 
         DrawConditionEditMenu(ref update);
-
-        ImGui.End();
 
         if (update) {
             Plugin.Config.Save();
@@ -82,44 +80,47 @@ public class CustomConditions
 
         var paneWidth = 170f * ImGuiHelpers.GlobalScale;
 
-        ImGui.BeginGroup();
+        using var group = ImRaii.Group();
 
         var items = Plugin.Config.CustomConditions.Select(c => c.Name).ToArray();
-        ImGui.BeginListBox("##custom-condition-listbox", new Vector2(paneWidth, -1 - ImGui.GetTextLineHeight() * 2));
-        foreach (var (cond, i) in Plugin.Config.CustomConditions.Select((item, i) => (item, i))) {
-            if (i == _ui.editIndex) {
-                if (ImGui.InputText($"##custom-condition-name-{i}", ref _ui.editBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue)
-                    || ImGui.IsItemDeactivated()) {
-                    // save users from themselves
-                    _ui.editBuf = _ui.editBuf
-                        .Trim()
-                        .Replace(Commands.QuoteCharacter, "");
 
-                    // This kind of check should really be enforced on the config level but whatever.
-                    if (!ConditionNameIsValid(_ui.editBuf)) {
-                        cond.Name = ConditionNameIsValid(_ui.previousName) ? _ui.previousName! : DefaultConditionName();
+        using (var listBox = ImRaii.ListBox("##custom-condition-listbox", new Vector2(paneWidth, -1 - ImGui.GetTextLineHeight() * 2))) {
+            if (listBox) {
+                foreach (var (cond, i) in Plugin.Config.CustomConditions.Select((item, i) => (item, i))) {
+                    if (i == _ui.editIndex) {
+                        if (ImGui.InputText($"##custom-condition-name-{i}", ref _ui.editBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue)
+                            || ImGui.IsItemDeactivated()) {
+                            // save users from themselves
+                            _ui.editBuf = _ui.editBuf
+                                .Trim()
+                                .Replace(Commands.QuoteCharacter, "");
+
+                            // This kind of check should really be enforced on the config level but whatever.
+                            if (!ConditionNameIsValid(_ui.editBuf)) {
+                                cond.Name = ConditionNameIsValid(_ui.previousName) ? _ui.previousName! : DefaultConditionName();
+                            } else {
+                                cond.Name = _ui.editBuf;
+                            }
+
+                            _ui.editIndex = -1;
+                            _ui.editBuf = string.Empty;
+                            _ui.previousName = null;
+                            update = true;
+                        }
+
+                        if (_ui.focusTextEdit) {
+                            ImGui.SetKeyboardFocusHere(-1);
+                            _ui.focusTextEdit = false;
+                        }
                     } else {
-                        cond.Name = _ui.editBuf;
+                        if (ImGui.Selectable($"{cond.Name}##custom-condition-selectable", _ui.selectedIndex == i)) {
+                            _menuMulti.ClearEditing();
+                            _ui.selectedIndex = i;
+                        }
                     }
-
-                    _ui.editIndex = -1;
-                    _ui.editBuf = string.Empty;
-                    _ui.previousName = null;
-                    update = true;
-                }
-
-                if (_ui.focusTextEdit) {
-                    ImGui.SetKeyboardFocusHere(-1);
-                    _ui.focusTextEdit = false;
-                }
-            } else {
-                if (ImGui.Selectable($"{cond.Name}##custom-condition-selectable", _ui.selectedIndex == i)) {
-                    _menuMulti.ClearEditing();
-                    _ui.selectedIndex = i;
                 }
             }
         }
-        ImGui.EndListBox();
 
         if (ImGuiExt.IconButton(FontAwesomeIcon.Plus)) {
             Plugin.Config.CustomConditions.Add(new CustomCondition("<TEMP>", Plugin));
@@ -174,112 +175,101 @@ public class CustomConditions
         ImGuiExt.HoverTooltip("Delete (hold Control to allow)");
 
         var _b = true;
-        if (ImGui.BeginPopupModal($"{Popups.CannotRemoveCustomCondition}", ref _b, ImGuiWindowFlags.AlwaysAutoResize)) {
-            ImGui.Text("There are swap conditions that use this custom condition.");
+        using (var popup = ImRaii.PopupModal($"{Popups.CannotRemoveCustomCondition}", ref _b, ImGuiWindowFlags.AlwaysAutoResize)) {
+            if (popup) {
+                ImGui.Text("There are swap conditions that use this custom condition.");
 
-            if (ImGui.Button("OK##custom-condition-modal-ok")) {
-                ImGui.CloseCurrentPopup();
+                if (ImGui.Button("OK##custom-condition-modal-ok")) {
+                    ImGui.CloseCurrentPopup();
+                }
             }
-
-            ImGui.EndPopup();
         }
-
-        ImGui.EndGroup();
     }
 
     private void DrawConditionEditMenu(ref bool update)
     {
-        ImGui.BeginChild("##condition-menu-child-edit-condition", new Vector2(-1, -1), true);
+        using var editChild = ImRaii.Child("##condition-menu-child-edit-condition", new Vector2(-1, -1), true);
 
         if (ActiveCondition is null) {
             ImGui.Text("Select a custom condition on the left to edit");
-            ImGui.EndChild();
             return;
         }
 
         ImGui.Separator();
 
-        if (ImGui.BeginCombo("Condition type", ActiveCondition.ConditionType.DisplayName())) {
-            foreach (var type in Enum.GetValues(typeof(CustomConditionType))
-                         .Cast<CustomConditionType>()
-                         .OrderBy(t => t.DisplayOrder())) {
-                if (ImGui.Selectable(type.DisplayName())) {
-                    ActiveCondition.ConditionType = type;
-                    update = true;
+        using (var combo = ImRaii.Combo("Condition type", ActiveCondition.ConditionType.DisplayName())) {
+            if (combo) {
+                foreach (var type in Enum.GetValues(typeof(CustomConditionType))
+                             .Cast<CustomConditionType>()
+                             .OrderBy(t => t.DisplayOrder())) {
+                    if (ImGui.Selectable(type.DisplayName())) {
+                        ActiveCondition.ConditionType = type;
+                        update = true;
+                    }
                 }
             }
-
-            ImGui.EndCombo();
         }
 
         ImGui.Spacing();
 
         var valueChildBgColor = ActiveCondition.IsMet(Plugin) ? ImGuiColors.HealerGreen : ImGuiColors.DPSRed;
-        ImGui.PushStyleColor(ImGuiCol.ChildBg, valueChildBgColor - new Vector4(0, 0, 0, 0.82f));
-        if (ImGui.BeginChild("##condition-edit-display-value-child",
-                new Vector2(-1, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemInnerSpacing.Y * 2 + 4), true,
-                ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs)) {
-            ImGui.Text("Current value:");
-            ImGui.SameLine();
 
-            var state = ActiveCondition.IpcState(Plugin);
-            if (state is >= ConditionState.ErrorPluginUnavailable) {
-                var text = state switch
-                {
-                    ConditionState.ErrorPluginUnavailable => "× QoL Bar not loaded",
-                    ConditionState.ErrorConditionRemoved => "× Condition removed",
-                    ConditionState.ErrorConditionNotFound => "× Condition not found",
-                    ConditionState.ErrorUnknown => "× Error getting condition state",
-                    _ => string.Empty,
-                };
-                ImGui.TextColored(ImGuiColors.ParsedPurple, text);
-            } else {
-                if (ActiveCondition.IsMet(Plugin)) {
-                    ImGui.TextColored(ImGuiColors.ParsedGreen, "✓ TRUE");
+        using (ImRaii.PushColor(ImGuiCol.ChildBg, valueChildBgColor - new Vector4(0, 0, 0, 0.82f)))
+        using (var child = ImRaii.Child("##condition-edit-display-value-child", new Vector2(-1, ImGui.GetTextLineHeightWithSpacing() + ImGui.GetStyle().ItemInnerSpacing.Y * 2 + 4), true, ImGuiWindowFlags.NoDecoration | ImGuiWindowFlags.NoInputs)) {
+            if (child) {
+                ImGui.Text("Current value:");
+                ImGui.SameLine();
+
+                var state = ActiveCondition.IpcState(Plugin);
+                if (state is >= ConditionState.ErrorPluginUnavailable) {
+                    var text = state switch {
+                        ConditionState.ErrorPluginUnavailable => "× QoL Bar not loaded",
+                        ConditionState.ErrorConditionRemoved => "× Condition removed",
+                        ConditionState.ErrorConditionNotFound => "× Condition not found",
+                        ConditionState.ErrorUnknown => "× Error getting condition state",
+                        _ => string.Empty,
+                    };
+                    ImGui.TextColored(ImGuiColors.ParsedPurple, text);
                 } else {
-                    ImGui.TextColored(ImGuiColors.DalamudRed, "× FALSE");
+                    if (ActiveCondition.IsMet(Plugin)) {
+                        ImGui.TextColored(ImGuiColors.ParsedGreen, "✓ TRUE");
+                    } else {
+                        ImGui.TextColored(ImGuiColors.DalamudRed, "× FALSE");
+                    }
                 }
             }
-
-            ImGui.EndChild();
         }
-        ImGui.PopStyleColor();
 
         ImGui.Spacing();
 
-        if (ImGui.BeginChild("##condition-menu-child-edit-condition-settings-main",
-                new Vector2(-1, ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeight() - SwapperSettingsPaneHeight),
-                false)) {
-            ImGui.Spacing();
-            switch (ActiveCondition.ConditionType) {
-                case CustomConditionType.ConsoleToggle:
-                    DrawConditionEditMenu_ConsoleCommand();
-                    break;
-                case CustomConditionType.HoldToActivate:
-                    DrawConditionEditMenu_Keybind(ref update);
-                    break;
-                case CustomConditionType.InZone:
-                    _zoneMenu.Draw(ActiveCondition, ref update);
-                    break;
-                case CustomConditionType.QoLBarCondition:
-                    DrawConditionEditMenu_QoLBar(ref update);
-                    break;
-                case CustomConditionType.MultiCondition:
-                    _menuMulti.Draw(ActiveCondition, ref update);
-                    break;
+        using (var child = ImRaii.Child("##condition-menu-child-edit-condition-settings-main", new Vector2(-1, ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeight() - SwapperSettingsPaneHeight))) {
+            if (child) {
+                ImGui.Spacing();
+                switch (ActiveCondition.ConditionType) {
+                    case CustomConditionType.ConsoleToggle:
+                        DrawConditionEditMenu_ConsoleCommand();
+                        break;
+                    case CustomConditionType.HoldToActivate:
+                        DrawConditionEditMenu_Keybind(ref update);
+                        break;
+                    case CustomConditionType.InZone:
+                        _zoneMenu.Draw(ActiveCondition, ref update);
+                        break;
+                    case CustomConditionType.QoLBarCondition:
+                        DrawConditionEditMenu_QoLBar(ref update);
+                        break;
+                    case CustomConditionType.MultiCondition:
+                        _menuMulti.Draw(ActiveCondition, ref update);
+                        break;
+                }
             }
-
-            ImGui.EndChild();
         }
 
-        if (ImGui.BeginChild("##condition-menu-child-sub-settings", new Vector2(-1, SwapperSettingsPaneHeight), true)) {
-            DrawConditionEditMenuSwapSettings(ref update);
-
-            ImGui.EndChild();
+        using (var child = ImRaii.Child("##condition-menu-child-sub-settings", new Vector2(-1, SwapperSettingsPaneHeight), true)) {
+            if (child) {
+                DrawConditionEditMenuSwapSettings(ref update);
+            }
         }
-
-        ImGui.EndChild();
-
     }
 
     private void DrawConditionEditMenuSwapSettings(ref bool update)
@@ -303,15 +293,15 @@ public class CustomConditions
         if (enableHoldTime) {
             var holdTimeInput = ActiveCondition.HoldTime;
 
-            ImGui.Indent();
-            ImGui.PushItemWidth(180);
-            if (ImGui.InputFloat("Delay duration", ref holdTimeInput, 0.05f, 0.2f, "%.2f")) {
-                if (holdTimeInput > 0) {
-                    ActiveCondition.HoldTime = Math.Max(0, holdTimeInput);
-                    update = true;
+            using (ImRaii.PushIndent())
+            using (ImRaii.ItemWidth(180)) {
+                if (ImGui.InputFloat("Delay duration", ref holdTimeInput, 0.05f, 0.2f, "%.2f")) {
+                    if (holdTimeInput > 0) {
+                        ActiveCondition.HoldTime = Math.Max(0, holdTimeInput);
+                        update = true;
+                    }
                 }
             }
-            ImGui.PopItemWidth();
         }
     }
 
@@ -349,33 +339,34 @@ public class CustomConditions
         if (ActiveCondition is null)
             return;
 
-        ImGui.PushItemWidth(135 * ImGuiHelpers.GlobalScale);
+        using var itemWidth = ImRaii.ItemWidth(135 * ImGuiHelpers.GlobalScale);
+
 
         // Modifier key
         var modifierKeyDisplay = ActiveCondition.ModifierKeyCode.GetFancyName();
-        if (ImGui.BeginCombo("Modifier##custom-condition-modifier-key", modifierKeyDisplay)) {
-            foreach (var k in Plugin.Keybinder.ModifierKeys) {
-                if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-modifier-key-op")) {
-                    ActiveCondition.ModifierKeyCode = k;
-                    update = true;
+        using (var combo = ImRaii.Combo("Modifier##custom-condition-modifier-key", modifierKeyDisplay)) {
+            if (combo) {
+                foreach (var k in Plugin.Keybinder.ModifierKeys) {
+                    if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-modifier-key-op")) {
+                        ActiveCondition.ModifierKeyCode = k;
+                        update = true;
+                    }
                 }
             }
-            ImGui.EndCombo();
         }
 
         // Input key
         var inputKeyDisplay = ActiveCondition.KeyCode.GetFancyName();
-        if (ImGui.BeginCombo("Keybind##custom-condition-input-key", inputKeyDisplay)) {
-            foreach (var k in Plugin.Keybinder.InputKeys) {
-                if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-input-key-op")) {
-                    ActiveCondition.KeyCode = k;
-                    update = true;
+        using (var combo = ImRaii.Combo("Keybind##custom-condition-input-key", inputKeyDisplay)) {
+            if (combo) {
+                foreach (var k in Plugin.Keybinder.InputKeys) {
+                    if (ImGui.Selectable($"{k.GetFancyName()}##custom-condition-input-key-op")) {
+                        ActiveCondition.KeyCode = k;
+                        update = true;
+                    }
                 }
             }
-            ImGui.EndCombo();
         }
-
-        ImGui.PopItemWidth();
     }
 
     private void DrawConditionEditMenu_QoLBar(ref bool update)
@@ -384,7 +375,7 @@ public class CustomConditions
             return;
 
         if (Plugin.QoLBarIpc.Enabled) {
-            ImGui.PushItemWidth(250 * ImGuiHelpers.GlobalScale);
+            using var itemWidth = ImRaii.ItemWidth(250 * ImGuiHelpers.GlobalScale);
 
             var selected = ActiveCondition.ExternalIndex;
             var conditions = Plugin.QoLBarIpc.GetConditionSets();
@@ -396,16 +387,17 @@ public class CustomConditions
                 selectedName = ActiveCondition.ExternalIndex < 0 ? "No condition" : $"[{selected}] {conditions[selected]}";
             }
 
-            if (ImGui.BeginCombo("Condition##qol-bar-condition", selectedName)) {
-                for (var i = 0; i < conditions.Length; i++) {
-                    var name = $"[{i}] {conditions[i]}";
-                    if (ImGui.Selectable($"{name}##custom-condition-modifier-key-op")) {
-                        ActiveCondition.ExternalIndex = i;
-                        Plugin.QoLBarIpc.ClearCache();
-                        update = true;
+            using (var combo = ImRaii.Combo("Condition##qol-bar-condition", selectedName)) {
+                if (combo) {
+                    for (var i = 0; i < conditions.Length; i++) {
+                        var name = $"[{i}] {conditions[i]}";
+                        if (ImGui.Selectable($"{name}##custom-condition-modifier-key-op")) {
+                            ActiveCondition.ExternalIndex = i;
+                            Plugin.QoLBarIpc.ClearCache();
+                            update = true;
+                        }
                     }
                 }
-                ImGui.EndCombo();
             }
 
             var negate = ActiveCondition.Negate;
@@ -415,7 +407,6 @@ public class CustomConditions
                 update = true;
             }
 
-            ImGui.PopItemWidth();
         }
 
         ImGuiExt.VerticalSpace();
@@ -461,14 +452,16 @@ public class CustomConditions
 
             var listBoxSize = new Vector2(ImGui.GetContentRegionAvail().X - 100 * ImGuiHelpers.GlobalScale,
                 (ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeight() * 5) / 2);
-            ImGui.BeginListBox("Selected zones", listBoxSize);
-            var conditionZoneItems = activeCondition.MapIds.Select(mid => new ZoneListData(mid, _allZones.First(zone => zone.MapId == mid).Name));
-            foreach (var (zone, i) in conditionZoneItems.Select((z, i) => (z, i))) {
-                if (ImGui.Selectable($"{zone.Name}##selected-{i}", _selectedZonesSelection == i)) {
-                    _selectedZonesSelection = i;
+            using (var listBox = ImRaii.ListBox("Selected zones", listBoxSize)) {
+                if (listBox) {
+                    var conditionZoneItems = activeCondition.MapIds.Select(mid => new ZoneListData(mid, _allZones.First(zone => zone.MapId == mid).Name));
+                    foreach (var (zone, i) in conditionZoneItems.Select((z, i) => (z, i))) {
+                        if (ImGui.Selectable($"{zone.Name}##selected-{i}", _selectedZonesSelection == i)) {
+                            _selectedZonesSelection = i;
+                        }
+                    }
                 }
             }
-            ImGui.EndListBox();
 
             ImGui.Separator();
 
@@ -492,22 +485,24 @@ public class CustomConditions
 
             ImGui.Separator();
 
-            ImGui.PushItemWidth(listBoxSize.X);
-            if (ImGui.InputText("Filter", ref _zoneNameFilterInput, 256)) {
-                _allZonesSelection = -1;
-            }
-            ImGui.PopItemWidth();
-
-            ImGui.BeginListBox("All zones", listBoxSize);
-            foreach (var (zone, i) in _allZones
-                         .Select((z, i) => (z, i))
-                         .Where(zi => zi.z.Name.Contains(_zoneNameFilterInput, StringComparison.InvariantCultureIgnoreCase))
-                         .ExceptBy(activeCondition.MapIds, zi => zi.z.MapId)) {
-                if (ImGui.Selectable($"{zone.Name}##selected-all-{i}", _allZonesSelection == i)) {
-                    _allZonesSelection = i;
+            using (ImRaii.ItemWidth(listBoxSize.X)) {
+                if (ImGui.InputText("Filter", ref _zoneNameFilterInput, 256)) {
+                    _allZonesSelection = -1;
                 }
             }
-            ImGui.EndListBox();
+
+            using (var listBox = ImRaii.ListBox("All zones", listBoxSize)) {
+                if (listBox) {
+                    foreach (var (zone, i) in _allZones
+                                 .Select((z, i) => (z, i))
+                                 .Where(zi => zi.z.Name.Contains(_zoneNameFilterInput, StringComparison.InvariantCultureIgnoreCase))
+                                 .ExceptBy(activeCondition.MapIds, zi => zi.z.MapId)) {
+                        if (ImGui.Selectable($"{zone.Name}##selected-all-{i}", _allZonesSelection == i)) {
+                            _allZonesSelection = i;
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -547,11 +542,16 @@ public class CustomConditions
             if (activeCondition.ConditionType is not CustomConditionType.MultiCondition)
                 return;
 
-            const ImGuiTableFlags flags = ImGuiTableFlags.PadOuterX
-                | ImGuiTableFlags.RowBg;
+            var usedConditionLoopPopup = false;
 
-            if (!ImGui.BeginTable("custom-condition-multi-table", 4, flags))
-                return;
+            DrawTable(activeCondition, ref usedConditionLoopPopup, ref update);
+
+            DrawOthers(activeCondition, usedConditionLoopPopup, ref update);
+        }
+
+        public void DrawTable(CustomCondition activeCondition, ref bool usedConditionLoopPopup, ref bool update) {
+            using var table = ImRaii.Table("custom-condition-multi-table", 4, ImGuiTableFlags.PadOuterX | ImGuiTableFlags.RowBg);
+            if (!table) return;
 
             ImGui.TableSetupColumn("##junction", ImGuiTableColumnFlags.WidthFixed, 57 * ImGuiHelpers.GlobalScale);
             ImGui.TableSetupColumn("NOT", ImGuiTableColumnFlags.WidthFixed, 30 * ImGuiHelpers.GlobalScale);
@@ -562,8 +562,6 @@ public class CustomConditions
             var workingConditions = new List<MultiCondition.MultiConditionItem>(activeCondition.MultiCondition.AllItems);
             if (_ui.editingConditionIndex == workingConditions.Count)
                 workingConditions.Add(_ui.editingCondition!);
-
-            var usedConditionLoopPopup = false;
 
             foreach (var (cond, i) in workingConditions.Select((cond, i) => (cond, i))) {
                 ImGui.TableNextRow();
@@ -576,114 +574,112 @@ public class CustomConditions
 
                     // Column: Junction
 
-                    ImGui.PushItemWidth(-1);
-                    if (i > 0 &&
-                        ImGui.BeginCombo($"##multicond-edit-junction-{i}", _ui.editingCondition!.Type.UiName())) {
-                        foreach (var junc in Enum.GetValues<MultiConditionJunction>()) {
-                            if (ImGui.Selectable(junc.UiName())) {
-                                _ui.editingCondition!.Type = junc;
-                                update = true;
-                            }
-                        }
-
-                        ImGui.EndCombo();
-                    }
-
-                    ImGui.TableNextColumn();
-
-                    // Column: NOT
-                    if (ImGui.Checkbox($"##multicondition-negation-{i}", ref _ui.editingCondition.Negation))
-                        update = true;
-
-                    ImGui.TableNextColumn();
-
-                    // Column: Condition
-
-                    if (_ui.editingCondition.Condition.CurrentType == typeof(ClassJobCategoryId))
-                        ImGui.PushItemWidth(ImGui.GetColumnWidth() / 2);
-                    else
-                        ImGui.PushItemWidth(ImGui.GetColumnWidth());
-
-                    if (ImGui.BeginCombo($"##multicond-edit-condition-{i}", _ui.editingCondition.Condition.UiName(_plugin, partial: _ui.editingConditionIndex >= 0))) {
-                        foreach (Status status in Enum.GetValues(typeof(Status))) {
-                            if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
-                                _ui.editingCondition.Condition = new CustomConditionUnion(status);
-                                update = true;
-                            }
-                        }
-
-                        foreach (var custom in _plugin.Config.CustomConditions) {
-                            if (ImGui.Selectable($"{custom.DisplayName}##condition-edit-status")) {
-                                var prevCondition = _ui.editingCondition.Condition;
-
-                                _ui.editingCondition.Condition = new CustomConditionUnion(custom);
-
-                                if (!_ui.editingCondition.Condition.Custom!.MultiCondition.Validate()) {
-                                    // Revert to previous condition
-                                    _ui.editingCondition.Condition = prevCondition;
-                                    usedConditionLoopPopup = true;
+                    using (ImRaii.ItemWidth(-1)) {
+                        if (i > 0) {
+                            using (var combo = ImRaii.Combo($"##multicond-edit-junction-{i}", _ui.editingCondition!.Type.UiName())) {
+                                if (combo) {
+                                    foreach (var junc in Enum.GetValues<MultiConditionJunction>()) {
+                                        if (ImGui.Selectable(junc.UiName())) {
+                                            _ui.editingCondition!.Type = junc;
+                                            update = true;
+                                        }
+                                    }
                                 }
-
-                                update = true;
                             }
                         }
 
-                        if (ImGui.Selectable("Class/Job")) {
-                            _ui.editingCondition.Condition = new CustomConditionUnion((ClassJobCategoryId)0);
+                        ImGui.TableNextColumn();
+
+                        // Column: NOT
+                        if (ImGui.Checkbox($"##multicondition-negation-{i}", ref _ui.editingCondition.Negation))
                             update = true;
-                        }
 
-                        ImGui.EndCombo();
-                    }
+                        ImGui.TableNextColumn();
 
-                    if (_ui.editingCondition.Condition.CurrentType == typeof(ClassJobCategoryId)) {
-                        ImGui.SameLine();
+                        // Column: Condition
 
-                        // Secondary combo for ClassJob
+                        var conditionWidth = ImGui.GetColumnWidth();
+                        if (_ui.editingCondition.Condition.CurrentType == typeof(ClassJobCategoryId))
+                            conditionWidth /= 2;
 
-                        if (ImGui.BeginCombo($"##multicond-edit-condition-classjob-{i}", _ui.editingCondition.Condition.ClassJob!.Value.DisplayName(_plugin))) {
-                            var first = true;
-                            foreach (var group in ClassJobCategoryIdExtensions.ClassJobCategoryGroupings) {
-                                if (first)
-                                    first = false;
-                                else
-                                    ImGui.Selectable("--", false, ImGuiSelectableFlags.Disabled);
+                        using (ImRaii.ItemWidth(conditionWidth)) {
+                            using (var conditionCombo = ImRaii.Combo($"##multicond-edit-condition-{i}", _ui.editingCondition.Condition.UiName(_plugin, partial: _ui.editingConditionIndex >= 0))) {
+                                if (conditionCombo) {
+                                    foreach (var status in Enum.GetValues<Status>()) {
+                                        if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
+                                            _ui.editingCondition.Condition = new CustomConditionUnion(status);
+                                            update = true;
+                                        }
+                                    }
 
-                                foreach (var classJob in group) {
-                                    if (ImGui.Selectable($"{classJob.DisplayName(_plugin)}##condition-edit-status-classjob-{classJob}")) {
-                                        _ui.editingCondition.Condition = new CustomConditionUnion(classJob);
+                                    foreach (var custom in _plugin.Config.CustomConditions) {
+                                        if (ImGui.Selectable($"{custom.DisplayName}##condition-edit-status")) {
+                                            var prevCondition = _ui.editingCondition.Condition;
+
+                                            _ui.editingCondition.Condition = new CustomConditionUnion(custom);
+
+                                            if (!_ui.editingCondition.Condition.Custom!.MultiCondition.Validate()) {
+                                                // Revert to previous condition
+                                                _ui.editingCondition.Condition = prevCondition;
+                                                usedConditionLoopPopup = true;
+                                            }
+
+                                            update = true;
+                                        }
+                                    }
+
+                                    if (ImGui.Selectable("Class/Job")) {
+                                        _ui.editingCondition.Condition = new CustomConditionUnion((ClassJobCategoryId)0);
                                         update = true;
                                     }
                                 }
-
                             }
 
-                            ImGui.EndCombo();
+                            if (_ui.editingCondition.Condition.CurrentType == typeof(ClassJobCategoryId)) {
+                                ImGui.SameLine();
+
+                                // Secondary combo for ClassJob
+                                using var classJobCombo = ImRaii.Combo($"##multicond-edit-condition-classjob-{i}", _ui.editingCondition.Condition.ClassJob!.Value.DisplayName(_plugin));
+                                if (classJobCombo) {
+                                    var first = true;
+                                    foreach (var group in ClassJobCategoryIdExtensions.ClassJobCategoryGroupings) {
+                                        if (first)
+                                            first = false;
+                                        else
+                                            ImGui.Selectable("--", false, ImGuiSelectableFlags.Disabled);
+
+                                        foreach (var classJob in group) {
+                                            if (ImGui.Selectable($"{classJob.DisplayName(_plugin)}##condition-edit-status-classjob-{classJob}")) {
+                                                _ui.editingCondition.Condition = new CustomConditionUnion(classJob);
+                                                update = true;
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
                         }
+
+                        ImGui.TableNextColumn();
+
+                        // Column: Actions
+
+                        if (!(cond.Condition.CurrentType == typeof(ClassJobCategoryId) && cond.Condition.ClassJob!.Value == 0)
+                            && ImGuiExt.IconButton(FontAwesomeIcon.Check, "multicond-confirm")) {
+                            _ui.addCondition = true;
+                        }
+
+                        ImGui.SameLine();
+
+                        if (ImGuiExt.IconButton(FontAwesomeIcon.Times, "multicond-cancel")) {
+                            _ui.editingConditionIndex = -1;
+                            _ui.editingCondition = null;
+                        }
+
+                        if (_ui.savedRowHeight == 0)
+                            _ui.savedRowHeight = ImGui.GetTextLineHeightWithSpacing();
+
                     }
-
-                    ImGui.PopItemWidth();
-
-                    ImGui.TableNextColumn();
-
-                    // Column: Actions
-
-                    if (!(cond.Condition.CurrentType == typeof(ClassJobCategoryId) && cond.Condition.ClassJob!.Value == 0)
-                        && ImGuiExt.IconButton(FontAwesomeIcon.Check, "multicond-confirm")) {
-                        _ui.addCondition = true;
-                    }
-
-                    ImGui.SameLine();
-
-                    if (ImGuiExt.IconButton(FontAwesomeIcon.Times, "multicond-cancel")) {
-                        _ui.editingConditionIndex = -1;
-                        _ui.editingCondition = null;
-                    }
-
-                    if (_ui.savedRowHeight == 0)
-                        _ui.savedRowHeight = ImGui.GetTextLineHeightWithSpacing();
-
-                    ImGui.PopItemWidth();
 
                     ImGui.TableNextColumn();
                 } else {
@@ -692,14 +688,14 @@ public class CustomConditions
                     // Column: Junction
 
                     if (i > 0)
-                        ImGui.TextUnformatted(cond.Type.UiName());
+                        ImGui.Text(cond.Type.UiName());
                     ImGui.TableNextColumn();
 
                     // Column: NOT
 
-                    ImGui.PushFont(UiBuilder.IconFont);
-                    ImGui.TextUnformatted(cond.Negation ? FontAwesomeIcon.Check.ToIconString() : string.Empty);
-                    ImGui.PopFont();
+                    using (ImRaii.PushFont(UiBuilder.IconFont)) {
+                        ImGui.Text(cond.Negation ? FontAwesomeIcon.Check.ToIconString() : string.Empty);
+                    }
                     ImGui.TableNextColumn();
 
                     // Column: Condition
@@ -707,7 +703,7 @@ public class CustomConditions
                     var thisConditionActive = cond.Condition.IsActive(_plugin) ^ cond.Negation;
                     ImGui.Text(thisConditionActive ? "●" : "○");
                     ImGui.SameLine();
-                    ImGui.TextUnformatted(cond.Condition.UiName(_plugin));
+                    ImGui.Text(cond.Condition.UiName(_plugin));
                     ImGui.TableNextColumn();
 
                     // Column: Actions
@@ -743,9 +739,9 @@ public class CustomConditions
                     }
                 }
             }
+        }
 
-            ImGui.EndTable();
-
+        private void DrawOthers(CustomCondition activeCondition, bool usedConditionLoopPopup, ref bool update) {
             if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "condition")) {
                 _ui.editingConditionIndex = activeCondition.MultiCondition.Count;
                 _ui.editingCondition = new MultiCondition.MultiConditionItem
@@ -800,27 +796,26 @@ public class CustomConditions
 
             if (usedConditionLoopPopup) {
                 ImGui.OpenPopup(Popups.UsedConditionWouldCreateLoop);
-                usedConditionLoopPopup = false;
             }
 
             // Popups
 
             var _ready = true;
-            if (ImGui.BeginPopupModal(Popups.AddedConditionWouldCreateLoop, ref _ready, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.AlwaysAutoResize)) {
-                ImGui.Text("Adding that condition would result in an infinite loop.");
-                if (ImGui.Button("OK"))
-                    ImGui.CloseCurrentPopup();
-
-                ImGui.EndPopup();
+            using (var popup = ImRaii.PopupModal(Popups.AddedConditionWouldCreateLoop, ref _ready, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.AlwaysAutoResize)) {
+                if (popup) {
+                    ImGui.Text("Adding that condition would result in an infinite loop.");
+                    if (ImGui.Button("OK"))
+                        ImGui.CloseCurrentPopup();
+                }
             }
 
             _ready = true;
-            if (ImGui.BeginPopupModal(Popups.UsedConditionWouldCreateLoop, ref _ready, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.AlwaysAutoResize)) {
-                ImGui.Text("Using that condition would result in an infinite loop.");
-                if (ImGui.Button("OK"))
-                    ImGui.CloseCurrentPopup();
-
-                ImGui.EndPopup();
+            using (var popup = ImRaii.PopupModal(Popups.UsedConditionWouldCreateLoop, ref _ready, ImGuiWindowFlags.NoResize | ImGuiWindowFlags.AlwaysAutoResize)) {
+                if (popup) {
+                    ImGui.Text("Using that condition would result in an infinite loop.");
+                    if (ImGui.Button("OK"))
+                        ImGui.CloseCurrentPopup();
+                }
             }
         }
     }

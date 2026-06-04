@@ -1,6 +1,7 @@
-﻿using Dalamud.Interface;
-using Dalamud.Bindings.ImGui;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,27 +9,20 @@ using System.Numerics;
 
 namespace HUDManager.Ui;
 
-public class Swaps
-{
+public class Swaps {
     private Plugin Plugin { get; }
 
     private int _editingConditionIndex = -1;
     private HudConditionMatch? _editingCondition;
     private bool _scrollToAdd;
 
-    private (CustomConditions window, bool isOpen) _customConditionsMenu;
-
-    public Swaps(Plugin plugin)
-    {
+    public Swaps(Plugin plugin) {
         Plugin = plugin;
-        _customConditionsMenu = (new CustomConditions(plugin), false);
     }
 
-    internal void Draw()
-    {
-        if (!ImGui.BeginTabItem("Swapper")) {
-            return;
-        }
+    internal void Draw() {
+        using var tabItem = ImRaii.TabItem("Swapper");
+        if (!tabItem) return;
 
         var enabled = Plugin.Config.SwapsEnabled;
         if (ImGui.Checkbox("Enable swaps", ref enabled)) {
@@ -42,17 +36,17 @@ public class Swaps
 
         ImGui.Spacing();
         var staging = ((int)Plugin.Config.StagingSlot + 1).ToString();
-        if (ImGui.BeginCombo("Staging slot", staging)) {
-            foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
-                if (!ImGui.Selectable(((int)slot + 1).ToString())) {
-                    continue;
+        using (var combo = ImRaii.Combo("Staging slot", staging)) {
+            if (combo) {
+                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
+                    if (!ImGui.Selectable(((int)slot + 1).ToString())) {
+                        continue;
+                    }
+
+                    Plugin.Config.StagingSlot = slot;
+                    Plugin.Config.Save();
                 }
-
-                Plugin.Config.StagingSlot = slot;
-                Plugin.Config.Save();
             }
-
-            ImGui.EndCombo();
         }
 
         ImGui.SameLine();
@@ -62,61 +56,91 @@ public class Swaps
 
         if (Plugin.Config.Layouts.Count == 0) {
             ImGui.TextUnformatted("Create at least one layout to begin setting up swaps.");
-        } else {
-            if (!Plugin.Config.DisableHelpPanels) {
-                ImGui.TextWrapped("Add swap conditions below.\nThe conditions are checked from top to bottom.\nThe first condition that is satisfied will be the layout that is used.");
-                if (Plugin.Config.AdvancedSwapMode) {
-                    ImGui.TextWrapped("Setting a row to \"layer\" mode will cause it to be applied on top of the first non-layer condition.");
-                }
-                ImGui.Separator();
-            }
-
-            DrawConditionsTable();
-        }
-
-        ImGui.EndTabItem();
-    }
-
-    private void DrawConditionsTable()
-    {
-        ImGui.PushFont(UiBuilder.IconFont);
-        var height = ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeightWithSpacing() - ImGui.GetStyle().ItemInnerSpacing.Y;
-        ImGui.PopFont();
-        if (!ImGui.BeginChild("##conditions-table", new Vector2(-1, height))) {
             return;
         }
+
+        if (!Plugin.Config.DisableHelpPanels) {
+            ImGui.TextWrapped("Add swap conditions below.\nThe conditions are checked from top to bottom.\nThe first condition that is satisfied will be the layout that is used.");
+            if (Plugin.Config.AdvancedSwapMode) {
+                ImGui.TextWrapped("Setting a row to \"layer\" mode will cause it to be applied on top of the first non-layer condition.");
+            }
+            ImGui.Separator();
+        }
+
+        var height = ImGui.GetContentRegionAvail().Y - ImGui.GetFrameHeight() - ImGui.GetStyle().ItemSpacing.Y;
 
         var update = false;
 
-        const ImGuiTableFlags flags = ImGuiTableFlags.Borders
-            & ~ImGuiTableFlags.BordersOuterV
-            | ImGuiTableFlags.PadOuterX
-            | ImGuiTableFlags.RowBg;
+        using (var child = ImRaii.Child("##conditions-table", new Vector2(-1, height))) {
+            if (child) {
+                DrawConditionTable(ref update);
+
+                if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, "Add swap condition")) {
+                    _editingConditionIndex = Plugin.Config.HudConditionMatches.Count;
+                    _editingCondition = new HudConditionMatch();
+                    _scrollToAdd = true;
+                } else if (ImGui.IsItemHovered()) {
+                    ImGui.SetTooltip("Add a new swap condition");
+                }
+            }
+        }
+
+        ImGui.Indent();
+
+        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Flag, "Custom conditions")) {
+            Plugin.WindowManager.CustomConditions.Toggle();
+        } else if (ImGui.IsItemHovered()) {
+            ImGui.SetTooltip("Open the Custom Conditions menu");
+        }
+
+        ImGui.SameLine();
 
         var advancedMode = Plugin.Config.AdvancedSwapMode;
-        var columns = Plugin.Config.AdvancedSwapMode ? 6 : 5;
-
-        if (!ImGui.BeginTable("uimanager-swaps-table", columns, flags)) {
-            return;
+        if (ImGui.Checkbox("Advanced mode##swap-advanced-check", ref advancedMode)) {
+            Plugin.Config.AdvancedSwapMode = advancedMode;
+            update = true;
         }
+
+        if (update) {
+            Plugin.Config.Save();
+
+            if (Plugin.ObjectTable.LocalPlayer != null && Plugin.Config.SwapsEnabled) {
+                Plugin.Statuses.Update();
+                Plugin.Statuses.SetHudLayout();
+            }
+        }
+    }
+
+    private void DrawConditionTable(ref bool update) {
+        var columns = Plugin.Config.AdvancedSwapMode ? 6 : 5;
+        using var table = ImRaii.Table("uimanager-swaps-table", columns, (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuterV) | ImGuiTableFlags.PadOuterX | ImGuiTableFlags.RowBg);
+        if (!table) return;
+
+        var advancedMode = Plugin.Config.AdvancedSwapMode;
+        var addCondition = false;
+        var actionedItemIndex = -1;
+        var action = 0; // 0 for delete, otherwise move.
 
         var conditions = new List<HudConditionMatch>(Plugin.Config.HudConditionMatches);
         if (_editingConditionIndex == conditions.Count) {
             conditions.Add(new HudConditionMatch());
         }
 
+        var width = ImGuiExt.IconButtonWidth(FontAwesomeIcon.PencilAlt)
+                    + ImGuiExt.IconButtonWidth(FontAwesomeIcon.TrashAlt)
+                    + ImGuiExt.IconButtonWidth(FontAwesomeIcon.ArrowUp)
+                    + ImGuiExt.IconButtonWidth(FontAwesomeIcon.ArrowDown)
+                    + ImGui.GetStyle().ItemSpacing.X * 3;
+
         if (advancedMode)
             ImGui.TableSetupColumn("Layer", ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Class/Job");
         ImGui.TableSetupColumn("State");
         ImGui.TableSetupColumn("Layout");
-        ImGui.TableSetupColumn("Options");
+        ImGui.TableSetupColumn("Options", ImGuiTableColumnFlags.WidthFixed, width);
         ImGui.TableSetupColumn("Active", ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableHeadersRow();
 
-        var addCondition = false;
-        var actionedItemIndex = -1;
-        var action = 0; // 0 for delete, otherwise move.
         foreach (var item in conditions.Select((cond, i) => new { cond, i })) {
             ImGui.TableNextRow();
             ImGui.TableSetColumnIndex(0);
@@ -141,71 +165,67 @@ public class Swaps
 
                 // Column: Job
 
-                ImGui.PushItemWidth(-1);
-                if (ImGui.BeginCombo("##condition-edit-job", jobDisplayName)) {
-                    if (ImGui.Selectable("Any##condition-edit-job")) {
-                        _editingCondition.ClassJobCategory = null;
-                    }
+                using (ImRaii.ItemWidth(-1))
+                using (var combo = ImRaii.Combo("##condition-edit-job", jobDisplayName)) {
+                    if (combo) {
+                        if (ImGui.Selectable("Any##condition-edit-job")) {
+                            _editingCondition.ClassJobCategory = null;
+                        }
 
-                    foreach (var group in ClassJobCategoryIdExtensions.ClassJobCategoryGroupings) {
-                        ImGui.Selectable("⸻⸻", false, ImGuiSelectableFlags.Disabled);
-                        foreach (var classJobCat in group)
-                        {
-                            if (ImGui.Selectable($"{classJobCat.DisplayName(Plugin)}##condition-edit-job")) {
-                                _editingCondition.ClassJobCategory = classJobCat;
+                        foreach (var group in ClassJobCategoryIdExtensions.ClassJobCategoryGroupings) {
+                            ImGui.Selectable("⸻⸻", false, ImGuiSelectableFlags.Disabled);
+                            foreach (var classJobCat in group) {
+                                if (ImGui.Selectable($"{classJobCat.DisplayName(Plugin)}##condition-edit-job")) {
+                                    _editingCondition.ClassJobCategory = classJobCat;
+                                }
                             }
                         }
                     }
-
-                    ImGui.EndCombo();
                 }
 
-                ImGui.PopItemWidth();
                 ImGui.TableNextColumn();
 
                 // Column: Status/Custom condition
 
                 var statusDisplayName = _editingCondition.Status?.Name() ?? _editingCondition.CustomCondition?.DisplayName;
 
-                ImGui.PushItemWidth(-1);
-                if (ImGui.BeginCombo("##condition-edit-status", statusDisplayName ?? "Any")) {
-                    if (ImGui.Selectable("Any##condition-edit-status")) {
-                        _editingCondition.Status = null;
-                    }
-
-                    foreach (Status status in Enum.GetValues(typeof(Status))) {
-                        if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
-                            _editingCondition.CustomCondition = null;
-                            _editingCondition.Status = status;
-                        }
-                    }
-
-                    foreach (var cond in Plugin.Config.CustomConditions) {
-                        if (ImGui.Selectable($"{cond.DisplayName}##condition-edit-status")) {
-                            _editingCondition.CustomCondition = cond;
+                using (ImRaii.ItemWidth(-1))
+                using (var combo = ImRaii.Combo("##condition-edit-status", statusDisplayName ?? "Any")) {
+                    if (combo) {
+                        if (ImGui.Selectable("Any##condition-edit-status")) {
                             _editingCondition.Status = null;
                         }
-                    }
 
-                    ImGui.EndCombo();
-                }
+                        foreach (Status status in Enum.GetValues(typeof(Status))) {
+                            if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
+                                _editingCondition.CustomCondition = null;
+                                _editingCondition.Status = status;
+                            }
+                        }
 
-                ImGui.PopItemWidth();
-                ImGui.TableNextColumn();
-
-                ImGui.PushItemWidth(-1);
-                var comboPreview = _editingCondition.LayoutId == Guid.Empty ? string.Empty : Plugin.Config.Layouts[_editingCondition.LayoutId].Name;
-                if (ImGui.BeginCombo("##condition-edit-layout", comboPreview)) {
-                    foreach (var layout in Plugin.Config.Layouts) {
-                        if (ImGui.Selectable($"{layout.Value.Name}##condition-edit-layout-{layout.Key}")) {
-                            _editingCondition.LayoutId = layout.Key;
+                        foreach (var cond in Plugin.Config.CustomConditions) {
+                            if (ImGui.Selectable($"{cond.DisplayName}##condition-edit-status")) {
+                                _editingCondition.CustomCondition = cond;
+                                _editingCondition.Status = null;
+                            }
                         }
                     }
-
-                    ImGui.EndCombo();
                 }
 
-                ImGui.PopItemWidth();
+                ImGui.TableNextColumn();
+
+                var comboPreview = _editingCondition.LayoutId == Guid.Empty ? string.Empty : Plugin.Config.Layouts[_editingCondition.LayoutId].Name;
+                using (ImRaii.ItemWidth(-1))
+                using (var combo = ImRaii.Combo("##condition-edit-layout", comboPreview)) {
+                    if (combo) {
+                        foreach (var layout in Plugin.Config.Layouts) {
+                            if (ImGui.Selectable($"{layout.Value.Name}##condition-edit-layout-{layout.Key}")) {
+                                _editingCondition.LayoutId = layout.Key;
+                            }
+                        }
+                    }
+                }
+
                 ImGui.TableNextColumn();
 
                 if (_editingCondition.LayoutId != Guid.Empty) {
@@ -231,9 +251,9 @@ public class Swaps
 
                 if (advancedMode) {
                     if (item.cond.IsLayer) {
-                        ImGui.PushFont(UiBuilder.IconFont);
-                        ImGuiExt.CenterColumnText(FontAwesomeIcon.Check.ToIconString());
-                        ImGui.PopFont();
+                        using (ImRaii.PushFont(UiBuilder.IconFont)) {
+                            ImGuiExt.CenterColumnText(FontAwesomeIcon.Check.ToIconString());
+                        }
                     }
                     ImGui.TableNextColumn();
                 }
@@ -299,52 +319,18 @@ public class Swaps
             }
         }
 
-        ImGui.EndTable();
-
-        if (ImGuiExt.IconButton(FontAwesomeIcon.Plus, "condition")) {
-            _editingConditionIndex = Plugin.Config.HudConditionMatches.Count;
-            _editingCondition = new HudConditionMatch();
-            _scrollToAdd = true;
-        } else if (ImGui.IsItemHovered()) {
-            ImGui.SetTooltip("Add a new swap condition");
-        }
-
-        ImGui.EndChild();
-
-        ImGui.Indent();
-
-        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Flag, "Custom conditions")) {
-            _customConditionsMenu.isOpen = true;
-        } else if (ImGui.IsItemHovered()) {
-            ImGui.SetTooltip("Open the Custom Conditions menu");
-        }
-
-        if (_customConditionsMenu.isOpen)
-            _customConditionsMenu.window.Draw(ref _customConditionsMenu.isOpen);
-
-        ImGui.SameLine();
-
-        if (ImGui.Checkbox("Advanced mode##swap-advanced-check", ref advancedMode)) {
-            Plugin.Config.AdvancedSwapMode = advancedMode;
-            Plugin.Config.Save();
-            update = true;
-        }
-
         if (addCondition) {
-            update = true;
             if (_editingConditionIndex == Plugin.Config.HudConditionMatches.Count && _editingCondition != null) {
                 Plugin.Config.HudConditionMatches.Add(_editingCondition);
             } else if (_editingCondition != null) {
                 Plugin.Config.HudConditionMatches.RemoveAt(_editingConditionIndex);
                 Plugin.Config.HudConditionMatches.Insert(_editingConditionIndex, _editingCondition);
             }
-
-            Plugin.Config.Save();
             _editingConditionIndex = -1;
+            update = true;
         }
 
         if (actionedItemIndex >= 0) {
-            update = true;
             if (action == 0) {
                 Plugin.Config.HudConditionMatches.RemoveAt(actionedItemIndex);
             } else {
@@ -355,19 +341,7 @@ public class Swaps
                     Plugin.Config.HudConditionMatches.Insert(actionedItemIndex + action, c);
                 }
             }
-
-            Plugin.Config.Save();
+            update = true;
         }
-
-        if (!update) {
-            return;
-        }
-
-        if (Plugin.ObjectTable.LocalPlayer == null || !Plugin.Config.SwapsEnabled) {
-            return;
-        }
-
-        Plugin.Statuses.Update();
-        Plugin.Statuses.SetHudLayout();
     }
 }

@@ -5,6 +5,7 @@ using HUDManager.Tree;
 using HUDManager.Ui.Editor.Tabs;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -37,9 +38,9 @@ public class LayoutEditor
         ExternalElements = new ExternalElements(plugin, ui);
     }
 
-    internal void Draw()
-    {
-        if (!ImGui.BeginTabItem("Layout Editor")) {
+    internal void Draw() {
+        using var layoutEditorTab = ImRaii.TabItem("Layout Editor");
+        if (!layoutEditorTab) {
             Plugin.Swapper.SetEditLock(false);
             return;
         }
@@ -60,7 +61,7 @@ public class LayoutEditor
 
         if (Util.IsCharacterConfigOpen()) {
             ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
-            goto EndTabItem;
+            return;
         }
 
         if (!Plugin.Config.DisableHelpPanels) {
@@ -76,26 +77,26 @@ public class LayoutEditor
         Plugin.Config.Layouts.TryGetValue(Ui.SelectedLayout, out var selected);
         var selectedName = selected?.Name ?? "<none>";
 
-        if (ImGui.BeginCombo("##edit-layout", selectedName)) {
-            if (ImGui.Selectable("<none>")) {
-                Ui.SelectedLayout = Guid.Empty;
-                layoutChanged = true;
-            }
-
-            foreach (var node in nodes) {
-                foreach (var (child, depth) in node.TraverseWithDepth()) {
-                    var indent = new string(' ', (int)depth * 4);
-                    if (!ImGui.Selectable($"{indent}{child.Value.Name}##edit-{child.Id}", child.Id == Ui.SelectedLayout)) {
-                        continue;
-                    }
-
-                    Ui.SelectedLayout = child.Id;
-                    update = true;
+        using (var combo = ImRaii.Combo("##edit-layout", selectedName)) {
+            if (combo) {
+                if (ImGui.Selectable("<none>")) {
+                    Ui.SelectedLayout = Guid.Empty;
                     layoutChanged = true;
                 }
-            }
 
-            ImGui.EndCombo();
+                foreach (var node in nodes) {
+                    foreach (var (child, depth) in node.TraverseWithDepth()) {
+                        var indent = new string(' ', (int)depth * 4);
+                        if (!ImGui.Selectable($"{indent}{child.Value.Name}##edit-{child.Id}", child.Id == Ui.SelectedLayout)) {
+                            continue;
+                        }
+
+                        Ui.SelectedLayout = child.Id;
+                        update = true;
+                        layoutChanged = true;
+                    }
+                }
+            }
         }
 
         ImGui.SameLine();
@@ -144,23 +145,41 @@ public class LayoutEditor
 
         SetUpExportLayoutPopup();
 
-        if (Ui.SelectedLayout == Guid.Empty) {
-            goto EndTabItem;
+        if (Ui.SelectedLayout != Guid.Empty) {
+            DrawMainSection(nodes, ref update);
+
+            SetUpOptionsPopup(ref update);
+
+            ImGui.Indent();
+            if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Cog, "Positioning settings")) {
+                ImGui.OpenPopup(Popups.LayoutEditorOptions);
+            }
         }
 
-        var layoutElementsHeight = ImGui.GetContentRegionAvail().Y - ImGui.GetTextLineHeightWithSpacing() - ImGui.GetStyle().ItemInnerSpacing.Y;
-        if (ImGui.BeginChild("##layout-editor-main", new Vector2(-1, layoutElementsHeight), true)) {
-            var layout = Plugin.Config.Layouts[Ui.SelectedLayout];
+        if (layoutChanged) {
+            // Kill all previews so they don't fuck up the new layout.
+            Previews.Clear();
+        }
+        if (update) {
+            Plugin.Config.Save();
+        }
+    }
 
-            Plugin.Config.Layouts.TryGetValue(layout.Parent, out var parent);
-            var parentName = parent?.Name ?? "<none>";
+    private void DrawMainSection(List<Node<SavedLayout>> nodes, ref bool update) {
+        var height = ImGui.GetContentRegionAvail().Y - ImGui.GetFrameHeight() - ImGui.GetStyle().ItemSpacing.Y;
 
-            var ourChildren = nodes.Find(Ui.SelectedLayout)
-                ?.Traverse()
-                .Select(el => el.Id)
-                .ToArray() ?? [];
+        using var editorChild = ImRaii.Child("##layout-editor-main", new Vector2(-1, height), true);
+        if (!editorChild) return;
 
-            if (ImGui.BeginCombo("Parent", parentName)) {
+        var layout = Plugin.Config.Layouts[Ui.SelectedLayout];
+
+        Plugin.Config.Layouts.TryGetValue(layout.Parent, out var parent);
+        var parentName = parent?.Name ?? "<none>";
+
+        var ourChildren = nodes.Find(Ui.SelectedLayout)?.Traverse().Select(el => el.Id).ToArray() ?? [];
+
+        using (var combo = ImRaii.Combo("Parent", parentName)) {
+            if (combo) {
                 if (ImGui.Selectable("<none>")) {
                     layout.Parent = Guid.Empty;
                     Plugin.Config.Save();
@@ -181,64 +200,40 @@ public class LayoutEditor
                         Plugin.Config.Save();
                     }
                 }
-
-                ImGui.EndCombo();
             }
+        }
 
-            ImGui.SameLine();
-            ImGuiExt.HelpMarker("A layout will inherit its parameters from its parent if it has one."
-                + "\n\nWhen a parent layout is set, the \"Enabled\" column will be visible for each parameter of an element."
-                + "\n\nA parameter must be enabled for it to have any effect. If it is not enabled, the value from the parent layout will be used instead.");
+        ImGui.SameLine();
+        ImGuiExt.HelpMarker("A layout will inherit its parameters from its parent if it has one."
+                            + "\n\nWhen a parent layout is set, the \"Enabled\" column will be visible for each parameter of an element."
+                            + "\n\nA parameter must be enabled for it to have any effect. If it is not enabled, the value from the parent layout will be used instead.");
 
-            if (ImGui.BeginTabBar("uimanager-positioning")) {
-                if (ImGui.BeginTabItem("HUD Elements")) {
-                    HudElements.Draw(layout, ref update);
-
-                    ImGui.EndTabItem();
+        using (var tabBar = ImRaii.TabBar("uimanager-positioning")) {
+            if (tabBar) {
+                using (var tabItem = ImRaii.TabItem("HUD Elements")) {
+                    if (tabItem) {
+                        HudElements.Draw(layout, ref update);
+                    }
                 }
 
-                if (ImGui.BeginTabItem("Windows")) {
-                    Windows.Draw(layout, ref update);
-
-                    ImGui.EndTabItem();
+                using (var tabItem = ImRaii.TabItem("Windows")) {
+                    if (tabItem) {
+                        Windows.Draw(layout, ref update);
+                    }
                 }
 
-                if (ImGui.BeginTabItem("External Elements")) {
-                    ExternalElements.Draw(layout, ref update);
-
-                    ImGui.EndTabItem();
+                using (var tabItem = ImRaii.TabItem("External Elements")) {
+                    if (tabItem) {
+                        ExternalElements.Draw(layout, ref update);
+                    }
                 }
-
-                ImGui.EndTabBar();
             }
-
-            ImGui.EndChild();
-        }
-
-        SetUpOptionsPopup(ref update);
-
-        ImGui.Indent();
-        if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Cog, "Positioning settings")) {
-            ImGui.OpenPopup(Popups.LayoutEditorOptions);
-        }
-
-        EndTabItem:
-        ImGui.EndTabItem();
-
-        if (layoutChanged) {
-            // Kill all previews so they don't fuck up the new layout.
-            Previews.Clear();
-        }
-        if (update) {
-            Plugin.Config.Save();
         }
     }
 
-    private void SetUpAddLayoutPopup(ref bool update, ref bool layoutChanged)
-    {
-        if (!ImGui.BeginPopup(Popups.AddLayout)) {
-            return;
-        }
+    private void SetUpAddLayoutPopup(ref bool update, ref bool layoutChanged) {
+        var popup = ImRaii.Popup(Popups.AddLayout);
+        if (!popup) return;
 
         var name = NewLayoutName ?? string.Empty;
         if (ImGui.InputText("Name", ref name, 100)) {
@@ -247,9 +242,9 @@ public class LayoutEditor
 
         var exists = Plugin.Config.Layouts.Values.Any(layout => layout.Name == NewLayoutName);
         if (exists) {
-            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f));
-            ImGui.TextUnformatted("A layout with that name already exists.");
-            ImGui.PopStyleColor();
+            using (ImRaii.PushColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f))) {
+                ImGui.Text("A layout with that name already exists.");
+            }
         } else if (ImGui.Button("Add") && NewLayoutName != null) {
             // create the layout
             var saved = new SavedLayout(NewLayoutName, new Dictionary<ElementKind, Element>(), new Dictionary<string, Window>(), Guid.Empty);
@@ -269,18 +264,14 @@ public class LayoutEditor
 
             ImGui.CloseCurrentPopup();
         }
-
-        ImGui.EndPopup();
     }
 
-    private void SetUpDeleteVerifyPopup(IEnumerable<Node<SavedLayout>> nodes, ref bool update, ref bool layoutChanged)
-    {
-        if (!ImGui.BeginPopupModal(Popups.DeleteVerify)) {
-            return;
-        }
+    private void SetUpDeleteVerifyPopup(IEnumerable<Node<SavedLayout>> nodes, ref bool update, ref bool layoutChanged) {
+        using var popup = ImRaii.PopupModal(Popups.DeleteVerify);
+        if (!popup) return;
 
         if (Plugin.Config.Layouts.TryGetValue(Ui.SelectedLayout, out var deleting)) {
-            ImGui.TextUnformatted($"Are you sure you want to delete the layout \"{deleting.Name}\"?");
+            ImGui.Text($"Are you sure you want to delete the layout \"{deleting.Name}\"?");
 
             if (ImGui.Button("Yes")) {
                 // unset the parent of any child layouts
@@ -307,15 +298,12 @@ public class LayoutEditor
                 ImGui.CloseCurrentPopup();
             }
         }
-
-        ImGui.EndPopup();
     }
 
     private void SetUpRenameLayoutPopup(ref bool update)
     {
-        if (!ImGui.BeginPopup(Popups.RenameLayout)) {
-            return;
-        }
+        var popup = ImRaii.Popup(Popups.RenameLayout);
+        if (!popup) return;
 
         var name = RenameLayoutName ?? "<none>";
         if (ImGui.InputText("Name", ref name, 100)) {
@@ -328,15 +316,11 @@ public class LayoutEditor
 
             ImGui.CloseCurrentPopup();
         }
-
-        ImGui.EndPopup();
     }
 
-    private void SetUpImportLayoutPopup(ref bool update, ref bool layoutChanged)
-    {
-        if (!ImGui.BeginPopup(Popups.ImportLayout)) {
-            return;
-        }
+    private void SetUpImportLayoutPopup(ref bool update, ref bool layoutChanged) {
+        using var popup = ImRaii.Popup(Popups.ImportLayout);
+        if (!popup) return;
 
         var importName = ImportLayoutName ?? "";
         if (ImGui.InputText("Imported layout name", ref importName, 100)) {
@@ -350,13 +334,13 @@ public class LayoutEditor
 
         var exists = Plugin.Config.Layouts.Values.Any(layout => layout.Name == ImportLayoutName);
         if (exists) {
-            ImGui.PushStyleColor(ImGuiCol.Text, new Vector4(1f, .8f, .2f, 1f));
-            ImGui.TextUnformatted("This will overwrite an existing layout.");
-            ImGui.PopStyleColor();
+            using (ImRaii.PushColor(ImGuiCol.Text, new Vector4(1f, .8f, .2f, 1f))) {
+                ImGui.Text("This will overwrite an existing layout.");
+            }
         }
 
         var current = Hud.GetActiveHudSlot();
-        foreach (var slot in (HudSlot[])Enum.GetValues(typeof(HudSlot))) {
+        foreach (var slot in Enum.GetValues<HudSlot>()) {
             var name = current == slot ? $"({(int)slot + 1})" : $"{(int)slot + 1}";
             if (ImGui.Button($"{name}##import-{slot}") && ImportLayoutName != null) {
                 Guid id;
@@ -412,8 +396,6 @@ public class LayoutEditor
                 ImGui.CloseCurrentPopup();
             }
         }
-
-        ImGui.EndPopup();
     }
 
     private void SetUpExportLayoutPopup()
@@ -421,16 +403,15 @@ public class LayoutEditor
         void ReportExport(string layoutName, string dest)
             => Plugin.ChatGui.Print($"Exported layout \"{layoutName}\" to {dest}.");
 
-        if (!ImGui.BeginPopup(Popups.ExportLayout)) {
-            return;
-        }
+        var popup = ImRaii.Popup(Popups.ExportLayout);
+        if (!popup) return;
 
         if (!Plugin.Config.Layouts.TryGetValue(Ui.SelectedLayout, out var layout)) {
             return;
         }
 
         var current = Hud.GetActiveHudSlot();
-        foreach (var slot in (HudSlot[])Enum.GetValues(typeof(HudSlot))) {
+        foreach (var slot in Enum.GetValues<HudSlot>()) {
             var name = current == slot ? $"({(int)slot + 1})" : $"{(int)slot + 1}";
             if (ImGui.Button($"{name}##export-{slot}")) {
                 Plugin.Hud.WriteEffectiveLayout(slot, Ui.SelectedLayout);
@@ -452,15 +433,11 @@ public class LayoutEditor
             ImGui.SetClipboardText(json);
             ReportExport(layout.Name, "the clipboard");
         }
-
-        ImGui.EndPopup();
     }
 
-    private void SetUpOptionsPopup(ref bool update)
-    {
-        if (!ImGui.BeginPopup(Popups.LayoutEditorOptions)) {
-            return;
-        }
+    private void SetUpOptionsPopup(ref bool update) {
+        using var popup = ImRaii.Popup(Popups.LayoutEditorOptions);
+        if (!popup) return;
 
         var dragSpeed = Plugin.Config.DragSpeed;
         if (ImGui.DragFloat("Slider speed", ref dragSpeed, 0.01f, 0.01f, 10f)) {
@@ -468,19 +445,17 @@ public class LayoutEditor
             update = true;
         }
 
-        if (ImGui.BeginCombo("Positioning mode", Plugin.Config.PositioningMode.ToString())) {
-            foreach (var mode in (PositioningMode[])Enum.GetValues(typeof(PositioningMode))) {
-                if (!ImGui.Selectable($"{mode}##positioning", Plugin.Config.PositioningMode == mode)) {
-                    continue;
+        using (var combo = ImRaii.Combo("Positioning mode", Plugin.Config.PositioningMode.ToString())) {
+            if (combo) {
+                foreach (var mode in Enum.GetValues<PositioningMode>()) {
+                    if (!ImGui.Selectable($"{mode}##positioning", Plugin.Config.PositioningMode == mode)) {
+                        continue;
+                    }
+
+                    Plugin.Config.PositioningMode = mode;
+                    update = true;
                 }
-
-                Plugin.Config.PositioningMode = mode;
-                update = true;
             }
-
-            ImGui.EndCombo();
         }
-
-        ImGui.EndPopup();
     }
 }

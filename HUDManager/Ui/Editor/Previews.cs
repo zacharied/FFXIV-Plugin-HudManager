@@ -1,5 +1,6 @@
 ﻿using HUDManager.Structs;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -49,19 +50,18 @@ public class Previews
             } else {
                 ImGui.SetNextWindowPos(pos, ImGuiCond.Appearing);
             }
-
             ImGui.SetNextWindowSize(size);
-            ImGui.PushStyleColor(ImGuiCol.WindowBg, new Vector4(0f, 0f, 0f, .5f));
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0);
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowMinSize, Vector2.Zero);
-            if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
-                continue;
-            }
-            ImGui.PopStyleVar(3);
-            ImGui.PopStyleColor();
 
-            ImGui.TextUnformatted(element.Id.LocalisedName(Plugin.DataManager));
+            using (ImRaii.PushColor(ImGuiCol.WindowBg, new Vector4(0f, 0f, 0f, .5f)))
+            using (ImRaii.PushStyle(ImGuiStyleVar.WindowRounding, 0))
+            using (ImRaii.PushStyle(ImGuiStyleVar.WindowPadding, Vector2.Zero))
+            using (ImRaii.PushStyle(ImGuiStyleVar.WindowMinSize, Vector2.Zero)) {
+                if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
+                    continue;
+                }
+            }
+
+            ImGui.Text(element.Id.LocalisedName(Plugin.DataManager));
 
             // determine if the window has moved and update if it has
             var newPos = ImGuiExt.ConvertImGuiToGame(element, ImGui.GetWindowPos());

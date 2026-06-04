@@ -1,6 +1,7 @@
 ﻿using HUDManager.Configuration;
 using HUDManager.Ui.Editor.Tabs.External;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 using System.Numerics;
 
 namespace HUDManager.Ui.Editor.Tabs;
@@ -26,19 +27,20 @@ internal class ExternalElements
 
     internal void Draw(SavedLayout layout, ref bool update)
     {
-        foreach (var elem in _elements) elem.AddButtonToList(layout, ref update, elem.Available());
+        foreach (var elem in _elements)
+            elem.AddButtonToList(layout, ref update, elem.Available());
 
-        if (!ImGui.BeginChild("uimanager-overlay-edit", new Vector2(0, 0), true)) return;
+        using (var child = ImRaii.Child("uimanager-overlay-edit", new Vector2(0, 0), true)) {
+            if (!child) return;
 
-        foreach (var elem in _elements) elem.DrawControls(layout, ref update);
+            foreach (var elem in _elements)
+                elem.DrawControls(layout, ref update);
 
-        if (update)
-        {
-            Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, Ui.SelectedLayout);
-            Plugin.Hud.SelectSlot(Plugin.Config.StagingSlot, true);
+            if (update) {
+                Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, Ui.SelectedLayout);
+                Plugin.Hud.SelectSlot(Plugin.Config.StagingSlot, true);
+            }
         }
-
-        ImGui.EndChild();
     }
 }
 

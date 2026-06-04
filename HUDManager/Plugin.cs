@@ -37,8 +37,7 @@ public sealed class Plugin : IDalamudPlugin
     public Swapper Swapper { get; }
     private Commands Commands { get; }
 
-    public WindowSystem WindowSystem { get; set; }
-    public Interface Ui { get; }
+    public WindowManager WindowManager { get; }
     public Hud Hud { get; }
     public Statuses Statuses { get; }
     public Config Config { get; }
@@ -109,8 +108,7 @@ public sealed class Plugin : IDalamudPlugin
             Log.Warning("Unable to read help file");
         }
 
-        WindowSystem = new WindowSystem("HUD Manager");
-        Ui = new Interface(this);
+        WindowManager = new WindowManager(this);
         Hud = new Hud(this);
         Statuses = new Statuses(this);
         GameFunctions = new GameFunctions(this);
@@ -132,15 +130,12 @@ public sealed class Plugin : IDalamudPlugin
             Config.Save();
         }
 
-        WindowSystem.AddWindow(Ui);
-        Interface.UiBuilder.Draw += WindowSystem.Draw;
-        Interface.UiBuilder.OpenConfigUi += Ui.Open;
-
         Ready = true;
     }
 
     public void Dispose()
     {
+        WindowManager.Dispose();
         Commands.Dispose();
         Swapper.Dispose();
         PetHotbar.Dispose();

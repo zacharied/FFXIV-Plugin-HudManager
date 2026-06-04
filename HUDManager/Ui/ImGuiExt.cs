@@ -1,6 +1,8 @@
 ﻿using Dalamud.Interface;
 using HUDManager.Structs;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using System;
 using System.Numerics;
 
@@ -12,62 +14,45 @@ public static class ImGuiExt
 
     public static void HoverTooltip(string text)
     {
-        if (!ImGui.IsItemHovered()) {
-            return;
-        }
-
-        ImGui.BeginTooltip();
-        ImGui.TextUnformatted(text);
-        ImGui.EndTooltip();
+        if (ImGui.IsItemHovered())
+            ImGui.SetTooltip(text);
     }
 
     public static void HelpMarker(string text)
     {
-        ImGui.PushFont(UiBuilder.IconFont);
-        ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
-        ImGui.PopFont();
-
-        if (!ImGui.IsItemHovered()) {
-            return;
+        using (ImRaii.PushFont(UiBuilder.IconFont)) {
+            ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
         }
 
-        ImGui.BeginTooltip();
-        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 20f);
-        ImGui.TextUnformatted(text);
-        ImGui.PopTextWrapPos();
-        ImGui.EndTooltip();
+        if (!ImGui.IsItemHovered())
+            return;
+
+        using (ImRaii.Tooltip())
+        using (ImRaii.TextWrapPos(ImGui.GetFontSize() * 20f)) {
+            ImGui.Text(text);
+        }
     }
 
-    public static bool IconButton(FontAwesomeIcon icon, string? id = null)
-    {
-        ImGui.PushFont(UiBuilder.IconFont);
+    public static bool IconButton(FontAwesomeIcon icon, string? id = null) {
+        return ImGuiComponents.IconButton(id ?? "button", icon);
+    }
 
-        var text = icon.ToIconString();
-        if (id != null) {
-            text += $"##{id}";
+    public static float IconButtonWidth(FontAwesomeIcon icon) {
+        using (ImRaii.PushFont(UiBuilder.IconFont)) {
+            return ImGui.CalcTextSize(icon.ToIconString()).X + ImGui.GetStyle().FramePadding.X * 2;
         }
-
-        var result = ImGui.Button(text);
-
-        ImGui.PopFont();
-
-        return result;
     }
 
     public static bool IconCheckbox(FontAwesomeIcon icon, ref bool value, string? id = null)
     {
-        ImGui.PushFont(UiBuilder.IconFont);
+        using var font = ImRaii.PushFont(UiBuilder.IconFont);
 
         var text = icon.ToIconString();
         if (id != null) {
             text += $"##{id}";
         }
 
-        var result = ImGui.Checkbox(text, ref value);
-
-        ImGui.PopFont();
-
-        return result;
+        return ImGui.Checkbox(text, ref value);
     }
 
     public static void CenterColumnText(string text)
@@ -196,14 +181,9 @@ public static class ImGuiExt
         return pos;
     }
 
-    public static bool IconButtonEnabledWhen(bool enabled, FontAwesomeIcon icon, string? id = null)
-    {
-        if (!enabled)
-            ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 0.5f);
-        var result = IconButton(icon, id);
-        if (!enabled)
-            ImGui.PopStyleVar();
-
-        return result && enabled;
+    public static bool IconButtonEnabledWhen(bool enabled, FontAwesomeIcon icon, string? id = null) {
+        using (ImRaii.PushStyle(ImGuiStyleVar.Alpha, 0.5f, !enabled)) {
+            return IconButton(icon, id) && enabled;
+        }
     }
 }

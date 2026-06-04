@@ -40,11 +40,8 @@ public sealed class Interface : Window {
         SizeCondition = ImGuiCond.FirstUseEver;
     }
 
-    internal void Open() {
-        IsOpen = true;
-    }
-
     public override void OnClose() {
+        Plugin.WindowManager.CustomConditions.IsOpen = false;
         Plugin.Swapper.SetEditLock(false);
     }
 

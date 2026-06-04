@@ -2,6 +2,7 @@
 using HUDManager.Configuration;
 using HUDManager.Structs.External;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Utility.Raii;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,9 +51,8 @@ public sealed class Browsingway : IExternalElement
                 | ImGuiTableFlags.SizingFixedFit
                 | ImGuiTableFlags.RowBg;
 
-            if (!ImGui.BeginTable($"bw-overlay-table-{i}", 3, flags)) {
-                continue;
-            }
+            using var table = ImRaii.Table($"bw-overlay-table-{i}", 3, flags);
+            if (!table) continue;
 
             ImGui.TableSetupColumn("Enabled");
             ImGui.TableSetupColumn("Setting");
@@ -119,8 +119,6 @@ public sealed class Browsingway : IExternalElement
             DrawSettingRow(BrowsingwayOverlay.BrowsingwayOverlayComponent.Locked, "Locked", ref overlay.Locked, ref update);
             DrawSettingRow(BrowsingwayOverlay.BrowsingwayOverlayComponent.Typethrough, "Typethrough", ref overlay.Typethrough, ref update);
             DrawSettingRow(BrowsingwayOverlay.BrowsingwayOverlayComponent.Clickthrough, "Clickthrough", ref overlay.Clickthrough, ref update);
-
-            ImGui.EndTable();
         }
 
         foreach (var overlay in toRemove) {

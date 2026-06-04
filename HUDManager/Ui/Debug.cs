@@ -7,6 +7,7 @@ using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace HUDManager.Ui;
@@ -117,9 +118,8 @@ public class Debug
             PreviousLayout = layout;
         }
 
-        var unknowns = GetUnknownElements();
         if (ImGui.Button("Find unknown IDs")) {
-            foreach (var v in unknowns) {
+            foreach (var v in GetUnknownElements()) {
                 Plugin.Log.Information($"Unknown ID: {v.id}");
             }
         }
@@ -128,7 +128,7 @@ public class Debug
 
         ImGui.Checkbox("Draw unknown ID labels", ref _ui.drawUnknownIds);
         if (_ui.drawUnknownIds) {
-            DrawUnknownIdElements(unknowns);
+            DrawUnknownIdElements();
         }
 
         if (ImGui.Button("Find difference") && PreviousLayout != null) {
@@ -193,28 +193,19 @@ public class Debug
         return items.Where(e => !Enum.IsDefined(e.id)).ToList();
     }
 
-    private void DrawUnknownIdElements(IEnumerable<RawElement> list)
-    {
-        const ImGuiWindowFlags flags = ImGuiWindowFlags.NoTitleBar
-            | ImGuiWindowFlags.NoResize
-            | ImGuiWindowFlags.NoFocusOnAppearing
-            | ImGuiWindowFlags.NoScrollbar
-            | ImGuiWindowFlags.NoMove;
+    private void DrawUnknownIdElements() {
+        var drawList = ImGui.GetForegroundDrawList();
 
-        foreach (var raw in list) {
+        foreach (var raw in GetUnknownElements()) {
             var element = new Element(raw);
             var pos = ImGuiExt.ConvertGameToImGui(element);
-            ImGui.SetNextWindowPos(pos.Outer.Item1, ImGuiCond.Appearing);
 
-            ImGui.SetNextWindowSize(pos.Outer.Item2);
+            var min = pos.Outer.Item1;
+            var size = pos.Outer.Item2;
+            var max = min + size;
 
-            if (!ImGui.Begin($"##uimanager-preview-{element.Id}", flags)) {
-                continue;
-            }
-
-            ImGui.TextUnformatted(element.Id.LocalisedName(Plugin.DataManager));
-
-            ImGui.End();
+            drawList.AddRectFilled( min, max, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.7f)) );
+            drawList.AddText( min, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 1f)), element.Id.LocalisedName(Plugin.DataManager) );
         }
     }
 }

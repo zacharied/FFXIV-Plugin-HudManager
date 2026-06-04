@@ -33,7 +33,7 @@ public sealed class Commands : IDisposable
     private void OnCommand(string command, string args)
     {
         if (string.IsNullOrWhiteSpace(args)) {
-            Plugin.Ui.Open();
+            Plugin.WindowManager.Settings.Toggle();
             return;
         }
 
@@ -56,7 +56,7 @@ public sealed class Commands : IDisposable
                 return;
             }
 
-            Plugin.Ui.SelectedLayout = entry.Key;
+            Plugin.WindowManager.Settings.SelectedLayout = entry.Key;
             Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, entry.Key);
             Plugin.Hud.SelectSlot(Plugin.Config.StagingSlot, true);
         } else if (argsList[0] == "condition") {

@@ -1,62 +1,70 @@
-﻿using Dalamud.Interface;
+﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using HUDManager.Configuration;
 using HUDManager.Structs;
-using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Components;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
 
 namespace HUDManager.Ui.Editor.Tabs;
 
-public class WindowElements
-{
+public class WindowElements {
     private Plugin Plugin { get; }
 
-    public WindowElements(Plugin plugin)
-    {
+    public WindowElements(Plugin plugin) {
         Plugin = plugin;
     }
 
-    internal void Draw(SavedLayout layout, ref bool update)
-    {
+    internal void Draw(SavedLayout layout, ref bool update) {
         if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, "Add window##uimanager-add-window")) {
             ImGui.OpenPopup(Popups.AddWindow);
         }
 
-        if (ImGui.BeginPopup(Popups.AddWindow)) {
-            ImGui.TextUnformatted("Windows must be open to add them");
-            ImGui.Separator();
-
-            foreach (var window in WindowKindExt.All) {
-                var addon = Plugin.GameGui.GetAtkUnitByName(window, 1);
-                if (addon == null) {
-                    continue;
-                }
-
-                var flags = addon.Value.IsVisible && !layout.Windows.ContainsKey(window)
-                    ? ImGuiSelectableFlags.None
-                    : ImGuiSelectableFlags.Disabled;
-
-                if (!ImGui.Selectable(window, false, flags)) {
-                    continue;
-                }
-
-                var pos = Plugin.GameFunctions.GetAddonPosition(window);
-                if (pos != null) {
-                    layout.Windows.Add(window, new Window(pos));
-                    update = true;
-                }
-            }
-
-            ImGui.EndPopup();
-        }
-
-        if (!ImGui.BeginChild("uimanager-layout-editor-windows", new Vector2(0, 0))) {
-            return;
-        }
+        DrawPopup(layout, ref update);
 
         var toRemove = new HashSet<string>();
+
+        DrawChild(layout, toRemove, ref update);
+
+        foreach (var remove in toRemove) {
+            layout.Windows.Remove(remove);
+        }
+    }
+
+    private void DrawPopup(SavedLayout layout, ref bool update) {
+        using var popup = ImRaii.Popup(Popups.AddWindow);
+        if (!popup) return;
+
+        ImGui.TextUnformatted("Windows must be open to add them");
+        ImGui.Separator();
+
+        foreach (var window in WindowKindExt.All) {
+            var addon = Plugin.GameGui.GetAtkUnitByName(window, 1);
+            if (addon == null) {
+                continue;
+            }
+
+            var flags = addon.Value.IsVisible && !layout.Windows.ContainsKey(window)
+                ? ImGuiSelectableFlags.None
+                : ImGuiSelectableFlags.Disabled;
+
+            if (!ImGui.Selectable(window, false, flags)) {
+                continue;
+            }
+
+            var pos = Plugin.GameFunctions.GetAddonPosition(window);
+            if (pos != null) {
+                layout.Windows.Add(window, new Window(pos));
+                update = true;
+            }
+        }
+    }
+
+    private void DrawChild(SavedLayout layout, HashSet<string> toRemove, ref bool update) {
+        using var child = ImRaii.Child("uimanager-layout-editor-windows", new Vector2(0, 0));
+        if (!child) return;
 
         foreach (var entry in layout.Windows) {
             if (!ImGui.CollapsingHeader($"{entry.Key}##uimanager-window-{entry.Key}")) {
@@ -65,8 +73,7 @@ public class WindowElements
 
             var maxSettingWidth = ImGui.CalcTextSize("Setting").X;
 
-            void DrawSettingName(string name)
-            {
+            void DrawSettingName(string name) {
                 maxSettingWidth = Math.Max(maxSettingWidth, ImGui.CalcTextSize(name).X);
                 ImGui.TextUnformatted(name);
                 ImGui.NextColumn();
@@ -91,8 +98,7 @@ public class WindowElements
 
             ImGui.Separator();
 
-            void DrawEnabledCheckbox(string kind, WindowComponent component, ref bool update)
-            {
+            void DrawEnabledCheckbox(string kind, WindowComponent component, ref bool update) {
                 ImGui.NextColumn();
 
                 var enabled = entry.Value[component];
@@ -132,11 +138,5 @@ public class WindowElements
 
             ImGui.Columns();
         }
-
-        foreach (var remove in toRemove) {
-            layout.Windows.Remove(remove);
-        }
-
-        ImGui.EndChild();
     }
 }
