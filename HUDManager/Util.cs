@@ -3,11 +3,15 @@ using Lumina.Excel.Sheets;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace HUDManager;
 
-public static class Util
+public static partial class Util
 {
+    [GeneratedRegex(@"\d+", RegexOptions.NonBacktracking)]
+    private static partial Regex DigitRegex();
+
     public static readonly Dictionary<string, uint> EnglishAbbreviationToJobId = new();
 
     static Util()
@@ -15,6 +19,11 @@ public static class Util
         foreach (var (k, v) in JobIdToEnglishAbbreviation) {
             EnglishAbbreviationToJobId[v] = k;
         }
+    }
+
+    public static string ZeroPadNumbers(string input)
+    {
+        return DigitRegex().Replace(input, match => int.Parse(match.Value).ToString("D5"));
     }
 
     public static bool ContainsIgnoreCase(this string haystack, string needle)

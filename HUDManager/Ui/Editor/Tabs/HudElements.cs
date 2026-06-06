@@ -131,7 +131,7 @@ public class HudElements
         var sortedElements = layout.Elements
             .Where(entry => !ElementKindExt.Immutable.Contains(entry.Key) && entry.Key.IsRealElement())
             .Select(entry => Tuple.Create(entry.Key, entry.Value, entry.Key.LocalisedName(Plugin.DataManager)))
-            .OrderBy(tuple => tuple.Item3);
+            .OrderBy(tuple => Util.ZeroPadNumbers(tuple.Item3));
         foreach (var (kind, element, name) in sortedElements) {
             if (SearchEdit != null && !name.ContainsIgnoreCase(SearchEdit)) {
                 continue;
