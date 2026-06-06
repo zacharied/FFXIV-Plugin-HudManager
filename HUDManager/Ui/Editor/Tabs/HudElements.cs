@@ -411,13 +411,11 @@ public class HudElements
                         element[ElementComponent.Opacity] = true;
                 }
             }
+
             ImGui.TableNextRow();
         }
 
-        if (kind == ElementKind.TargetBar) {
-            if (element.Options is null) {
-                goto EndTargetBar;
-            }
+        if (kind == ElementKind.TargetBar && element.Options is not null) {
             var targetBarOpts = new TargetBarOptions(element.Options);
 
             NextColumnIfParent();
@@ -431,31 +429,22 @@ public class HudElements
                     update = true;
                 }
             }
-            ImGui.TableNextRow();
 
-            EndTargetBar:;
+            ImGui.TableNextRow();
         }
 
-        if (kind == ElementKind.StatusEffects) {
-            if (element.Options is null)
-                goto EndStatusEffects;
-            var statusOpts = new StatusBaseOptions(element.Options);
+        if (kind == ElementKind.StatusEffects && element.Options is not null) {
+            var statusOpts = new StatusEffectsOptions(element.Options);
 
             NextColumnIfParent();
             ImGui.TableNextColumn();
             DrawSettingNameWithHelp("Alignment", "Only applies if grouping (set below) is set to single element.");
 
-            using (ImRaii.ItemWidth((-1)))
-            using (var combo = ImRaii.Combo($"##alignment-{kind}", statusOpts.Alignment.Name())) {
-                if (combo) {
-                    foreach (var alignment in (StatusBaseAlignment[])Enum.GetValues(typeof(StatusBaseAlignment))) {
-                        if (!ImGui.Selectable($"{alignment.Name()}##{kind}", alignment == statusOpts.Alignment)) {
-                            continue;
-                        }
-
-                        statusOpts.Alignment = alignment;
-                        update = true;
-                    }
+            using (ImRaii.ItemWidth((-1))) {
+                var alignment = statusOpts.Alignment;
+                if (ImGuiExt.EnumCombo($"##alignment:{kind}", ref alignment)) {
+                    statusOpts.Alignment = alignment;
+                    update = true;
                 }
             }
 
@@ -463,45 +452,29 @@ public class HudElements
             ImGui.TableNextColumn();
             DrawSettingName("Grouping");
 
-            using (ImRaii.ItemWidth(-1))
-            using (var combo = ImRaii.Combo($"##grouping-{kind}", statusOpts.Grouping.Name())) {
-                if (combo) {
-                    foreach (var grouping in StatusBaseExt.StatusGroupingOrder) {
-                        if (!ImGui.Selectable($"{grouping.Name()}##{kind}", grouping == statusOpts.Grouping)) {
-                            continue;
-                        }
-
-                        statusOpts.Grouping = grouping;
-                        update = true;
-                    }
+            using (ImRaii.ItemWidth(-1)) {
+                var grouping = statusOpts.Grouping;
+                if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref grouping)) {
+                    statusOpts.Grouping = grouping;
+                    update = true;
                 }
             }
-            ImGui.TableNextRow();
 
-            EndStatusEffects:;
+            ImGui.TableNextRow();
         }
 
-        if (kind is ElementKind.StatusInfoEnhancements or ElementKind.StatusInfoEnfeeblements or ElementKind.StatusInfoOther or ElementKind.StatusInfoConditionalEnhancements) {
-            if (element.Options is null)
-                goto EndStatusInfo;
-
-            var statusOpts = new StatusSplitOptions(element);
+        if (kind is ElementKind.StatusInfoEnhancements && element.Options is not null) {
+            var statusOpts = new StatusInfoEnhancementsOptions(element);
 
             NextColumnIfParent();
             ImGui.TableNextColumn();
             DrawSettingName("Layout");
 
-            using (ImRaii.ItemWidth(-1))
-            using (var combo = ImRaii.Combo($"##layout-{kind}", statusOpts.Layout.Name())) {
-                if (combo) {
-                    foreach (var sLayout in (StatusSplitLayout[])Enum.GetValues(typeof(StatusSplitLayout))) {
-                        if (!ImGui.Selectable($"{sLayout.Name()}##{kind}", sLayout == statusOpts.Layout)) {
-                            continue;
-                        }
-
-                        statusOpts.Layout = sLayout;
-                        update = true;
-                    }
+            using (ImRaii.ItemWidth(-1)) {
+                var statusLayout = statusOpts.Layout;
+                if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
+                    statusOpts.Layout = statusLayout;
+                    update = true;
                 }
             }
 
@@ -509,19 +482,13 @@ public class HudElements
 
             NextColumnIfParent();
             ImGui.TableNextColumn();
-            DrawSettingName("Alignment");
+            DrawSettingName("Display settings");
 
-            using (ImRaii.ItemWidth(-1))
-            using (var combo = ImRaii.Combo($"##alignment-{kind}", statusOpts.Alignment.Name())) {
-                if (combo) {
-                    foreach (var alignment in (StatusSplitAlignment[])Enum.GetValues(typeof(StatusSplitAlignment))) {
-                        if (!ImGui.Selectable($"{alignment.Name()}##{kind}", alignment == statusOpts.Alignment)) {
-                            continue;
-                        }
-
-                        statusOpts.Alignment = alignment;
-                        update = true;
-                    }
+            using (ImRaii.ItemWidth(-1)) {
+                var displaySettings = statusOpts.DisplaySettings;
+                if (ImGuiExt.EnumCombo($"##display-settings:{kind}", ref displaySettings)) {
+                    statusOpts.DisplaySettings = displaySettings;
+                    update = true;
                 }
             }
 
@@ -532,14 +499,110 @@ public class HudElements
             DrawSettingName("Focusable by gamepad");
 
             using (ImRaii.ItemWidth(-1)) {
-                var focusable = statusOpts.Gamepad == StatusSplitGamepad.Focusable;
-                if (ImGui.Checkbox($"##focusable-by-gamepad-{kind}", ref focusable)) {
-                    statusOpts.Gamepad = focusable ? StatusSplitGamepad.Focusable : StatusSplitGamepad.NonFocusable;
+                var focusable = statusOpts.Gamepad == GamepadFocusType.Focusable;
+                if (ImGui.Checkbox($"##focusable-by-gamepad:{kind}", ref focusable)) {
+                    statusOpts.Gamepad = focusable ? GamepadFocusType.Focusable : GamepadFocusType.NonFocusable;
                     update = true;
                 }
             }
 
-            EndStatusInfo:;
+            ImGui.TableNextRow();
+        }
+
+        if (kind is ElementKind.StatusInfoConditionalEnhancements && element.Options is not null) {
+            var statusOpts = new StatusInfoConditionalOptions(element);
+
+            NextColumnIfParent();
+            ImGui.TableNextColumn();
+            DrawSettingName("Layout");
+
+            using (ImRaii.ItemWidth(-1)) {
+                var statusLayout = statusOpts.Layout;
+                if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
+                    statusOpts.Layout = statusLayout;
+                    update = true;
+                }
+            }
+
+            ImGui.TableNextRow();
+
+            NextColumnIfParent();
+            ImGui.TableNextColumn();
+            DrawSettingName("Focusable by gamepad");
+
+            using (ImRaii.ItemWidth(-1)) {
+                var focusable = statusOpts.Gamepad == GamepadFocusType.Focusable;
+                if (ImGui.Checkbox($"##focusable-by-gamepad:{kind}", ref focusable)) {
+                    statusOpts.Gamepad = focusable ? GamepadFocusType.Focusable : GamepadFocusType.NonFocusable;
+                    update = true;
+                }
+            }
+
+            ImGui.TableNextRow();
+        }
+
+        if (kind is ElementKind.StatusInfoEnfeeblements && element.Options is not null) {
+            var statusOpts = new StatusInfoEnfeeblementsOptions(element);
+
+            NextColumnIfParent();
+            ImGui.TableNextColumn();
+            DrawSettingName("Layout");
+
+            using (ImRaii.ItemWidth(-1)) {
+                var statusLayout = statusOpts.Layout;
+                if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
+                    statusOpts.Layout = statusLayout;
+                    update = true;
+                }
+            }
+
+            ImGui.TableNextRow();
+
+            NextColumnIfParent();
+            ImGui.TableNextColumn();
+            DrawSettingName("Focusable by gamepad");
+
+            using (ImRaii.ItemWidth(-1)) {
+                var focusable = statusOpts.Gamepad == GamepadFocusType.Focusable;
+                if (ImGui.Checkbox($"##focusable-by-gamepad:{kind}", ref focusable)) {
+                    statusOpts.Gamepad = focusable ? GamepadFocusType.Focusable : GamepadFocusType.NonFocusable;
+                    update = true;
+                }
+            }
+
+            ImGui.TableNextRow();
+        }
+
+        if (kind is ElementKind.StatusInfoOther && element.Options is not null) {
+            var statusOpts = new StatusInfoOtherOptions(element);
+
+            NextColumnIfParent();
+            ImGui.TableNextColumn();
+            DrawSettingName("Layout");
+
+            using (ImRaii.ItemWidth(-1)) {
+                var statusLayout = statusOpts.Layout;
+                if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
+                    statusOpts.Layout = statusLayout;
+                    update = true;
+                }
+            }
+
+            ImGui.TableNextRow();
+
+            NextColumnIfParent();
+            ImGui.TableNextColumn();
+            DrawSettingName("Focusable by gamepad");
+
+            using (ImRaii.ItemWidth(-1)) {
+                var focusable = statusOpts.Gamepad == GamepadFocusType.Focusable;
+                if (ImGui.Checkbox($"##focusable-by-gamepad:{kind}", ref focusable)) {
+                    statusOpts.Gamepad = focusable ? GamepadFocusType.Focusable : GamepadFocusType.NonFocusable;
+                    update = true;
+                }
+            }
+
+            ImGui.TableNextRow();
         }
 
         if (kind.IsHotbar()) {
@@ -579,25 +642,18 @@ public class HudElements
             ImGui.TableNextColumn();
             DrawSettingName("Hotbar layout");
 
-            using (ImRaii.ItemWidth(-1))
-            using (var combo = ImRaii.Combo($"##hotbar-layout-{kind}", hotbarOpts.Layout.Name())) {
-                if (combo) {
-                    foreach (var hotbarLayout in Enum.GetValues<HotbarLayout>()) {
-                        if (ImGui.Selectable($"{hotbarLayout.Name()}##{kind}", hotbarLayout == hotbarOpts.Layout)) {
-                            hotbarOpts.Layout = hotbarLayout;
-                            update = true;
-                        }
-                    }
+            using (ImRaii.ItemWidth(-1)) {
+                var hotbarLayout = hotbarOpts.Layout;
+                if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref hotbarLayout)) {
+                    hotbarOpts.Layout = hotbarLayout;
+                    update = true;
                 }
             }
 
             ImGui.TableNextRow();
         }
 
-        if (kind.ClassJob() != null) {
-            if (element.Options is null)
-                goto EndJobGauge;
-
+        if (kind.ClassJob() != null && element.Options is not null) {
             NextColumnIfParent();
             ImGui.TableNextColumn();
             DrawSettingName("Simple");
@@ -612,8 +668,6 @@ public class HudElements
             }
 
             ImGui.TableNextRow();
-
-            EndJobGauge:;
         }
 
         if (kind is ElementKind.PartyList && element.Options is not null) {
@@ -621,20 +675,16 @@ public class HudElements
             ImGui.TableNextColumn();
             DrawSettingName("Alignment");
 
-
             var partyListOpts = new PartyListOptions(element.Options);
 
-            using (ImRaii.ItemWidth(-1))
-            using (var combo = ImRaii.Combo($"##partylist-alignment-{kind}", partyListOpts.Alignment.ToString())) {
-                if (combo) {
-                    foreach (var alignment in (PartyListAlignment[])Enum.GetValues(typeof(PartyListAlignment))) {
-                        if (ImGui.Selectable($"{alignment.ToString()}##{kind}", partyListOpts.Alignment == alignment)) {
-                            partyListOpts.Alignment = alignment;
-                            update = true;
-                        }
-                    }
+            using (ImRaii.ItemWidth(-1)) {
+                var partyListAlignment = partyListOpts.Alignment;
+                if (ImGuiExt.EnumCombo($"##partylist-alignment:{kind}", ref partyListAlignment)) {
+                    partyListOpts.Alignment = partyListAlignment;
+                    update = true;
                 }
             }
+
             ImGui.TableNextRow();
         }
     }

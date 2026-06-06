@@ -1,23 +1,19 @@
 namespace HUDManager.Structs.Options;
 
-public class PartyListOptions
-{
-    private readonly byte[] _options;
+public class PartyListOptions {
+    private readonly EnumBitField<PartyListAlignment> alignment;
 
-    public PartyListAlignment Alignment
-    {
-        get => (PartyListAlignment)_options[0];
-        set => _options[0] = (byte)value;
+    public PartyListAlignment Alignment {
+        get => alignment.Value;
+        set => alignment.Value = value;
     }
 
-    public PartyListOptions(byte[] options)
-    {
-        _options = options;
+    public PartyListOptions(byte[] options) {
+        alignment = new EnumBitField<PartyListAlignment>(options, 0);
     }
 }
 
-public enum PartyListAlignment : byte
-{
+public enum PartyListAlignment : byte {
     Top = 0,
     Bottom = 1,
 }

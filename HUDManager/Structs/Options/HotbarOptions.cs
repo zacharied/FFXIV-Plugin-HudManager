@@ -1,74 +1,61 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HUDManager.Structs.Options;
 
-public class HotbarOptions
-{
-    private readonly Element _element;
-    private readonly byte[] _options;
+public class HotbarOptions {
+    private readonly Element element;
+    private readonly BitField<byte> index;
+    private readonly EnumBitField<HotbarLayout> layout;
 
-    public byte Index
-    {
-        get => _options[0];
-        set => _options[0] = value;
+    public byte Index {
+        get => index.Value;
+        set => index.Value = value;
     }
 
-    public HotbarLayout Layout
-    {
-        get => (HotbarLayout)_options[1];
-        set
-        {
-            _options[1] = (byte)value;
-            var size = value.Size();
-            _element.Width = size.X;
-            _element.Height = size.Y;
+    public HotbarLayout Layout {
+        get => layout.Value;
+        set {
+            layout.Value = value;
+
+            var size = CalculateSize(value);
+            element.Width = size.X;
+            element.Height = size.Y;
         }
     }
 
-    public HotbarOptions(Element element)
-    {
-        _element = element;
-        _options = element.Options;
-    }
-}
-
-public enum HotbarLayout : byte
-{
-    TwelveByOne = 1,
-    SixByTwo = 2,
-    FourByThree = 3,
-    ThreeByFour = 4,
-    TwoBySix = 5,
-    OneByTwelve = 6,
-}
-
-public static class HotbarLayoutExt
-{
-    public static string Name(this HotbarLayout layout)
-    {
-        return layout switch
-        {
-            HotbarLayout.TwelveByOne => "12x1",
-            HotbarLayout.SixByTwo => "6x2",
-            HotbarLayout.FourByThree => "4x3",
-            HotbarLayout.ThreeByFour => "3x4",
-            HotbarLayout.TwoBySix => "2x6",
-            HotbarLayout.OneByTwelve => "1x12",
-            _ => layout.ToString(),
-        };
+    public HotbarOptions(Element element) {
+        this.element = element;
+        index = new BitField<byte>(element.Options!, 0);
+        layout = new EnumBitField<HotbarLayout>(element.Options!, 1);
     }
 
-    public static Vector2<ushort> Size(this HotbarLayout layout)
-    {
-        return layout switch
-        {
-            HotbarLayout.TwelveByOne => new Vector2<ushort>(624, 72),
-            HotbarLayout.SixByTwo => new Vector2<ushort>(331, 121),
-            HotbarLayout.FourByThree => new Vector2<ushort>(241, 170),
-            HotbarLayout.ThreeByFour => new Vector2<ushort>(162, 260),
-            HotbarLayout.TwoBySix => new Vector2<ushort>(117, 358),
-            HotbarLayout.OneByTwelve => new Vector2<ushort>(72, 618),
+    private static Vector2<ushort> CalculateSize(HotbarLayout layout) {
+        return layout switch {
+            HotbarLayout.Layout12x1 => new Vector2<ushort>(624, 72),
+            HotbarLayout.Layout6x2 => new Vector2<ushort>(331, 121),
+            HotbarLayout.Layout4x3 => new Vector2<ushort>(241, 170),
+            HotbarLayout.Layout3x4 => new Vector2<ushort>(162, 260),
+            HotbarLayout.Layout2x6 => new Vector2<ushort>(117, 358),
+            HotbarLayout.Layout1x12 => new Vector2<ushort>(72, 618),
             _ => throw new ArgumentOutOfRangeException(nameof(layout), layout, null),
         };
     }
+}
+
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+public enum HotbarLayout : byte {
+    [Display(Name = "12x1")]
+    Layout12x1 = 1,
+    [Display(Name = "6x2")]
+    Layout6x2 = 2,
+    [Display(Name = "4x3")]
+    Layout4x3 = 3,
+    [Display(Name = "3x4")]
+    Layout3x4 = 4,
+    [Display(Name = "2x6")]
+    Layout2x6 = 5,
+    [Display(Name = "1x12")]
+    Layout1x12 = 6,
 }

@@ -4,6 +4,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace HUDManager.Ui;
@@ -185,5 +186,22 @@ public static class ImGuiExt
         using (ImRaii.PushStyle(ImGuiStyleVar.Alpha, 0.5f, !enabled)) {
             return IconButton(icon, id) && enabled;
         }
+    }
+
+    public static bool EnumCombo<T>(string label, ref T value) where T : struct, Enum {
+        var values = Enum.GetValues<T>();
+        if (values.Length != 0 && values[0].GetDisplayOrder() is not null) {
+            Array.Sort(values, (a, b) => a.GetDisplayOrder()!.Value.CompareTo(b.GetDisplayOrder()!.Value));
+        }
+
+        var names = values.Select(e => e.GetDisplayName()).ToArray();
+        var index = Array.IndexOf(values, value);
+
+        if (ImGui.Combo(label, ref index, names, values.Length)) {
+            value = values[index];
+            return true;
+        }
+
+        return false;
     }
 }
