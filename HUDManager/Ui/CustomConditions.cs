@@ -316,9 +316,9 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
             Plugin.Statuses.CustomConditionStatus.Toggle(ActiveCondition);
         }
 
-        ImGuiExt.VerticalSpace();
+        ImGui.Spacing();
         ImGui.Separator();
-        ImGuiExt.VerticalSpace();
+        ImGui.Spacing();
 
         ImGui.Text("Example commands:");
 
@@ -408,24 +408,20 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
 
         }
 
-        ImGuiExt.VerticalSpace();
+        ImGui.Spacing();
         ImGui.Separator();
-        ImGuiExt.VerticalSpace();
+        ImGui.Spacing();
 
-        ImGui.PushTextWrapPos();
-
-        ImGui.TextUnformatted("QoL Bar conditions require that the \"QoL Bar\" plugin by UnknownX is installed and enabled.");
-        ImGuiExt.VerticalSpace();
-        ImGui.TextUnformatted("Please note that QoL Bar conditions are saved according to their index number. This means "
-            + "that if the order of QoL Bar conditions changes while HUD Manager is disabled, an incorrect index may be "
-            + "used the next time HUD Manager is enabled. Keep this in mind if your QoL Bar conditions seem to be behaving "
-            + "strangely. A broken condition can be repaired by selecting a new condition above.");
-        ImGuiExt.VerticalSpace();
-        ImGui.TextUnformatted("There is a small performance penalty to fetching the QoL Bar condition state from another "
-            + "plugin, therefore it is recommended to create complex hybrid conditions on the QoL Bar side if possible, "
-            + "instead of checking many such conditions from HUD Manager.");
-
-        ImGui.PopTextWrapPos();
+        ImGui.TextWrapped("QoL Bar conditions require that the \"QoL Bar\" plugin by UnknownX is installed and enabled.");
+        ImGui.Spacing();
+        ImGui.TextWrapped("Please note that QoL Bar conditions are saved according to their index number. This means "
+                          + "that if the order of QoL Bar conditions changes while HUD Manager is disabled, an incorrect index may be "
+                          + "used the next time HUD Manager is enabled. Keep this in mind if your QoL Bar conditions seem to be behaving "
+                          + "strangely. A broken condition can be repaired by selecting a new condition above.");
+        ImGui.Spacing();
+        ImGui.TextWrapped("There is a small performance penalty to fetching the QoL Bar condition state from another "
+                          + "plugin, therefore it is recommended to create complex hybrid conditions on the QoL Bar side if possible, "
+                          + "instead of checking many such conditions from HUD Manager.");
     }
 
     private class DrawConditionEditMenu_InZone

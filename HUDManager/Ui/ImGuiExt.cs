@@ -11,8 +11,6 @@ namespace HUDManager.Ui;
 
 public static class ImGuiExt
 {
-    public static void VerticalSpace() => ImGui.Dummy(new Vector2(0, 5f));
-
     public static void HoverTooltip(string text)
     {
         if (ImGui.IsItemHovered())
