@@ -475,6 +475,10 @@ public class HudElements
                 if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
                     statusOpts.Layout = statusLayout;
                     update = true;
+
+                    if (Editor.Previews.Elements.Contains(kind)) {
+                        Editor.Previews.Update.Add(kind);
+                    }
                 }
             }
 
@@ -521,6 +525,10 @@ public class HudElements
                 if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
                     statusOpts.Layout = statusLayout;
                     update = true;
+
+                    if (Editor.Previews.Elements.Contains(kind)) {
+                        Editor.Previews.Update.Add(kind);
+                    }
                 }
             }
 
@@ -553,6 +561,10 @@ public class HudElements
                 if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
                     statusOpts.Layout = statusLayout;
                     update = true;
+
+                    if (Editor.Previews.Elements.Contains(kind)) {
+                        Editor.Previews.Update.Add(kind);
+                    }
                 }
             }
 
@@ -585,6 +597,10 @@ public class HudElements
                 if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref statusLayout)) {
                     statusOpts.Layout = statusLayout;
                     update = true;
+
+                    if (Editor.Previews.Elements.Contains(kind)) {
+                        Editor.Previews.Update.Add(kind);
+                    }
                 }
             }
 
@@ -647,6 +663,10 @@ public class HudElements
                 if (ImGuiExt.EnumCombo($"##grouping:{kind}", ref hotbarLayout)) {
                     hotbarOpts.Layout = hotbarLayout;
                     update = true;
+
+                    if (Editor.Previews.Elements.Contains(kind)) {
+                        Editor.Previews.Update.Add(kind);
+                    }
                 }
             }
 
