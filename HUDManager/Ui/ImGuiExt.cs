@@ -53,15 +53,6 @@ public static class ImGuiExt
         return ImGui.Checkbox(text, ref value);
     }
 
-    public static void CenterColumnText(string text)
-    {
-        var posX = ImGui.GetCursorPosX() + ImGui.GetColumnWidth() - ImGui.CalcTextSize(text).X - ImGui.GetScrollX() - 2 * ImGui.GetStyle().ItemSpacing.X;
-        if (posX > ImGui.GetCursorPosX()) {
-            ImGui.SetCursorPosX(posX);
-        }
-        ImGui.Text(text);
-    }
-
     public record OverlayPosition(Tuple<Vector2, Vector2> Outer, Tuple<Vector2, Vector2>? Inner);
 
     public static OverlayPosition ConvertGameToImGuiWithInner(Element element)

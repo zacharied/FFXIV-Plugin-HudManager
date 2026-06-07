@@ -155,6 +155,8 @@ public class Swaps {
 
                 if (advancedMode) {
                     var applyLayer = _editingCondition.IsLayer;
+
+                    ImCursor.ToNestedRect(new Vector2(ImGui.GetFrameHeight(), 0), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);
                     if (ImGui.Checkbox($"##condition-layered-{item.i}", ref applyLayer)) {
                         _editingCondition.IsLayer = applyLayer;
                         update = true;
@@ -252,7 +254,9 @@ public class Swaps {
                 if (advancedMode) {
                     if (item.cond.IsLayer) {
                         using (ImRaii.PushFont(UiBuilder.IconFont)) {
-                            ImGuiExt.CenterColumnText(FontAwesomeIcon.Check.ToIconString());
+                            var text = FontAwesomeIcon.Check.ToIconString();
+                            ImCursor.ToNestedRect(ImGui.CalcTextSize(text), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);
+                            ImGui.Text(text);
                         }
                     }
                     ImGui.TableNextColumn();
@@ -313,7 +317,8 @@ public class Swaps {
                         activeText = Plugin.Statuses.ConditionHoldTimerIsTicking(item.cond) ? "▽" : "☆";
                     }
                     if (activeText != string.Empty) {
-                        ImGuiExt.CenterColumnText(activeText);
+                        ImCursor.ToNestedRect(ImGui.CalcTextSize(activeText), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);
+                        ImGui.Text(activeText);
                     }
                 }
             }
