@@ -199,8 +199,7 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
 
         using (var combo = ImRaii.Combo("Condition type", ActiveCondition.ConditionType.DisplayName())) {
             if (combo) {
-                foreach (var type in Enum.GetValues(typeof(CustomConditionType))
-                             .Cast<CustomConditionType>()
+                foreach (var type in Enum.GetValues<CustomConditionType>()
                              .OrderBy(t => t.DisplayOrder())) {
                     if (ImGui.Selectable(type.DisplayName())) {
                         ActiveCondition.ConditionType = type;

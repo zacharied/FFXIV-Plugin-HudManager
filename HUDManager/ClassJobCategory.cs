@@ -45,7 +45,7 @@ public static class ClassJobCategoryIdExtensions
         var classJobSheet = plugin.DataManager.GetExcelSheet<ClassJob>();
         var classJobIds = classJobSheet.Select(j => j.RowId).ToList();
 
-        foreach (var cat in Enum.GetValues(typeof(ClassJobCategoryId)).Cast<ClassJobCategoryId>()) {
+        foreach (var cat in Enum.GetValues<ClassJobCategoryId>()) {
             // Display name
             _displayNames[cat] = cat.DisplayName(plugin);
 
@@ -83,7 +83,7 @@ public static class ClassJobCategoryIdExtensions
 
         // Sanity check, make sure the groupings list has all the categories.
         if (!ClassJobCategoryGroupings.SelectMany(x => x).ToList().ToHashSet().SetEquals(
-                new HashSet<ClassJobCategoryId>(Enum.GetValues(typeof(ClassJobCategoryId)).Cast<ClassJobCategoryId>()))) {
+                new HashSet<ClassJobCategoryId>(Enum.GetValues<ClassJobCategoryId>()))) {
             throw new ApplicationException("Job category lists do not match");
         }
     }
@@ -161,7 +161,7 @@ public static class ClassJobCategoryIdExtensions
         ClassJobCategoryId best = 0;
 
         var categoryOnly = false;
-        foreach (var cat in Enum.GetValues(typeof(ClassJobCategoryId)).Cast<ClassJobCategoryId>()) {
+        foreach (var cat in Enum.GetValues<ClassJobCategoryId>()) {
             if (_activationConditions![cat][classJob.RowId])
                 if (ClassJobCombos.Contains(cat)) {
                     // This is a class-job combo

@@ -38,7 +38,7 @@ public class Swaps {
         var staging = ((int)Plugin.Config.StagingSlot + 1).ToString();
         using (var combo = ImRaii.Combo("Staging slot", staging)) {
             if (combo) {
-                foreach (HudSlot slot in Enum.GetValues(typeof(HudSlot))) {
+                foreach (var slot in Enum.GetValues<HudSlot>()) {
                     if (!ImGui.Selectable(((int)slot + 1).ToString())) {
                         continue;
                     }
@@ -196,7 +196,7 @@ public class Swaps {
                             _editingCondition.Status = null;
                         }
 
-                        foreach (Status status in Enum.GetValues(typeof(Status))) {
+                        foreach (var status in Enum.GetValues<Status>()) {
                             if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
                                 _editingCondition.CustomCondition = null;
                                 _editingCondition.Status = status;
