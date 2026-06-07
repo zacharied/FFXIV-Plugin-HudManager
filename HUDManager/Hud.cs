@@ -329,10 +329,15 @@ public sealed class Hud : IDisposable
 
     private unsafe void ApplyJobGaugeVisibility(ElementKind kind, Element element)
     {
-        var unitName = kind.GetJobGaugeAtkName()!;
-        var unit = (AtkUnitBase*)Plugin.GameGui.GetAddonByName(unitName).Address;
-        if (unit is null)
+        var unitName = kind.GetJobGaugeAtkName();
+        if (unitName is null)
             return;
+
+        var ptr = Plugin.GameGui.GetAddonByName(unitName);
+        if (ptr.IsNull)
+            return;
+
+        var unit = (AtkUnitBase*)ptr.Address;
 
         var visibilityMask = Util.GamepadModeActive(Plugin) ? VisibilityFlags.Gamepad : VisibilityFlags.Keyboard;
         if ((element.Visibility & visibilityMask) > 0) {

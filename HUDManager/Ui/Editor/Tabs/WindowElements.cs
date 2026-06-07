@@ -41,12 +41,12 @@ public class WindowElements {
         ImGui.Separator();
 
         foreach (var window in WindowKindExt.All) {
-            var addon = Plugin.GameGui.GetAtkUnitByName(window, 1);
-            if (addon == null) {
+            var ptr = Plugin.GameGui.GetAddonByName(window);
+            if (ptr.IsNull) {
                 continue;
             }
 
-            var flags = addon.Value.IsVisible && !layout.Windows.ContainsKey(window)
+            var flags = ptr.IsVisible && !layout.Windows.ContainsKey(window)
                 ? ImGuiSelectableFlags.None
                 : ImGuiSelectableFlags.Disabled;
 

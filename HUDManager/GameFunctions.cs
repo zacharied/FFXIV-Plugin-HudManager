@@ -44,13 +44,11 @@ public class GameFunctions
         );
     }
 
-    public Vector2<short>? GetAddonPosition(string uiName)
-    {
-        var addon = Plugin.GameGui.GetAtkUnitByName(uiName, 1);
-        if (addon == null) {
+    public Vector2<short>? GetAddonPosition(string uiName) {
+        var ptr = Plugin.GameGui.GetAddonByName(uiName);
+        if (ptr.IsNull)
             return null;
-        }
 
-        return new Vector2<short>(addon.Value.X, addon.Value.Y);
+        return new Vector2<short>(ptr.X, ptr.Y);
     }
 }
