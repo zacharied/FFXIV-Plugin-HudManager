@@ -256,6 +256,7 @@ public class Swaps {
                         using (ImRaii.PushFont(UiBuilder.IconFont)) {
                             var text = FontAwesomeIcon.Check.ToIconString();
                             ImCursor.ToNestedRect(ImGui.CalcTextSize(text), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);
+                            ImGui.AlignTextToFramePadding();
                             ImGui.Text(text);
                         }
                     }
@@ -266,20 +267,23 @@ public class Swaps {
 
                 var jobDisplayName = item.cond.ClassJobCategory?.DisplayName(Plugin) ?? String.Empty;
 
-                ImGui.TextUnformatted(jobDisplayName);
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(jobDisplayName);
                 ImGui.TableNextColumn();
 
                 // Column: Status/Custom condition
 
                 var statusDisplayName = item.cond.Status?.Name() ?? item.cond.CustomCondition?.DisplayName;
 
-                ImGui.TextUnformatted(statusDisplayName ?? string.Empty);
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(statusDisplayName ?? string.Empty);
                 ImGui.TableNextColumn();
 
                 // Column: Layout
 
                 Plugin.Config.Layouts.TryGetValue(item.cond.LayoutId, out var condLayout);
-                ImGui.TextUnformatted(condLayout?.Name ?? string.Empty);
+                ImGui.AlignTextToFramePadding();
+                ImGui.Text(condLayout?.Name ?? string.Empty);
                 ImGui.TableNextColumn();
 
                 // Column: Actions
@@ -318,6 +322,7 @@ public class Swaps {
                     }
                     if (activeText != string.Empty) {
                         ImCursor.ToNestedRect(ImGui.CalcTextSize(activeText), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);
+                        ImGui.AlignTextToFramePadding();
                         ImGui.Text(activeText);
                     }
                 }

@@ -164,13 +164,15 @@ public class HudElements
 
         static void DrawSettingName(string name)
         {
-            ImGui.TextUnformatted(name);
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text(name);
             ImGui.TableNextColumn();
         }
 
         static void DrawSettingNameWithHelp(string name, string help)
         {
-            ImGui.TextUnformatted(name);
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text(name);
             ImGuiComponents.HelpMarker(help);
             ImGui.TableNextColumn();
         }
