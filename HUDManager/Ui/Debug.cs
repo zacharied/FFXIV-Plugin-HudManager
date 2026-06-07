@@ -200,8 +200,8 @@ public class Debug
             var element = new Element(raw);
             var pos = ImGuiExt.ConvertGameToImGui(element);
 
-            var min = pos.Outer.Item1;
-            var size = pos.Outer.Item2;
+            var min = pos.Item1;
+            var size = pos.Item2;
             var max = min + size;
 
             drawList.AddRectFilled( min, max, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.7f)) );

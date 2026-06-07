@@ -67,21 +67,20 @@ public static class ImGuiExt
 
     public record OverlayPosition(Tuple<Vector2, Vector2> Outer, Tuple<Vector2, Vector2>? Inner);
 
-    public static OverlayPosition ConvertGameToImGui(Element element)
+    public static OverlayPosition ConvertGameToImGuiWithInner(Element element)
     {
-        var inner = element.Id switch
-        {
-            ElementKind.TargetInfoProgressBar => ConvertGameToImGui(element, 246, 10, 204, 24, 1),
-            ElementKind.TargetInfoStatus => ConvertGameToImGui(element, 13, 45, 375, 82, 1),
-            ElementKind.TargetInfoHp => ConvertGameToImGui(element, 0, 0, -1, -1, 0.5f),
+        var pos = ConvertGameToImGui(element);
+        var inner = element.Id switch {
+            ElementKind.TargetInfoProgressBar => CreateInner(pos, element.Scale, 246, 10, 204, 24),
+            ElementKind.TargetInfoStatus => CreateInner(pos, element.Scale, 13, 45, 375, 82),
+            ElementKind.TargetInfoHp => CreateInner(pos, element.Scale, 0, 0, -1, 62),
             _ => null,
         };
 
-        return new OverlayPosition(ConvertGameToImGui(element, 0, 0, -1, -1, 1), inner);
+        return new OverlayPosition(pos, inner);
     }
 
-    private static Tuple<Vector2, Vector2> ConvertGameToImGui(Element element, int offsetX, int offsetY, int innerWidth, int innerHeight, float heightScale)
-    {
+    public static Tuple<Vector2, Vector2> ConvertGameToImGui(Element element) {
         // get X & Y coords from the element, which are percentages (0 - 100)
         var percentagePos = new Vector2(element.X, element.Y);
 
@@ -123,18 +122,28 @@ public static class ImGuiExt
         pixelPos.Y -= subY;
 
         // round the coords
-        pixelPos.X = (float)Math.Round(pixelPos.X) + offsetX * element.Scale;
-        pixelPos.Y = (float)Math.Round(pixelPos.Y) + offsetY * element.Scale;
+        pixelPos.X = (float)Math.Round(pixelPos.X);
+        pixelPos.Y = (float)Math.Round(pixelPos.Y) ;
+
+        return Tuple.Create(pixelPos, size);
+    }
+
+    private static Tuple<Vector2, Vector2> CreateInner(Tuple<Vector2, Vector2> pos, float outerScale, int offsetX, int offsetY, int innerWidth, int innerHeight)
+    {
+        var pixelPos = pos.Item1;
+        var size = pos.Item2;
+
+        // round the coords
+        pixelPos.X = (float)Math.Round(pixelPos.X) + offsetX * outerScale;
+        pixelPos.Y = (float)Math.Round(pixelPos.Y) + offsetY * outerScale;
 
         if (innerWidth > 0) {
-            size.X = innerWidth * element.Scale;
+            size.X = innerWidth * outerScale;
         }
 
         if (innerHeight > 0) {
-            size.Y = innerHeight * element.Scale;
+            size.Y = innerHeight * outerScale;
         }
-
-        size.Y *= heightScale;
 
         return Tuple.Create(pixelPos, size);
     }

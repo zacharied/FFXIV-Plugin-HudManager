@@ -42,7 +42,7 @@ public class Previews
                 continue;
             }
 
-            var (outer, inner) = ImGuiExt.ConvertGameToImGui(element);
+            var (outer, inner) = ImGuiExt.ConvertGameToImGuiWithInner(element);
             var (pos, size) = outer;
 
             if (Update.Remove(element.Id)) {
