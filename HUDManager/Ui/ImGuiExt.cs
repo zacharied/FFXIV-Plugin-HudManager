@@ -23,12 +23,11 @@ public static class ImGuiExt
             ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
         }
 
-        if (!ImGui.IsItemHovered())
-            return;
-
-        using (ImRaii.Tooltip())
-        using (ImRaii.TextWrapPos(ImGui.GetFontSize() * 20f)) {
-            ImGui.Text(text);
+        if (ImGui.IsItemHovered()) {
+            using (ImRaii.Tooltip())
+            using (ImRaii.TextWrapPos(ImGui.GetFontSize() * 20f)) {
+                ImGui.Text(text);
+            }
         }
     }
 
