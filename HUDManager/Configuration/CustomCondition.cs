@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace HUDManager.Configuration;
 
@@ -141,7 +142,7 @@ public struct CustomConditionUnion
 
     public string UiName(Plugin plugin, bool partial = false) =>
         CurrentType == typeof(CustomCondition) ? Custom!.DisplayName :
-        CurrentType == typeof(Status) ? Game!.Value.Name() :
+        CurrentType == typeof(Status) ? Game!.Value.GetDisplayName() :
         CurrentType == typeof(ClassJobCategoryId) ? "Class/Job" + (partial ? string.Empty : $"  {ClassJob!.Value.DisplayName(plugin)}") :
         throw new CustomConditionUnionUndefinedException();
 
@@ -153,34 +154,14 @@ public struct CustomConditionUnion
 
 public enum CustomConditionType
 {
+    [Display(Name = "Toggle by command", Order = 0)]
     ConsoleToggle = 0,
+    [Display(Name = "Hold key", Order = 1)]
     HoldToActivate = 1,
-    InZone = 3,
-    QoLBarCondition = 4,
+    [Display(Name = "Multiple conditions", Order = 99)]
     MultiCondition = 2,
-}
-
-public static class CustomConditionTypeExt
-{
-    public static string DisplayName(this CustomConditionType type)
-        => type switch
-        {
-            CustomConditionType.ConsoleToggle => "Toggle by command",
-            CustomConditionType.HoldToActivate => "Hold key",
-            CustomConditionType.InZone => "In zone",
-            CustomConditionType.QoLBarCondition => "QoL Bar condition",
-            CustomConditionType.MultiCondition => "Multiple conditions",
-            _ => throw new ArgumentOutOfRangeException(nameof(type)),
-        };
-
-    public static int DisplayOrder(this CustomConditionType type)
-        => type switch
-        {
-            CustomConditionType.ConsoleToggle => 0,
-            CustomConditionType.HoldToActivate => 1,
-            CustomConditionType.InZone => 2,
-            CustomConditionType.QoLBarCondition => 3,
-            CustomConditionType.MultiCondition => 99,
-            _ => throw new ArgumentOutOfRangeException(nameof(type)),
-        };
+    [Display(Name = "In zone", Order = 2)]
+    InZone = 3,
+    [Display(Name = "QoL Bar condition", Order = 3)]
+    QoLBarCondition = 4,
 }

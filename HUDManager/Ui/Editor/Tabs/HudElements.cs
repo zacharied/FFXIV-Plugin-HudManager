@@ -281,17 +281,10 @@ public class HudElements
         DrawSettingName("Measured from");
 
         var measuredFrom = element.MeasuredFrom;
-        using (ImRaii.ItemWidth(-1))
-        using (var combo = ImRaii.Combo($"##measured-from-{kind}", measuredFrom.Name())) {
-            if (combo) {
-                foreach (var measured in Enum.GetValues<MeasuredFrom>()) {
-                    if (!ImGui.Selectable($"{measured.Name()}##{kind}", measuredFrom == measured)) {
-                        continue;
-                    }
-
-                    element.MeasuredFrom = measured;
-                    update = true;
-                }
+        using (ImRaii.ItemWidth(-1)) {
+            if (ImGuiExt.EnumCombo($"##measured-from:{kind}", ref measuredFrom)) {
+                element.MeasuredFrom = measuredFrom;
+                update = true;
             }
         }
 

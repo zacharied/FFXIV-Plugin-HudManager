@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
 
 namespace HUDManager;
@@ -303,57 +304,48 @@ public class HudConditionMatch
 // Note: Changing the names of these is a breaking change
 public enum Status
 {
+    [Display(Name = "In combat")]
     InCombat = ConditionFlag.InCombat,
+    [Display(Name = "In instance")]
     InInstance = ConditionFlag.BoundByDuty,
+    [Display(Name = "Crafting")]
     Crafting = ConditionFlag.Crafting,
+    [Display(Name = "Gathering")]
     Gathering = ConditionFlag.Gathering,
+    [Display(Name = "Fishing")]
     Fishing = ConditionFlag.Fishing,
+    [Display(Name = "Mounted")]
     Mounted = ConditionFlag.Mounted,
+    [Display(Name = "Weapon drawn")]
     WeaponDrawn = -1,
+    [Display(Name = "Roleplaying")]
     Roleplaying = -2,
+    [Display(Name = "Performing music")]
     PlayingMusic = -3,
+    [Display(Name = "In PvP")]
     InPvp = -4,
+    [Display(Name = "In dialogue")]
     InDialogue = -5,
+    [Display(Name = "In FATE area")]
     InFate = -6,
+    [Display(Name = "Level-synced for FATE")]
     InFateLevelSynced = -7,
+    [Display(Name = "In a sanctuary")]
     InSanctuary = -8,
+    [Display(Name = "Chat focused")]
     ChatFocused = -9,
+    [Display(Name = "Keyboard/mouse mode")]
     InputModeKbm = -10,
+    [Display(Name = "Gamepad mode")]
     InputModeGamepad = -11,
+    [Display(Name = "Windowed")]
     Windowed = -12,
+    [Display(Name = "Full Screen")]
     FullScreen = -13,
 }
 
 public static class StatusExtensions
 {
-    public static string Name(this Status status)
-    {
-        return status switch
-        {
-            Status.InCombat => "In combat",
-            Status.WeaponDrawn => "Weapon drawn",
-            Status.InInstance => "In instance",
-            Status.Crafting => "Crafting",
-            Status.Gathering => "Gathering",
-            Status.Fishing => "Fishing",
-            Status.Mounted => "Mounted",
-            Status.Roleplaying => "Roleplaying",
-            Status.PlayingMusic => "Performing music",
-            Status.InPvp => "In PvP",
-            Status.InDialogue => "In dialogue",
-            Status.InFate => "In FATE area",
-            Status.InFateLevelSynced => "Level-synced for FATE",
-            Status.InSanctuary => "In a sanctuary",
-            Status.ChatFocused => "Chat focused",
-            Status.InputModeKbm => "Keyboard/mouse mode",
-            Status.InputModeGamepad => "Gamepad mode",
-            Status.Windowed => "Windowed",
-            Status.FullScreen => "Full Screen",
-            _ => throw new ApplicationException($"No name was set up for {status}"),
-        };
-
-    }
-
     public static bool Active(this Status status, Plugin plugin, IPlayerCharacter? player = null)
     {
         if (status > 0) {

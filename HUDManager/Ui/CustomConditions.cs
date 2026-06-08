@@ -197,16 +197,10 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
 
         ImGui.Separator();
 
-        using (var combo = ImRaii.Combo("Condition type", ActiveCondition.ConditionType.DisplayName())) {
-            if (combo) {
-                foreach (var type in Enum.GetValues<CustomConditionType>()
-                             .OrderBy(t => t.DisplayOrder())) {
-                    if (ImGui.Selectable(type.DisplayName())) {
-                        ActiveCondition.ConditionType = type;
-                        update = true;
-                    }
-                }
-            }
+        var conditionType = ActiveCondition.ConditionType;
+        if (ImGuiExt.EnumCombo($"Condition type", ref conditionType)) {
+            ActiveCondition.ConditionType = conditionType;
+            update = true;
         }
 
         ImGui.Spacing();
@@ -571,15 +565,10 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
 
                     using (ImRaii.ItemWidth(-1)) {
                         if (i > 0) {
-                            using (var combo = ImRaii.Combo($"##multicond-edit-junction-{i}", _ui.editingCondition!.Type.UiName())) {
-                                if (combo) {
-                                    foreach (var junc in Enum.GetValues<MultiConditionJunction>()) {
-                                        if (ImGui.Selectable(junc.UiName())) {
-                                            _ui.editingCondition!.Type = junc;
-                                            update = true;
-                                        }
-                                    }
-                                }
+                            var conditionType = _ui.editingCondition!.Type;
+                            if (ImGuiExt.EnumCombo($"##multicond-edit-junction:{i}", ref conditionType)) {
+                                _ui.editingCondition!.Type = conditionType;
+                                update = true;
                             }
                         }
 
@@ -601,7 +590,7 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
                             using (var conditionCombo = ImRaii.Combo($"##multicond-edit-condition-{i}", _ui.editingCondition.Condition.UiName(_plugin, partial: _ui.editingConditionIndex >= 0))) {
                                 if (conditionCombo) {
                                     foreach (var status in Enum.GetValues<Status>()) {
-                                        if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
+                                        if (ImGui.Selectable($"{status.GetDisplayName()}##condition-edit-status")) {
                                             _ui.editingCondition.Condition = new CustomConditionUnion(status);
                                             update = true;
                                         }
@@ -683,7 +672,7 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
                     // Column: Junction
 
                     if (i > 0)
-                        ImGui.Text(cond.Type.UiName());
+                        ImGui.Text(cond.Type.GetDisplayName());
                     ImGui.TableNextColumn();
 
                     // Column: NOT

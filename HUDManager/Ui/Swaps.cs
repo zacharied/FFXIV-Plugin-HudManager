@@ -189,7 +189,7 @@ public class Swaps {
 
                 // Column: Status/Custom condition
 
-                var statusDisplayName = _editingCondition.Status?.Name() ?? _editingCondition.CustomCondition?.DisplayName;
+                var statusDisplayName = _editingCondition.Status?.GetDisplayName() ?? _editingCondition.CustomCondition?.DisplayName;
 
                 using (ImRaii.ItemWidth(-1))
                 using (var combo = ImRaii.Combo("##condition-edit-status", statusDisplayName ?? "Any")) {
@@ -199,7 +199,7 @@ public class Swaps {
                         }
 
                         foreach (var status in Enum.GetValues<Status>()) {
-                            if (ImGui.Selectable($"{status.Name()}##condition-edit-status")) {
+                            if (ImGui.Selectable($"{status.GetDisplayName()}##condition-edit-status")) {
                                 _editingCondition.CustomCondition = null;
                                 _editingCondition.Status = status;
                             }
@@ -273,7 +273,7 @@ public class Swaps {
 
                 // Column: Status/Custom condition
 
-                var statusDisplayName = item.cond.Status?.Name() ?? item.cond.CustomCondition?.DisplayName;
+                var statusDisplayName = item.cond.Status?.GetDisplayName() ?? item.cond.CustomCondition?.DisplayName;
 
                 ImGui.AlignTextToFramePadding();
                 ImGui.Text(statusDisplayName ?? string.Empty);

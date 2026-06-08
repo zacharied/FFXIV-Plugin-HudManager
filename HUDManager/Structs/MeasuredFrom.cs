@@ -1,39 +1,32 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace HUDManager.Structs;
 
 public enum MeasuredFrom : byte
 {
+    [Display(Name = "Top left")]
     TopLeft = 0,
+    [Display(Name = "Top middle")]
     TopMiddle = 1,
+    [Display(Name = "Top right")]
     TopRight = 2,
+    [Display(Name = "Middle left")]
     MiddleLeft = 3,
+    [Display(Name = "Middle")]
     Middle = 4,
+    [Display(Name = "Middle right")]
     MiddleRight = 5,
+    [Display(Name = "Bottom left")]
     BottomLeft = 6,
+    [Display(Name = "Bottom middle")]
     BottomMiddle = 7,
+    [Display(Name = "Bottom right")]
     BottomRight = 8,
 }
 
 public static class MeasureFromExt
 {
-    public static string Name(this MeasuredFrom measuredFrom)
-    {
-        return measuredFrom switch
-        {
-            MeasuredFrom.TopLeft => "Top left",
-            MeasuredFrom.TopMiddle => "Top middle",
-            MeasuredFrom.TopRight => "Top right",
-            MeasuredFrom.MiddleLeft => "Middle left",
-            MeasuredFrom.Middle => "Middle",
-            MeasuredFrom.MiddleRight => "Middle right",
-            MeasuredFrom.BottomLeft => "Bottom left",
-            MeasuredFrom.BottomMiddle => "Bottom middle",
-            MeasuredFrom.BottomRight => "Bottom right",
-            _ => measuredFrom.ToString(),
-        };
-    }
-
     public static Tuple<MeasuredX, MeasuredY> ToParts(this MeasuredFrom measured)
     {
         return measured switch

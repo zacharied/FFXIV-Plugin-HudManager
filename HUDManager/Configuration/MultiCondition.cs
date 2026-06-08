@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace HUDManager.Configuration;
@@ -119,17 +120,8 @@ public class MultiCondition
 
 public enum MultiConditionJunction
 {
+    [Display(Name = "AND")]
     LogicalAnd,
+    [Display(Name = "OR")]
     LogicalOr,
-}
-
-public static class MultiConditionJunctionExt
-{
-    public static string UiName(this MultiConditionJunction type) =>
-        type switch
-        {
-            MultiConditionJunction.LogicalAnd => "AND",
-            MultiConditionJunction.LogicalOr => "OR",
-            _ => string.Empty,
-        };
 }
