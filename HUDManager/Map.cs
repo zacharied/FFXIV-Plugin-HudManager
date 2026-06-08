@@ -1,4 +1,5 @@
 ﻿using Dalamud.Plugin.Services;
+using Lumina.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
