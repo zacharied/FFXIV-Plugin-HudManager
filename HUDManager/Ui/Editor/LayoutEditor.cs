@@ -403,7 +403,7 @@ public class LayoutEditor
         void ReportExport(string layoutName, string dest)
             => Plugin.ChatGui.Print($"Exported layout \"{layoutName}\" to {dest}.");
 
-        var popup = ImRaii.Popup(Popups.ExportLayout);
+        using var popup = ImRaii.Popup(Popups.ExportLayout);
         if (!popup) return;
 
         if (!Plugin.Config.Layouts.TryGetValue(Ui.SelectedLayout, out var layout)) {
