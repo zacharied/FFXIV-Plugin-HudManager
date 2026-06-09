@@ -21,6 +21,8 @@ public class Config : IPluginConfiguration
 
     public bool AdvancedSwapMode { get; set; }
 
+    public bool UseLayoutListTreeView { get; set; }
+
     public bool DisableHelpPanels { get; set; }
 
     public HudSlot StagingSlot { get; set; } = HudSlot.Four;
@@ -29,7 +31,7 @@ public class Config : IPluginConfiguration
 
     public float DragSpeed { get; set; } = 1f;
 
-    public Dictionary<Guid, SavedLayout> Layouts { get; } = new();
+    public OrderedDictionary<Guid, SavedLayout> Layouts { get; } = new();
 
     public List<HudConditionMatch> HudConditionMatches { get; } = [];
 

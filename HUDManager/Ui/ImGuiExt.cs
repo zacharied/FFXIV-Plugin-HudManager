@@ -2,6 +2,7 @@
 using HUDManager.Structs;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using System;
 using System.Linq;
@@ -200,5 +201,52 @@ public static class ImGuiExt
         }
 
         return false;
+    }
+
+    public static bool IconButtonWithCenteredText(FontAwesomeIcon icon, string text, Vector2? size = null, bool centerIcon = false) {
+        var iconStr = icon.ToIconString();
+        var idIndex = text.IndexOf("##", StringComparison.Ordinal);
+        var textStr = idIndex >= 0 ? text[..idIndex] : text;
+
+        Vector2 iconSize;
+        using (ImRaii.PushFont(UiBuilder.IconFont)) {
+            iconSize = ImGui.CalcTextSize(iconStr);
+        }
+        var textSize = ImGui.CalcTextSize(textStr);
+
+        var framePadding = ImGui.GetStyle().FramePadding;
+        var iconPadding = 3 * ImGuiHelpers.GlobalScale;
+        var width = size is { X: not 0 } ? size.Value.X : iconSize.X + textSize.X + (framePadding.X * 2) + iconPadding;
+        var height = size is { Y: not 0 } ? size.Value.Y : ImGui.GetFrameHeight();
+
+        var cursor = ImGui.GetCursorScreenPos();
+        bool button;
+        using (ImRaii.PushId(text)) {
+            button = ImGui.Button(string.Empty, new Vector2(width, height));
+        }
+
+        var totalContentWidth = iconSize.X + iconPadding + textSize.X;
+        var contentEndX = cursor.X + width - framePadding.X;
+        var iconX = centerIcon
+            ? Math.Clamp(cursor.X + (width - totalContentWidth) / 2f, cursor.X + framePadding.X, Math.Max(cursor.X + framePadding.X, contentEndX - totalContentWidth))
+            : cursor.X + framePadding.X;
+        var contentStartX = iconX + iconSize.X + iconPadding;
+        var textX = centerIcon
+            ? contentStartX
+            : Math.Clamp((contentStartX + contentEndX - textSize.X) / 2f, contentStartX, Math.Max(contentStartX, contentEndX - textSize.X));
+
+        var iconPos = new Vector2(iconX, cursor.Y + (height - iconSize.Y) / 2f);
+        var textPos = new Vector2(textX, cursor.Y + (height - textSize.Y) / 2f);
+
+        var dl = ImGui.GetWindowDrawList();
+        var textColor = ImGui.GetColorU32(ImGuiCol.Text);
+        using (ImRaii.PushFont(UiBuilder.IconFont)) {
+            dl.AddText(iconPos, textColor, iconStr);
+        }
+        dl.PushClipRect(new Vector2(contentStartX, cursor.Y), new Vector2(contentEndX, cursor.Y + height), true);
+        dl.AddText(textPos, textColor, textStr);
+        dl.PopClipRect();
+
+        return button;
     }
 }
