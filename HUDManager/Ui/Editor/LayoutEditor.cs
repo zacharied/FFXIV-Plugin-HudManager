@@ -232,7 +232,7 @@ public class LayoutEditor
     }
 
     private void SetUpAddLayoutPopup(ref bool update, ref bool layoutChanged) {
-        var popup = ImRaii.Popup(Popups.AddLayout);
+        using var popup = ImRaii.Popup(Popups.AddLayout);
         if (!popup) return;
 
         var name = NewLayoutName ?? string.Empty;
@@ -300,9 +300,8 @@ public class LayoutEditor
         }
     }
 
-    private void SetUpRenameLayoutPopup(ref bool update)
-    {
-        var popup = ImRaii.Popup(Popups.RenameLayout);
+    private void SetUpRenameLayoutPopup(ref bool update) {
+        using var popup = ImRaii.Popup(Popups.RenameLayout);
         if (!popup) return;
 
         var name = RenameLayoutName ?? "<none>";
