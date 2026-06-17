@@ -10,12 +10,14 @@ using System.Numerics;
 
 namespace HUDManager.Ui;
 
-public static class ImGuiExt
-{
-    public static void HoverTooltip(string text)
-    {
-        if (ImGui.IsItemHovered())
-            ImGui.SetTooltip(text);
+public static class ImGuiExt {
+    public static void HoverTooltip(string text) {
+        if (text == "") return;
+        using (ImRaii.DefaultStyle()) {
+            if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) {
+                ImGui.SetTooltip(text);
+            }
+        }
     }
 
     public static void HelpMarker(string text) {
