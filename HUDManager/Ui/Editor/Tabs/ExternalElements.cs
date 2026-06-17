@@ -1,6 +1,5 @@
 ﻿using HUDManager.Configuration;
 using HUDManager.Ui.Editor.Tabs.External;
-using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 using System.Numerics;
 
@@ -30,7 +29,7 @@ internal class ExternalElements
         foreach (var elem in _elements)
             elem.AddButtonToList(layout, ref update, elem.Available());
 
-        using (var child = ImRaii.Child("uimanager-overlay-edit", new Vector2(0, 0), true)) {
+        using (var child = ImRaii.Child("uimanager-overlay-edit", new Vector2(0, 0), false)) {
             if (!child) return;
 
             foreach (var elem in _elements)
