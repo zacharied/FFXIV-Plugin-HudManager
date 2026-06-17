@@ -233,6 +233,7 @@ public class HudElements
                 return;
 
             var enabled = element[component];
+            ImCursor.ToNestedRect(new Vector2(ImGui.GetFrameHeight(), 0), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);
             if (ImGui.Checkbox($"###{component}-enabled-{kind}", ref enabled)) {
                 element[component] = enabled;
                 Plugin.Config.Save();
