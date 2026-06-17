@@ -11,6 +11,23 @@ public static class ImCursor {
         set => ImGui.SetCursorPos(value);
     }
 
+    public static float X {
+        get => ImGui.GetCursorPosX();
+        set => ImGui.SetCursorPosX(value);
+    }
+
+    public static float Y {
+        get => ImGui.GetCursorPosY();
+        set => ImGui.SetCursorPosY(value);
+    }
+
+    public static Vector2 ScreenPosition {
+        get => ImGui.GetCursorScreenPos();
+        set => ImGui.SetCursorScreenPos(value);
+    }
+
+    public static Vector2 StartPosition => ImGui.GetCursorStartPos();
+
     [SuppressMessage("ReSharper", "UseWithExpressionToCopyStruct")] // For consistency in the switch expression
     public static void ToNestedRect(Vector2 inner, Vector2 outer, ImAlign align = ImAlign.Center, Vector2? offset = null) {
         var delta = outer - inner;
@@ -31,6 +48,16 @@ public static class ImCursor {
             relPos += offset.Value;
 
         Position += relPos;
+    }
+
+    public static ExcursionEndObject Excursion() {
+        return new ExcursionEndObject(ImGui.GetCursorPos());
+    }
+
+    public readonly ref struct ExcursionEndObject(Vector2 startPos) : IDisposable {
+        public void Dispose() {
+            ImGui.SetCursorPos(startPos);
+        }
     }
 }
 
