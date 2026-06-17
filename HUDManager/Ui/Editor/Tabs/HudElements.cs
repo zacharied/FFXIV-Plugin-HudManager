@@ -64,11 +64,6 @@ public class HudElements
                 DrawElements(layout, ref update);
             }
         }
-
-        if (update) {
-            Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, Ui.SelectedLayout);
-            Plugin.Hud.SelectSlot(Plugin.Config.StagingSlot, true);
-        }
     }
 
     private void DrawAddElementPopup(ref bool update) {

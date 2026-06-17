@@ -34,11 +34,6 @@ internal class ExternalElements
 
             foreach (var elem in _elements)
                 elem.DrawControls(layout, ref update);
-
-            if (update) {
-                Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, Ui.SelectedLayout);
-                Plugin.Hud.SelectSlot(Plugin.Config.StagingSlot, true);
-            }
         }
     }
 }
