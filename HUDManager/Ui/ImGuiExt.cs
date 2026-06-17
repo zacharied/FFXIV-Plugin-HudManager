@@ -18,8 +18,7 @@ public static class ImGuiExt
             ImGui.SetTooltip(text);
     }
 
-    public static void HelpMarker(string text)
-    {
+    public static void HelpMarker(string text) {
         using (ImRaii.PushFont(UiBuilder.IconFont)) {
             ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
         }
@@ -42,8 +41,7 @@ public static class ImGuiExt
         }
     }
 
-    public static bool IconCheckbox(FontAwesomeIcon icon, ref bool value, string? id = null)
-    {
+    public static bool IconCheckbox(FontAwesomeIcon icon, ref bool value, string? id = null) {
         using var font = ImRaii.PushFont(UiBuilder.IconFont);
 
         var text = icon.ToIconString();
@@ -56,8 +54,7 @@ public static class ImGuiExt
 
     public record OverlayPosition(Tuple<Vector2, Vector2> Outer, Tuple<Vector2, Vector2>? Inner);
 
-    public static OverlayPosition ConvertGameToImGuiWithInner(Element element)
-    {
+    public static OverlayPosition ConvertGameToImGuiWithInner(Element element) {
         var pos = ConvertGameToImGui(element);
         var inner = element.Id switch {
             ElementKind.TargetInfoProgressBar => CreateInner(pos, element.Scale, 246, 10, 204, 24),
@@ -90,16 +87,14 @@ public static class ImGuiExt
         var (xMeasure, yMeasure) = element.MeasuredFrom.ToParts();
 
         // determine subtraction values to make the coords point to the top left
-        var subX = xMeasure switch
-        {
+        var subX = xMeasure switch {
             MeasuredX.Left => 0,
             MeasuredX.Middle => size.X / 2,
             MeasuredX.Right => size.X,
             _ => throw new ArgumentOutOfRangeException($"Unknown measure value: {xMeasure}"),
         };
 
-        var subY = yMeasure switch
-        {
+        var subY = yMeasure switch {
             MeasuredY.Top => 0,
             MeasuredY.Middle => size.Y / 2,
             MeasuredY.Bottom => size.Y,
@@ -112,13 +107,12 @@ public static class ImGuiExt
 
         // round the coords
         pixelPos.X = (float)Math.Round(pixelPos.X);
-        pixelPos.Y = (float)Math.Round(pixelPos.Y) ;
+        pixelPos.Y = (float)Math.Round(pixelPos.Y);
 
         return Tuple.Create(pixelPos, size);
     }
 
-    private static Tuple<Vector2, Vector2> CreateInner(Tuple<Vector2, Vector2> pos, float outerScale, int offsetX, int offsetY, int innerWidth, int innerHeight)
-    {
+    private static Tuple<Vector2, Vector2> CreateInner(Tuple<Vector2, Vector2> pos, float outerScale, int offsetX, int offsetY, int innerWidth, int innerHeight) {
         var pixelPos = pos.Item1;
         var size = pos.Item2;
 
@@ -137,8 +131,7 @@ public static class ImGuiExt
         return Tuple.Create(pixelPos, size);
     }
 
-    public static Vector2 ConvertImGuiToGame(Element element, Vector2 im)
-    {
+    public static Vector2 ConvertImGuiToGame(Element element, Vector2 im) {
         // get the coordinates in pixels
         var pos = new Vector2(im.X, im.Y);
 
@@ -152,16 +145,14 @@ public static class ImGuiExt
         var (xMeasure, yMeasure) = element.MeasuredFrom.ToParts();
 
         // determine how much to add to convert top left coords into the element's system
-        var addX = xMeasure switch
-        {
+        var addX = xMeasure switch {
             MeasuredX.Left => 0,
             MeasuredX.Middle => size.X / 2,
             MeasuredX.Right => size.X,
             _ => throw new ArgumentOutOfRangeException($"Unknown measure value: {xMeasure}"),
         };
 
-        var addY = yMeasure switch
-        {
+        var addY = yMeasure switch {
             MeasuredY.Top => 0,
             MeasuredY.Middle => size.Y / 2,
             MeasuredY.Bottom => size.Y,
