@@ -3,7 +3,6 @@ using HUDManager.Configuration;
 using HUDManager.Structs.External;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 

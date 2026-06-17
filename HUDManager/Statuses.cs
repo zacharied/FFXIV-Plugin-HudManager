@@ -1,7 +1,7 @@
 ﻿using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using FFXIVClientStructs.FFXIV.Client.Game;
+using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.Fate;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
@@ -175,7 +175,7 @@ public class Statuses
         player ??= plugin.ObjectTable.LocalPlayer;
         if (player == null)
             return false;
-        return ((FFXIVClientStructs.FFXIV.Client.Game.Character.Character*)player.Address)->OnlineStatus == 22;
+        return ((Character*)player.Address)->OnlineStatus == 22;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

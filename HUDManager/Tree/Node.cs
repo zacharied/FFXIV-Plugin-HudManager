@@ -77,7 +77,7 @@ public class Node<T>
         }
     }
 
-    public static List<Node<SavedLayout>> BuildTree(Dictionary<Guid, SavedLayout> layouts)
+    public static List<Node<SavedLayout>> BuildTree(OrderedDictionary<Guid, SavedLayout> layouts)
     {
         var lookup = new Dictionary<Guid, Node<SavedLayout>>();
         var rootNodes = new List<Node<SavedLayout>>();

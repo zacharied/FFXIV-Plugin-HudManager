@@ -1,6 +1,4 @@
-﻿using Dalamud.Game;
-using Dalamud.Interface.Windowing;
-using Dalamud.Plugin;
+﻿using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using HUDManager.Configuration;
 using HUDManager.Structs;
