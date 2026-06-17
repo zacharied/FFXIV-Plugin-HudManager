@@ -122,7 +122,7 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
             }
         }
 
-        if (ImGuiExt.IconButton(FontAwesomeIcon.Plus)) {
+        if (ImGuiExt.IconButton(FontAwesomeIcon.FileCirclePlus)) {
             Plugin.Config.CustomConditions.Add(new CustomCondition("<TEMP>", Plugin));
 
             // Enable edit box
@@ -131,7 +131,7 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
 
             update = true;
         }
-        ImGuiExt.HoverTooltip("Add");
+        ImGuiExt.HoverTooltip("Create");
 
         ImGui.SameLine();
 
@@ -188,14 +188,12 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
 
     private void DrawConditionEditMenu(ref bool update)
     {
-        using var editChild = ImRaii.Child("##condition-menu-child-edit-condition", new Vector2(-1, -1), true);
+        using var editChild = ImRaii.Child("##condition-menu-child-edit-condition", new Vector2(-1, -1), false);
 
         if (ActiveCondition is null) {
             ImGui.Text("Select a custom condition on the left to edit");
             return;
         }
-
-        ImGui.Separator();
 
         var conditionType = ActiveCondition.ConditionType;
         if (ImGuiExt.EnumCombo($"Condition type", ref conditionType)) {
