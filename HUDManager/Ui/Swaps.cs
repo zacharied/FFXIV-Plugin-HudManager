@@ -34,7 +34,6 @@ public class Swaps {
             Plugin.Statuses.SetHudLayout();
         }
 
-        ImGui.Spacing();
         var staging = ((int)Plugin.Config.StagingSlot + 1).ToString();
         using (var combo = ImRaii.Combo("Staging slot", staging)) {
             if (combo) {
@@ -51,8 +50,6 @@ public class Swaps {
 
         ImGui.SameLine();
         ImGuiExt.HelpMarker("The staging slot is the HUD layout slot that will be used as your HUD layout. All changes will be written to this slot when swaps are enabled.");
-
-        ImGui.Separator();
 
         if (Plugin.Config.Layouts.Count == 0) {
             ImGui.TextUnformatted("Create at least one layout to begin setting up swaps.");
@@ -84,8 +81,6 @@ public class Swaps {
                 }
             }
         }
-
-        ImGui.Indent();
 
         if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Flag, "Custom conditions")) {
             Plugin.WindowManager.CustomConditions.Toggle();
@@ -292,23 +287,29 @@ public class Swaps {
                     _editingConditionIndex = item.i;
                     _editingCondition = item.cond.Clone();
                 }
+                ImGuiExt.HoverTooltip("Edit");
 
                 ImGui.SameLine();
-                if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"{item.i}")) {
-                    actionedItemIndex = item.i;
+                using (ImRaii.Disabled(!ImGui.GetIO().KeyCtrl)) {
+                    if (ImGuiExt.IconButton(FontAwesomeIcon.TrashAlt, $"{item.i}")) {
+                        actionedItemIndex = item.i;
+                    }
                 }
+                ImGuiExt.HoverTooltip("Delete (hold Control to allow)");
 
                 ImGui.SameLine();
                 if (ImGuiExt.IconButton(FontAwesomeIcon.ArrowUp, $"{item.i}")) {
                     actionedItemIndex = item.i;
                     action = -1;
                 }
+                ImGuiExt.HoverTooltip("Move up");
 
                 ImGui.SameLine();
                 if (ImGuiExt.IconButton(FontAwesomeIcon.ArrowDown, $"{item.i}")) {
                     actionedItemIndex = item.i;
                     action = 1;
                 }
+                ImGuiExt.HoverTooltip("Move down");
 
                 // Column: Active
 
