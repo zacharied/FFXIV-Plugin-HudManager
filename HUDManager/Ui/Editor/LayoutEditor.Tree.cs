@@ -4,8 +4,8 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using HUDManager.Configuration;
-using HUDManager.Structs;
 using HUDManager.Tree;
+using HUDManager.Ui.DragDrop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -91,7 +91,7 @@ public partial class LayoutEditor {
                    .Push(ImGuiStyleVar.FramePadding, ImGuiHelpers.ScaledVector2(0, 3))) {
             DrawTreeNodeNone(ref treeAction);
             foreach (var node in nodes) {
-                DrawTreeNode(node, true, ref treeAction);
+                DrawTreeNode(node, true, ref treeAction, ref update);
             }
             DrawTreeNodeEnd(ref treeAction);
         }
@@ -106,44 +106,35 @@ public partial class LayoutEditor {
                     break;
 
                 case TreeAction.PlaceAfter placeAfter:
-                    if (SetParentFromSibling(placeAfter.Id, placeAfter.SiblingId)) {
-                        layoutChanged = true;
+                    if (SetParentFromSibling(placeAfter.Id, placeAfter.SiblingId))
                         update = true;
-                    }
                     if (config.Layouts.SlideAfter(placeAfter.Id, placeAfter.SiblingId))
                         update = true;
                     break;
 
                 case TreeAction.PlaceBefore placeBefore:
-                    if (SetParentFromSibling(placeBefore.Id, placeBefore.SiblingId)) {
-                        layoutChanged = true;
+                    if (SetParentFromSibling(placeBefore.Id, placeBefore.SiblingId))
                         update = true;
-                    }
                     if (config.Layouts.SlideBefore(placeBefore.Id, placeBefore.SiblingId))
                         update = true;
                     break;
 
                 case TreeAction.PlaceEnd placeEnd:
-                    if (SetParentTo(placeEnd.Id, Guid.Empty)) {
-                        layoutChanged = true;
+                    if (SetParentTo(placeEnd.Id, Guid.Empty))
                         update = true;
-                    }
                     if (config.Layouts.SlideToEnd(placeEnd.Id))
                         update = true;
                     break;
 
                 case TreeAction.PlaceStart placeStart:
-                    if (SetParentTo(placeStart.Id, Guid.Empty)) {
-                        layoutChanged = true;
+                    if (SetParentTo(placeStart.Id, Guid.Empty))
                         update = true;
-                    }
                     if (config.Layouts.SlideToStart(placeStart.Id))
                         update = true;
                     break;
 
                 case TreeAction.SetParent setParent:
                     if (SetParentTo(setParent.Id, setParent.ParentId)) {
-                        layoutChanged = true;
                         update = true;
                         SlideToLastAmongChildren(setParent.Id);
                     }
@@ -233,7 +224,7 @@ public partial class LayoutEditor {
         }
     }
 
-    private void DrawTreeNode(Node<SavedLayout>? node, bool allowDrop, ref TreeAction? treeAction) {
+    private void DrawTreeNode(Node<SavedLayout>? node, bool allowDrop, ref TreeAction? treeAction, ref bool update) {
         if (node == null)
             return;
 
@@ -300,7 +291,6 @@ public partial class LayoutEditor {
             using var drop = ElementDragDrop.Drop();
             if (ElementDragDrop.SourceElement is { } sourceElement) {
                 if (drop.Any) {
-                    ElementDragDrop.Action = ElementDragDrop.GetActionKind();
                     ElementDragDrop.ElementExists = node.Value.Elements.ContainsKey(sourceElement.Id);
                 }
                 if (drop.Dropped && ElementDragDrop.AllowWrite) {
@@ -308,6 +298,7 @@ public partial class LayoutEditor {
                     if (ElementDragDrop.GetActionKind() == ElementActionKind.Move && ElementDragDrop.SourceLayout is { } sourceLayout) {
                         sourceLayout.Elements.Remove(sourceElement.Id);
                     }
+                    update = true;
                 }
             }
         }
@@ -347,7 +338,7 @@ public partial class LayoutEditor {
 
         if (isExpanded) {
             foreach (var child in node.Children) {
-                DrawTreeNode(child, allowDrop && !isDraggingThis, ref treeAction);
+                DrawTreeNode(child, allowDrop && !isDraggingThis, ref treeAction, ref update);
             }
         }
     }

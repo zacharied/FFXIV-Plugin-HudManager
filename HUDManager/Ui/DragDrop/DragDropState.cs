@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 
-namespace HUDManager.Ui;
+namespace HUDManager.Ui.DragDrop;
 
 public sealed class DragDropState<T>(string payloadId) {
     private readonly string payloadId = $"HUDMAN_{payloadId}";
@@ -52,8 +52,8 @@ public sealed class DragDropState<T>(string payloadId) {
 
     public bool IsHovered(T id) => EqualityComparer<T>.Default.Equals(HoverId, id);
 
-    public DragState GetDragState(T id) {
-        return IsSource(id) ? DragState.Source : IsHovered(id) ? DragState.Target : DragState.None;
+    public DragDropRole GetRole(T id) {
+        return IsSource(id) ? DragDropRole.Source : IsHovered(id) ? DragDropRole.Target : DragDropRole.None;
     }
 
     public bool HasPayload() {
@@ -64,7 +64,11 @@ public sealed class DragDropState<T>(string payloadId) {
         return payload.IsDataType(payloadId);
     }
 
-    public bool CanDrop() {
+    /// <summary>
+    /// Checks whether an item is being hovered for this state manager. Must be called once per frame before CheckActive.
+    /// </summary>
+    /// <returns>true if a valid target is being hovered, otherwise false</returns>
+    public bool CheckHover() {
         if (!sawTargetThisFrame) {
             HoverId = default;
             return false;
@@ -73,7 +77,11 @@ public sealed class DragDropState<T>(string payloadId) {
         return true;
     }
 
-    public bool IsActive() {
+    /// <summary>
+    /// Checks whether a drag is active for this state manager, even if nothing is being hovered. Must be called once per frame after CheckHover.
+    /// </summary>
+    /// <returns>true if a drag is active, otherwise false</returns>
+    public bool CheckActive() {
         var hasPayload = HasPayload();
         var sawSource = sawSourceThisFrame;
 
@@ -175,7 +183,7 @@ public ref struct DropDisposable(ImRaii.DragDropTargetDisposable inner) : IDispo
     public static bool operator |(DropDisposable i, bool value) => i.Dropped || value;
 }
 
-public enum DragState {
+public enum DragDropRole {
     None,
     Source,
     Target,

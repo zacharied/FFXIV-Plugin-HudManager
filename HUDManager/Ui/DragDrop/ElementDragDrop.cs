@@ -4,7 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 using HUDManager.Configuration;
 using HUDManager.Structs;
 
-namespace HUDManager.Ui;
+namespace HUDManager.Ui.DragDrop;
 
 public sealed class ElementDragDrop(string payloadId) {
     private readonly DragDropState<uint> state = new(payloadId);
@@ -12,14 +12,16 @@ public sealed class ElementDragDrop(string payloadId) {
     public SavedLayout? SourceLayout { get; set; }
     public Element? SourceElement { get; set; }
     public bool ElementExists { get; set; }
-    public ElementActionKind Action { get; set; } = ElementActionKind.None;
-
+    private ElementActionKind Action { get; set; } = ElementActionKind.None;
 
     public void EndFrame() {
-        if (!state.CanDrop())
+        if (state.CheckHover()) {
+            Action = GetActionKind();
+        } else {
             Action = ElementActionKind.None;
+        }
 
-        if (state.IsActive()) {
+        if (state.CheckActive()) {
             DrawTooltip();
         } else {
             SourceElement = null;

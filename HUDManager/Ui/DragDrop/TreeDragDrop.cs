@@ -5,7 +5,7 @@ using Dalamud.Interface.Utility.Raii;
 using System;
 using System.Numerics;
 
-namespace HUDManager.Ui;
+namespace HUDManager.Ui.DragDrop;
 
 public sealed class TreeDragDrop(string payloadId) {
     private readonly DragDropState<Guid> state = new(payloadId);
@@ -16,10 +16,10 @@ public sealed class TreeDragDrop(string payloadId) {
     public Guid SourceId => state.SourceId;
 
     public void EndFrame() {
-        if (!state.CanDrop())
+        if (!state.CheckHover())
             Action = TreeActionKind.None;
 
-        if (state.IsActive()) {
+        if (state.CheckActive()) {
             DrawTooltip();
         } else {
             SourceName = null;

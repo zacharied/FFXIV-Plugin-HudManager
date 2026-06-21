@@ -4,6 +4,7 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using HUDManager.Configuration;
 using HUDManager.Tree;
+using HUDManager.Ui.DragDrop;
 using HUDManager.Ui.Editor.Tabs;
 using System;
 using System.Numerics;
