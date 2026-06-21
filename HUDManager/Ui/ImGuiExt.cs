@@ -242,4 +242,10 @@ public static class ImGuiExt {
 
         return button;
     }
+
+    public static Vector2 GetMousePosInRect(Vector2 min, Vector2 max) {
+        var mousePos = ImGui.GetMousePos();
+        var relativePos = new Vector2(mousePos.X - min.X, mousePos.Y - min.Y);
+        return new Vector2(relativePos.X / (max.X - min.X), relativePos.Y / (max.Y - min.Y));
+    }
 }

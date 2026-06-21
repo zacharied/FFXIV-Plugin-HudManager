@@ -13,22 +13,7 @@ using System.Numerics;
 namespace HUDManager.Ui.Editor;
 
 public partial class LayoutEditor {
-    private DragState? dragState;
-
-    private class DragState(Node<SavedLayout> source) {
-        public readonly Node<SavedLayout> Source = source;
-        public Node<SavedLayout>? Target;
-        public TreeActionKind? Action;
-        public bool SawSourceThisFrame;
-
-        public void Reset() {
-            Target = null;
-            Action = null;
-            SawSourceThisFrame = false;
-        }
-    }
-
-    public bool IsDragSource(Guid id) => dragState is { Source: var dragSource } && dragSource.Id == id;
+    private readonly TreeDragDrop treeDragDrop = new("TREE");
 
     private void DrawLayoutManagerTreeView(List<Node<SavedLayout>> nodes, ref bool layoutChanged, ref bool update) {
         var defaultCellPadding = ImGui.GetStyle().CellPadding;
@@ -99,12 +84,6 @@ public partial class LayoutEditor {
         using var listChild = ImRaii.Child("layoutTree", new Vector2(-1, -GetTableButtonSpace(2)), false, ImGuiWindowFlags.NoSavedSettings);
         if (!listChild) return;
 
-        if (!ImGuiP.IsDragDropActive()) {
-            dragState = null;
-        } else {
-            dragState?.Reset();
-        }
-
         TreeAction? treeAction = null;
         using (new ImRaii.StyleDisposable()
                    .Push(ImGuiStyleVar.ItemSpacing, Vector2.Zero)
@@ -169,30 +148,9 @@ public partial class LayoutEditor {
                     }
                     break;
             }
-        } else if (ImGuiP.IsDragDropActive() && dragState is { SawSourceThisFrame: true } state) {
-            using (ImRaii.Tooltip()) {
-                if (state.Action is null) {
-                    ImGui.TextColored(ImGuiColors.DalamudGrey, $"Drag ");
-                    ImGui.SameLine(0, 0);
-                    ImGui.Text($"{state.Source.Value.Name}");
-                } else if (state.Action is TreeActionKind.InsertBefore or TreeActionKind.InsertAfter) {
-                    ImGui.TextColored(ImGuiColors.InfoForeground, $"Move ");
-                    ImGui.SameLine(0, 0);
-                    ImGui.Text($"{state.Source.Value.Name}");
-                    if (GetDragMode() is TreeDragMode.Insert) {
-                        ImGui.TextColored(ImGuiColors.DalamudGrey3, $"(hold shift to set parent)");
-                    }
-                } else if (state.Action is TreeActionKind.Attach) {
-                    ImGui.TextColored(ImGuiColors.ParsedPink, $"Set parent of ");
-                    ImGui.SameLine(0, 0);
-                    ImGui.Text($"{state.Source.Value.Name}");
-                    ImGui.SameLine(0, 0);
-                    ImGui.TextColored(ImGuiColors.ParsedPink, $" to ");
-                    ImGui.SameLine(0, 0);
-                    ImGui.Text($"{state.Target?.Value.Name}");
-                }
-            }
         }
+
+        treeDragDrop.EndFrame();
     }
 
     private bool SetParentFromSibling(Guid targetId, Guid siblingId) {
@@ -246,18 +204,11 @@ public partial class LayoutEditor {
         var itemRectMin = ImGui.GetItemRectMin();
         var itemRectMax = ImGui.GetItemRectMax();
 
-        using (var dragDropTarget = ImRaii.DragDropTarget()) {
-            if (dragDropTarget) {
-                var payload = ImGui.AcceptDragDropPayload("HUDMAN_TREE", ImGuiDragDropFlags.AcceptNoDrawDefaultRect);
-                if (GetDragMode() is TreeDragMode.Insert or TreeDragMode.Any) {
-                    if (payload.IsNull) {
-                        dragState?.Action = TreeActionKind.InsertBefore;
-                        DrawInsertionLine(itemRectMin, itemRectMax, InsertionLineType.After);
-                    } else {
-                        if (dragState is { } state)
-                            treeAction = new TreeAction.PlaceStart(state.Source.Id);
-                    }
-                }
+        using (var drop = treeDragDrop.Drop(Guid.Empty, "")) {
+            if (drop.Hovered) {
+                treeDragDrop.PreviewInsertAfter(itemRectMin, itemRectMax);
+            } else if (drop.Dropped) {
+                treeAction = new TreeAction.PlaceStart(treeDragDrop.SourceId);
             }
         }
 
@@ -304,66 +255,47 @@ public partial class LayoutEditor {
             treeAction = new TreeAction.Activate(node.Id);
         }
 
-        using (var source = ImRaii.DragDropSource()) {
-            if (source) {
-                ImGui.SetDragDropPayload("HUDMAN_TREE", ReadOnlySpan<byte>.Empty);
-                dragState ??= new DragState(node);
-                dragState.SawSourceThisFrame = true;
-            }
-        }
+        using (treeDragDrop.Drag(node.Id, node.Value.Name)) { }
 
         var itemRectMin = ImGui.GetItemRectMin();
         var itemRectMax = ImGui.GetItemRectMax();
-        var isDraggingThis = IsDragSource(node.Id);
-        var hasDropRect = false;
+        var isDraggingThis = treeDragDrop.IsSource(node.Id);
 
         if (allowDrop) {
-            using var dragDropTarget = ImRaii.DragDropTarget();
-            if (dragDropTarget) {
-                var payload = ImGui.AcceptDragDropPayload("HUDMAN_TREE", ImGuiDragDropFlags.AcceptNoDrawDefaultRect);
-                var mousePos = ImGui.GetMousePos();
-                var relativePos = new Vector2(mousePos.X - itemRectMin.X, mousePos.Y - itemRectMin.Y);
-                var normalizedPos = new Vector2(relativePos.X / (itemRectMax.X - itemRectMin.X), relativePos.Y / (itemRectMax.Y - itemRectMin.Y));
+            using var drop = treeDragDrop.Drop(node.Id, node.Value.Name);
+            var action = (treeDragDrop.GetDragMode(), isExpanded, ImGuiExt.GetMousePosInRect(itemRectMin, itemRectMax).Y) switch {
+                (TreeDragMode.Insert, true, _) => TreeActionKind.InsertBefore,
+                (TreeDragMode.Insert, _, < 0.50f) => TreeActionKind.InsertBefore,
+                (TreeDragMode.Insert, _, _) => TreeActionKind.InsertAfter,
+                (TreeDragMode.Attach, _, _) => TreeActionKind.Attach,
+                (_, true, < 0.50f) => TreeActionKind.InsertBefore,
+                (_, true, _) => TreeActionKind.Attach,
+                (_, false, < 0.25f) => TreeActionKind.InsertBefore,
+                (_, false, > 0.75f) => TreeActionKind.InsertAfter,
+                (_, false, _) => TreeActionKind.Attach
+            };
 
-                var result = (GetDragMode(), isExpanded, normalizedPos.Y) switch {
-                    (TreeDragMode.Insert, true, _) => TreeActionKind.InsertBefore,
-                    (TreeDragMode.Insert, _, < 0.50f) => TreeActionKind.InsertBefore,
-                    (TreeDragMode.Insert, _, _) => TreeActionKind.InsertAfter,
-                    (TreeDragMode.Attach, _, _) => TreeActionKind.Attach,
-                    (_, true, < 0.50f) => TreeActionKind.InsertBefore,
-                    (_, true, _) => TreeActionKind.Attach,
-                    (_, false, < 0.25f) => TreeActionKind.InsertBefore,
-                    (_, false, > 0.75f) => TreeActionKind.InsertAfter,
-                    (_, false, _) => TreeActionKind.Attach
-                };
-
-                if (payload.IsNull) {
-                    dragState?.Target = node;
-                    if (result == TreeActionKind.InsertBefore) {
-                        DrawInsertionLine(itemRectMin, itemRectMax, InsertionLineType.Before);
-                        dragState?.Action = TreeActionKind.InsertBefore;
-                    } else if (result == TreeActionKind.InsertAfter) {
-                        DrawInsertionLine(itemRectMin, itemRectMax, InsertionLineType.After);
-                        dragState?.Action = TreeActionKind.InsertAfter;
-                    } else {
-                        var addChildColor = ImGui.ColorConvertFloat4ToU32(ImGuiColors.WarningForeground * new Vector4(1, 1, 1, 0.3f));
-                        ImGui.GetForegroundDrawList().AddRectFilled(itemRectMin, itemRectMax, addChildColor, ImDrawFlags.None);
-                        dragState?.Action = TreeActionKind.Attach;
-                        hasDropRect = true;
-                    }
-                } else if (dragState is { } state) {
-                    if (result == TreeActionKind.InsertBefore) {
-                        treeAction = new TreeAction.PlaceBefore(state.Source.Id, node.Id);
-                    } else if (result == TreeActionKind.InsertAfter) {
-                        treeAction = new TreeAction.PlaceAfter(state.Source.Id, node.Id);
-                    } else {
-                        treeAction = new TreeAction.SetParent(state.Source.Id, node.Id);
-                    }
+            if (drop.Hovered) {
+                treeDragDrop.HoverName = node.Value.Name;
+                if (action == TreeActionKind.InsertBefore) {
+                    treeDragDrop.PreviewInsertBefore(itemRectMin, itemRectMax);
+                } else if (action == TreeActionKind.InsertAfter) {
+                    treeDragDrop.PreviewInsertAfter(itemRectMin, itemRectMax);
+                } else {
+                    treeDragDrop.PreviewAttach(itemRectMin, itemRectMax);
+                }
+            } else if (drop.Dropped) {
+                if (action == TreeActionKind.InsertBefore) {
+                    treeAction = new TreeAction.PlaceBefore(treeDragDrop.SourceId, node.Id);
+                } else if (action == TreeActionKind.InsertAfter) {
+                    treeAction = new TreeAction.PlaceAfter(treeDragDrop.SourceId, node.Id);
+                } else {
+                    treeAction = new TreeAction.SetParent(treeDragDrop.SourceId, node.Id);
                 }
             }
         }
 
-        if (isSelected && !hasDropRect) {
+        if (isSelected) {
             ImGui.GetWindowDrawList().AddRectFilled(itemRectMin with { X = itemRectMin.X - 4 }, itemRectMax with { X = itemRectMax.X + 4 }, ImGui.ColorConvertFloat4ToU32(ImGuiColors.InfoBackground), 6f);
         }
 
@@ -408,21 +340,13 @@ public partial class LayoutEditor {
             .Push(ImGuiCol.Text, Vector4.Zero)
             .Push(ImGuiCol.HeaderActive, Vector4.Zero)
             .Push(ImGuiCol.HeaderHovered, Vector4.Zero);
-        using var treeNode = ImRaii.TreeNode($"##treeNodeEndZone", ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.FramePadding | ImGuiTreeNodeFlags.Leaf);
+        using (ImRaii.TreeNode($"##treeNodeEndZone", ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.FramePadding | ImGuiTreeNodeFlags.Leaf)) { }
 
-        using var dragDropTarget = ImRaii.DragDropTarget();
-        if (dragDropTarget) {
-            var payload = ImGui.AcceptDragDropPayload("HUDMAN_TREE", ImGuiDragDropFlags.AcceptNoDrawDefaultRect);
-            if (payload.IsNull) {
-                if (GetDragMode() is TreeDragMode.Insert or TreeDragMode.Any) {
-                    var itemRectMin = ImGui.GetItemRectMin();
-                    var itemRectMax = ImGui.GetItemRectMax();
-                    DrawInsertionLine(itemRectMin, itemRectMax, InsertionLineType.Before);
-                    dragState?.Action = TreeActionKind.InsertAfter;
-                }
-            } else {
-                if (dragState is { } state)
-                    action = new TreeAction.PlaceEnd(state.Source.Id);
+        using (var drop = treeDragDrop.Drop(Guid.AllBitsSet, "")) {
+            if (drop.Hovered) {
+                treeDragDrop.PreviewInsertBefore(ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+            } else if (drop.Dropped) {
+                action = new TreeAction.PlaceEnd(treeDragDrop.SourceId);
             }
         }
     }
@@ -437,54 +361,6 @@ public partial class LayoutEditor {
             return !ImGuiP.IsMouseDragPastThreshold(ImGuiMouseButton.Left);
         }
         return false;
-    }
-
-    private static void DrawInsertionLine(Vector2 itemRectMin, Vector2 itemRectMax, InsertionLineType type) {
-        var drawList = ImGui.GetForegroundDrawList();
-        var insertColor = ImGui.ColorConvertFloat4ToU32(ImGuiColors.WarningForeground);
-
-        var (start, end) = type switch {
-            InsertionLineType.Before => (itemRectMin, itemRectMax with { Y = itemRectMin.Y }),
-            InsertionLineType.After => (itemRectMin with { Y = itemRectMax.Y }, itemRectMax),
-            _ => throw new ArgumentOutOfRangeException($"Unknown insertion line type: {type}")
-        };
-
-        var thickness = 2f * ImGuiHelpers.GlobalScale;
-        drawList.AddLine(start, end, insertColor, thickness);
-
-        var arrowSize = 8f * ImGuiHelpers.GlobalScale;
-        start += ImGuiHelpers.ScaledVector2(2f, 0.5f);
-        drawList.AddTriangle(
-            start,
-            start + new Vector2(-arrowSize, -arrowSize * 0.6f),
-            start + new Vector2(-arrowSize, arrowSize * 0.6f),
-            insertColor, thickness
-        );
-    }
-
-    private static TreeDragMode GetDragMode() {
-        if (ImGui.IsKeyDown(ImGuiKey.ModShift))
-            return TreeDragMode.Attach;
-        if (ImGui.IsKeyDown(ImGuiKey.ModAlt))
-            return TreeDragMode.Any;
-        return TreeDragMode.Insert;
-    }
-
-    public enum TreeDragMode {
-        Insert,
-        Attach,
-        Any
-    }
-
-    public enum TreeActionKind {
-        InsertBefore,
-        InsertAfter,
-        Attach,
-    }
-
-    private enum InsertionLineType {
-        Before,
-        After
     }
 
     public abstract record TreeAction {
@@ -521,5 +397,4 @@ public partial class LayoutEditor {
         }
         ImGuiExt.HoverTooltip("Use compact layout view");
     }
-
 }
