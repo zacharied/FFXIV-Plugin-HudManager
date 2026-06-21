@@ -14,11 +14,9 @@ using System.Numerics;
 
 namespace HUDManager.Ui.Editor.Tabs;
 
-public class HudElements
-{
-    private static readonly float[] ScaleOptions =
-    [
-      2.0f,
+public class HudElements {
+    private static readonly float[] ScaleOptions = [
+        2.0f,
         1.8f,
         1.6f,
         1.4f,
@@ -37,15 +35,13 @@ public class HudElements
     private string? SearchAdd { get; set; }
     private string? SearchEdit { get; set; }
 
-    public HudElements(Plugin plugin, Interface ui, LayoutEditor editor)
-    {
+    public HudElements(Plugin plugin, Interface ui, LayoutEditor editor) {
         Plugin = plugin;
         Ui = ui;
         Editor = editor;
     }
 
-    internal void Draw(SavedLayout layout, ref bool update)
-    {
+    internal void Draw(SavedLayout layout, ref bool update) {
         if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, "Add element##uimanager-add-hud-element")) {
             ImGui.OpenPopup(Popups.AddElement);
         }
@@ -157,15 +153,13 @@ public class HudElements
     private void DrawElementTable(SavedLayout layout, Element element, ElementKind kind, List<ElementKind> toRemove, ref bool update) {
         bool HasParent() => layout.Parent != Guid.Empty;
 
-        static void DrawSettingName(string name)
-        {
+        static void DrawSettingName(string name) {
             ImGui.AlignTextToFramePadding();
             ImGui.Text(name);
             ImGui.TableNextColumn();
         }
 
-        static void DrawSettingNameWithHelp(string name, string help)
-        {
+        static void DrawSettingNameWithHelp(string name, string help) {
             ImGui.AlignTextToFramePadding();
             ImGui.Text(name);
             ImGuiComponents.HelpMarker(help);
@@ -218,8 +212,7 @@ public class HudElements
 
         ImGui.TableNextRow();
 
-        void DrawEnabledCheckboxIfParent(ElementKind kind, ElementComponent component, ref bool update, bool nextCol = true)
-        {
+        void DrawEnabledCheckboxIfParent(ElementKind kind, ElementComponent component, ref bool update, bool nextCol = true) {
             if (nextCol) {
                 ImGui.TableNextColumn();
             }
@@ -239,8 +232,7 @@ public class HudElements
             ImGui.TableNextColumn();
         }
 
-        void NextColumnIfParent()
-        {
+        void NextColumnIfParent() {
             if (HasParent())
                 ImGui.TableNextColumn();
         }
