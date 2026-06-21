@@ -138,11 +138,17 @@ public class HudElements {
                 continue;
             }
 
-            if (!ImGui.CollapsingHeader($"{name}##{kind}-{Ui.SelectedLayout}")) {
-                continue;
+            var header = ImGui.CollapsingHeader($"{name}##{kind}-{Ui.SelectedLayout}");
+            if (Plugin.Config.UseLayoutListTreeView) {
+                using var drag = Editor.ElementDragDrop.Drag();
+                if (drag) {
+                    Editor.ElementDragDrop.SourceLayout = layout;
+                    Editor.ElementDragDrop.SourceElement = element.Clone();
+                    Editor.ElementDragDrop.SourceName = element.Id.LocalisedName(Plugin.DataManager);
+                }
             }
-
-            DrawElementTable(layout, element, kind, toRemove, ref update);
+            if (header)
+                DrawElementTable(layout, element, kind, toRemove, ref update);
         }
 
         foreach (var remove in toRemove) {

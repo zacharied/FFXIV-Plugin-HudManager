@@ -27,7 +27,17 @@ public sealed class DragDropState<T>(string payloadId) {
     }
 
     public DropBuilderDisposable<T> Drop(T hoverId) {
-        return new DropBuilderDisposable<T>(ImRaii.DragDropTarget(), this, hoverId);
+        return Drop(ImRaii.DragDropTarget(), hoverId);
+    }
+
+    public DropBuilderDisposable<T> Drop(ImRaii.DragDropTargetDisposable disposable, T hoverId) {
+        if (disposable.Success && !HasPayload()) {
+            return new DropBuilderDisposable<T>(disposable, this, hoverId) {
+                AutoReject = true
+            };
+        }
+
+        return new DropBuilderDisposable<T>(disposable, this, hoverId);
     }
 
     public bool CheckDrop(T hoverId, ImGuiDragDropFlags flags = ImGuiDragDropFlags.None) {
@@ -46,7 +56,7 @@ public sealed class DragDropState<T>(string payloadId) {
         return IsSource(id) ? DragState.Source : IsHovered(id) ? DragState.Target : DragState.None;
     }
 
-    private bool HasPayload() {
+    public bool HasPayload() {
         var payload = ImGui.GetDragDropPayload();
         if (payload.IsNull)
             return false;
@@ -111,7 +121,9 @@ public ref struct DropBuilderDisposable<T>(ImRaii.DragDropTargetDisposable inner
     private ImRaii.DragDropTargetDisposable inner = inner;
     private bool alive = true;
 
-    public bool Success => inner.Success;
+    public bool AutoReject { get; init; } = false;
+
+    public bool Success => !AutoReject && inner.Success;
 
     public DropDisposable Reject() {
         alive = false;
@@ -121,9 +133,13 @@ public ref struct DropBuilderDisposable<T>(ImRaii.DragDropTargetDisposable inner
         };
     }
 
-    public DropDisposable TryAccept(ImGuiDragDropFlags flags = ImGuiDragDropFlags.None) {
-        alive = false;
+    public DropDisposable Accept(ImGuiDragDropFlags flags = ImGuiDragDropFlags.None) {
+        if (AutoReject)
+            return Reject();
+
         var dropped = state.CheckDrop(hoverId, flags);
+
+        alive = false;
         return new DropDisposable(inner) {
             Hovered = !dropped,
             Dropped = dropped,

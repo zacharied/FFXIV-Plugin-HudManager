@@ -4,6 +4,7 @@ using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using HUDManager.Configuration;
+using HUDManager.Structs;
 using HUDManager.Tree;
 using System;
 using System.Collections.Generic;
@@ -291,6 +292,22 @@ public partial class LayoutEditor {
                     treeAction = new TreeAction.PlaceAfter(treeDragDrop.SourceId, node.Id);
                 } else {
                     treeAction = new TreeAction.SetParent(treeDragDrop.SourceId, node.Id);
+                }
+            }
+        }
+
+        if (!isSelected) {
+            using var drop = ElementDragDrop.Drop();
+            if (ElementDragDrop.SourceElement is { } sourceElement) {
+                if (drop.Any) {
+                    ElementDragDrop.Action = ElementDragDrop.GetActionKind();
+                    ElementDragDrop.ElementExists = node.Value.Elements.ContainsKey(sourceElement.Id);
+                }
+                if (drop.Dropped && ElementDragDrop.AllowWrite) {
+                    node.Value.Elements[sourceElement.Id] = sourceElement;
+                    if (ElementDragDrop.GetActionKind() == ElementActionKind.Move && ElementDragDrop.SourceLayout is { } sourceLayout) {
+                        sourceLayout.Elements.Remove(sourceElement.Id);
+                    }
                 }
             }
         }

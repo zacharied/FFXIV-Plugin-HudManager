@@ -43,7 +43,7 @@ public sealed class TreeDragDrop(string payloadId) {
 
         HoverName = hoverName;
 
-        return result.TryAccept(ImGuiDragDropFlags.AcceptNoDrawDefaultRect);
+        return result.Accept(ImGuiDragDropFlags.AcceptNoDrawDefaultRect);
     }
 
     private void DrawTooltip() {

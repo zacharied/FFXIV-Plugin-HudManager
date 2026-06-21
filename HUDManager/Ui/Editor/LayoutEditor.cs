@@ -11,6 +11,8 @@ using System.Numerics;
 namespace HUDManager.Ui.Editor;
 
 public partial class LayoutEditor {
+    internal readonly ElementDragDrop ElementDragDrop;
+
     private Plugin Plugin { get; }
     private Interface Ui { get; }
     internal Previews Previews { get; }
@@ -25,6 +27,8 @@ public partial class LayoutEditor {
     public LayoutEditor(Plugin plugin, Interface ui) {
         Plugin = plugin;
         Ui = ui;
+
+        ElementDragDrop = new ElementDragDrop("ELEMENT");
 
         Previews = new Previews(plugin, ui);
         HudElements = new HudElements(plugin, ui, this);
@@ -72,6 +76,8 @@ public partial class LayoutEditor {
         } else {
             DrawLayoutManagerInlineView(nodes, ref layoutChanged, ref update);
         }
+
+        ElementDragDrop.EndFrame();
 
         if (layoutChanged) {
             // Kill all previews so they don't fuck up the new layout.
