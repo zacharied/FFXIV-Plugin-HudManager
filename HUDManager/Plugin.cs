@@ -106,7 +106,6 @@ public sealed class Plugin : IDalamudPlugin
             Log.Warning("Unable to read help file");
         }
 
-        WindowManager = new WindowManager(this);
         Hud = new Hud(this);
         Statuses = new Statuses(this);
         GameFunctions = new GameFunctions(this);
@@ -115,6 +114,7 @@ public sealed class Plugin : IDalamudPlugin
         PetHotbar = new PetHotbar(this);
         Keybinder = new Keybinder(this);
         QoLBarIpc = new QoLBarIpc(this);
+        WindowManager = new WindowManager(this);
 
         if (Config.FirstRun) {
             Config.FirstRun = false;
