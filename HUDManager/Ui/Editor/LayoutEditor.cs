@@ -135,7 +135,6 @@ public partial class LayoutEditor {
 
     private static float GetTableButtonSpace(int rows) {
         return ImGui.GetFrameHeight() * rows
-               + ImGui.GetStyle().ItemSpacing.Y * (1 + rows)
-               + ImGui.GetStyle().CellPadding.Y * 2;
+               + ImGui.GetStyle().ItemSpacing.Y * (1 + rows);
     }
 }
