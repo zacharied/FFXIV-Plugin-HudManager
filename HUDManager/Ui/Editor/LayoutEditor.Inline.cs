@@ -42,7 +42,7 @@ public partial class LayoutEditor {
         Plugin.Config.Layouts.TryGetValue(Ui.SelectedLayout, out var savedLayout);
 
         var iconButtonWidths =
-            ImGuiExt.IconButtonWidth(FontAwesomeIcon.Plus)
+            ImGuiExt.IconButtonWidth(FontAwesomeIcon.FileCirclePlus)
             + ImGuiExt.IconButtonWidth(FontAwesomeIcon.TrashAlt)
             + ImGuiExt.IconButtonWidth(FontAwesomeIcon.Edit)
             + ImGuiExt.IconButtonWidth(FontAwesomeIcon.FileImport)

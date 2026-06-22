@@ -30,7 +30,7 @@ public partial class LayoutEditor {
             using (ImRaii.PushColor(ImGuiCol.Text, new Vector4(1f, 0f, 0f, 1f))) {
                 ImGui.Text("A layout with that name already exists.");
             }
-        } else if (ImGui.Button("Add") && NewLayoutName != null) {
+        } else if (ImGui.Button("Create") && NewLayoutName != null) {
             // create the layout
             var saved = new SavedLayout(NewLayoutName, new Dictionary<ElementKind, Element>(), new Dictionary<string, Window>(), Guid.Empty);
             // reset the new layout name
