@@ -650,6 +650,7 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
                             && ImGuiExt.IconButton(FontAwesomeIcon.Check, "multicond-confirm")) {
                             _ui.addCondition = true;
                         }
+                        ImGuiExt.HoverTooltip("Confirm");
 
                         ImGui.SameLine();
 
@@ -657,6 +658,7 @@ public class CustomConditions : Dalamud.Interface.Windowing.Window
                             _ui.editingConditionIndex = -1;
                             _ui.editingCondition = null;
                         }
+                        ImGuiExt.HoverTooltip("Cancel");
 
                         if (_ui.savedRowHeight == 0)
                             _ui.savedRowHeight = ImGui.GetTextLineHeightWithSpacing();

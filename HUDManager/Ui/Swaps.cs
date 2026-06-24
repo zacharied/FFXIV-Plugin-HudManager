@@ -232,10 +232,12 @@ public class Swaps {
 
                     ImGui.SameLine();
                 }
+                ImGuiExt.HoverTooltip("Confirm");
 
                 if (ImGuiExt.IconButton(FontAwesomeIcon.Times, "condition-stop")) {
                     _editingConditionIndex = -1;
                 }
+                ImGuiExt.HoverTooltip("Cancel");
 
                 if (_scrollToAdd) {
                     _scrollToAdd = false;
