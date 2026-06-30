@@ -31,9 +31,8 @@ public class Swaps {
             Plugin.Config.SwapsEnabled = enabled;
             Plugin.Config.Save();
 
-            Plugin.Statuses.NeedsForceUpdate = Statuses.ForceState.SwapSettingChanged;
-            Plugin.Statuses.Update();
-            Plugin.Statuses.SetHudLayout();
+            if (enabled)
+                Plugin.Swapper.PendingForceUpdate |= ForceStageReason.SwapEnabled;
         }
 
         var staging = ((int)Plugin.Config.StagingSlot + 1).ToString();
@@ -101,16 +100,14 @@ public class Swaps {
         if (update) {
             Plugin.Config.Save();
 
-            if (Plugin.ObjectTable.LocalPlayer != null && Plugin.Config.SwapsEnabled) {
-                Plugin.Statuses.Update();
-                Plugin.Statuses.SetHudLayout();
-            }
+            if (Plugin.Config.SwapsEnabled)
+                Plugin.Swapper.PendingForceUpdate |= ForceStageReason.SwapConfigurationChanged;
         }
     }
 
     private void DrawConditionTable(ref bool update) {
         var columns = Plugin.Config.AdvancedSwapMode ? 6 : 5;
-        using var table = ImRaii.Table("uimanager-swaps-table", columns, (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuterV) | ImGuiTableFlags.PadOuterX | ImGuiTableFlags.RowBg);
+        using var table = ImRaii.Table($"uimanager-swaps-table-{columns}", columns, (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuterV) | ImGuiTableFlags.PadOuterX | ImGuiTableFlags.RowBg | ImGuiTableFlags.NoSavedSettings);
         if (!table) return;
 
         var advancedMode = Plugin.Config.AdvancedSwapMode;
@@ -333,10 +330,12 @@ public class Swaps {
                 ImGui.TableNextColumn();
                 if (Plugin.Config.SwapsEnabled) {
                     var activeText = string.Empty;
-                    if (Plugin.Statuses.ResultantLayout.activeLayout == item.cond) {
-                        activeText = Plugin.Statuses.ConditionHoldTimerIsTicking(item.cond) ? "▼" : "★";
-                    } else if (Plugin.Statuses.ResultantLayout.layeredLayouts.Contains(item.cond)) {
-                        activeText = Plugin.Statuses.ConditionHoldTimerIsTicking(item.cond) ? "▽" : "☆";
+                    if (Plugin.HudStage.Applied is { } desc) {
+                        if (desc.LayoutId == item.cond.LayoutId) {
+                            activeText = Plugin.Statuses.ConditionHoldTimerIsTicking(item.cond) ? "▼" : "★";
+                        } else if (desc.LayerIds.Contains(item.cond.LayoutId)) {
+                            activeText = Plugin.Statuses.ConditionHoldTimerIsTicking(item.cond) ? "▽" : "☆";
+                        }
                     }
                     if (activeText != string.Empty) {
                         ImCursor.ToNestedRect(ImGui.CalcTextSize(activeText), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);

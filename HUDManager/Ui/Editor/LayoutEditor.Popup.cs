@@ -219,7 +219,7 @@ public partial class LayoutEditor {
         foreach (var slot in Enum.GetValues<HudSlot>()) {
             var suffix = current == slot ? " (active)" : "";
             if (ImGui.Button($"Slot {(int)slot + 1}{suffix}###export-{slot}")) {
-                Plugin.Hud.WriteEffectiveLayout(slot, Ui.SelectedLayout);
+                Plugin.Hud.WriteAll(slot, Ui.SelectedLayout, []);
                 ReportExport(layout.Name, $"slot {slot}");
                 ImGui.CloseCurrentPopup();
             }

@@ -58,13 +58,6 @@ public class Debug
             Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
         }
 
-        ImGui.SameLine();
-
-        if (ImGui.Button("Default##ptrDefault")) {
-            var ptr = Hud.GetDefaultLayoutPointer();
-            Plugin.ChatGui.Print($"{ptr.ToInt64():X}");
-        }
-
         ImGui.TextUnformatted("Log layout to console");
         void LogLayout(HudSlot slot)
         {
@@ -90,15 +83,6 @@ public class Debug
         ImGui.SameLine();
         if (ImGui.Button("4##print4")) {
             LogLayout(HudSlot.Four);
-        }
-        ImGui.SameLine();
-        if (ImGui.Button("Default?##printDefault")) {
-            var layout = Marshal.PtrToStructure<Layout>(Hud.GetDefaultLayoutPointer());
-            Plugin.Log.Information($"===== Layout START (slot=DEFAULT) =====");
-            for (var i = 0; i < layout.elements.Length; i++) {
-                Plugin.Log.Information($"  i={i:000} {layout.elements[i]}");
-            }
-            Plugin.Log.Information("===== Layout END =====");
         }
 
         if (ImGui.Button("Data pointer")) {

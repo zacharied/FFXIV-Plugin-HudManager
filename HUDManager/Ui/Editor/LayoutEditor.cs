@@ -40,23 +40,17 @@ public partial class LayoutEditor {
     internal void Draw() {
         using var layoutEditorTab = ImRaii.TabItem("Layout Editor");
         if (!layoutEditorTab) {
-            Plugin.Swapper.SetEditLock(false);
+            Plugin.HudLock.SetEditLock(false);
             return;
-        }
-
-        // Lock enabled on this frame, so if swaps are enabled:
-        // - check the if the active layout changed,
-        // - set it and clear any left over previews if it did
-        if (Plugin.Swapper.SetEditLock(true)
-            && Plugin.Config.SwapsEnabled
-            && Plugin.Statuses.ResultantLayout.activeLayout is { LayoutId: var newLayout }
-            && Ui.SelectedLayout != newLayout) {
-            Ui.SelectedLayout = newLayout;
-            Previews.Clear();
         }
 
         var update = false;
         var layoutChanged = false;
+
+        if (Plugin.HudLock.SetEditLock(true)) {
+            Previews.Clear();
+            update = true;
+        }
 
         if (Util.IsCharacterConfigOpen()) {
             ImGui.TextUnformatted("Please close the Character Configuration window before continuing.");
@@ -85,9 +79,9 @@ public partial class LayoutEditor {
             Previews.Clear();
         }
         if (update) {
-            if (Plugin.PlayerState.IsLoaded) {
-                Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, Ui.SelectedLayout);
-                Plugin.Hud.SelectSlot(Plugin.Config.StagingSlot, true);
+            if (Ui.SelectedLayout != Guid.Empty && Plugin.PlayerState is { IsLoaded : true} playerState) {
+                var desc = new HudDescriptor(playerState.ClassJob.RowId, Ui.SelectedLayout, []);
+                Plugin.HudStage.Apply(desc, StageReason.None, ForceStageReason.Editing, StageFlags.IgnoreEditLock | StageFlags.ChangeSlot);
             }
 
             Plugin.Config.Save();

@@ -1,177 +1,126 @@
-﻿using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+﻿using Dalamud.Interface.ImGuiNotification;
+using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.Interop;
 using HUDManager.Configuration;
 using HUDManager.Structs;
 using HUDManager.Structs.External;
 using HUDManager.Tree;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace HUDManager;
 
-public sealed class Hud : IDisposable
-{
-    public const int InMemoryLayoutElements = 112; // Updated 7.5
-    // Each element is 32 bytes in ADDON.DAT, but they're 36 bytes when loaded into memory.
-    private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.4 (same since 5.45)
-
-    private const int DataSlotOffset = 0xDC20;          // Updated 7.5
-    private const int DataBaseLayoutOffset = 0x9D20;    // Updated 7.5
-    private const int DataDefaultLayoutOffset = 0x35F8; // Updated 6.51 (note: unused except in debug window, not sure of exact structure)
-
-    private StagingState? _stagingState;
+public sealed class Hud : IDisposable {
+    public const int InMemoryLayoutElements = 112;              // Updated 7.5
+    private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.5 (same since 5.45). Each element is 32 bytes in ADDON.DAT, but 36 bytes in memory.
+    private const int DataSlotOffset = 0xDC20;                  // Updated 7.5
+    private const int DataBaseLayoutOffset = 0x9D20;            // Updated 7.5
 
     private Plugin Plugin { get; }
 
-    private record StagingState(uint JobId, Guid LayoutId, List<Guid> LayerIds)
-    {
-        public bool SameLayers(Guid layoutId, List<Guid> layerIds) => LayoutId == layoutId && LayerIds.SequenceEqual(layerIds);
-        public bool SameJob(uint playerJobId) => JobId == playerJobId;
-    }
-
-    public Hud(Plugin plugin)
-    {
+    public Hud(Plugin plugin) {
         Plugin = plugin;
     }
 
-    public unsafe void SelectSlot(HudSlot slot, bool force = false)
-    {
-        // change the current slot so the game lets us pick one that's currently in use
-        if (!force) {
-            goto Return;
-        }
-
-        var currentSlotPtr = (uint*)(GetDataPointer() + DataSlotOffset);
-        // read the current slot
-        var currentSlot = *currentSlotPtr;
-        // if the current slot is the slot we want to change to, we can force a reload by
-        // telling the game it's on a different slot and swapping back to the desired slot
-        if (currentSlot == (uint)slot) {
-            var backupSlot = currentSlot;
-            if (backupSlot < 3) {
-                backupSlot += 1;
-            } else {
-                backupSlot = 0;
-            }
-
-            // back up this different slot
-            var backup = ReadLayout((HudSlot)backupSlot);
-            // change the current slot in memory
-            *currentSlotPtr = backupSlot;
-
-            // ask the game to change slot to our desired slot
-            // for some reason, this overwrites the current slot, so this is why we back up
-            AddonConfig.Instance()->ChangeHudLayout((uint)slot);
-            // restore the backup
-            WriteLayout((HudSlot)backupSlot, backup, false);
-            return;
-        }
-
-        Return:
-        AddonConfig.Instance()->ChangeHudLayout((uint)slot);
-    }
-
-    public static unsafe IntPtr GetDataPointer()
-    {
+    public static unsafe nint GetDataPointer() {
         return (nint)AddonConfig.Instance()->ActiveDataSet;
     }
 
-    internal static IntPtr GetDefaultLayoutPointer()
-    {
-        return GetDataPointer() + DataDefaultLayoutOffset;
+    internal static unsafe nint GetLayoutPointer(HudSlot slot) {
+        // return (nint)AddonConfig.Instance()->ActiveDataSet + DataBaseLayoutOffset + (int)slot * LayoutSize;
+        return (nint)AddonConfig.Instance()->ActiveDataSet->HudLayoutConfigEntries.GetPointer((int)slot * InMemoryLayoutElements);
     }
 
-    internal static unsafe IntPtr GetLayoutPointer(HudSlot slot)
-    {
-        var slotNum = (int)slot;
-        return (nint)AddonConfig.Instance()->ActiveDataSet + DataBaseLayoutOffset + slotNum * LayoutSize;
+    public static unsafe HudSlot GetActiveHudSlot() {
+        // var slotVal = Marshal.ReadInt32(GetDataPointer() + DataSlotOffset);
+        // if (!Enum.IsDefined(typeof(HudSlot), slotVal))
+        //     throw new System.IO.IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
+        // return (HudSlot)slotVal;
+
+        var addonConfig = AddonConfig.Instance();
+        if (addonConfig is null)
+            return HudSlot.One;
+
+        return (HudSlot)addonConfig->ActiveDataSet->CurrentHudLayout;
     }
 
-    public static HudSlot GetActiveHudSlot()
-    {
-        var slotVal = Marshal.ReadInt32(GetDataPointer() + DataSlotOffset);
-        // Plugin.SLog.Debug($"dataPointer(0x{GetDataPointer():X} + offset 0x{DataSlotOffset:X} = 0x{GetDataPointer() + DataSlotOffset:X} = {slotVal}");
-
-        if (!Enum.IsDefined(typeof(HudSlot), slotVal)) {
-            throw new IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
-        }
-
-        return (HudSlot)slotVal;
-    }
-
-    public static Layout ReadLayout(HudSlot slot)
-    {
+    public static Layout ReadLayout(HudSlot slot) {
         var slotPtr = GetLayoutPointer(slot);
         return Marshal.PtrToStructure<Layout>(slotPtr);
     }
 
-    private void WriteLayout(HudSlot slot, Layout layout, bool reloadIfNecessary = true)
-    {
-        WriteLayout(slot, layout.ToDictionary(), reloadIfNecessary);
+    public static unsafe void ApplyHudLayout() {
+        var addonConfig = AddonConfig.Instance();
+        if (addonConfig is null)
+            return;
+
+        addonConfig->ApplyHudLayout();
     }
 
-    private void WriteLayout(HudSlot slot, IReadOnlyDictionary<ElementKind, Element> dict, bool reloadIfNecessary = true)
-    {
+    public static unsafe void ChangeSlot(HudSlot slot) {
+        var addonConfig = AddonConfig.Instance();
+        if (addonConfig is null)
+            return;
+
+        if (addonConfig->ActiveDataSet->CurrentHudLayout != (uint)slot)
+            addonConfig->ChangeHudLayout((uint)slot);
+    }
+
+    public static unsafe bool IsEditingHudLayout() {
+        var rapture = RaptureAtkUnitManager.Instance();
+        if (rapture is null)
+            return false;
+
+        return rapture->IsEditingHudLayout;
+    }
+
+    private static void WriteLayout(HudSlot slot, IReadOnlyDictionary<ElementKind, Element> dict) {
+#if READONLY
+        return;
+#endif
         var slotPtr = GetLayoutPointer(slot);
 
         // update existing elements with saved data instead of wholesale overwriting
-        var slotLayout = ReadLayout(slot);
-#if !READONLY
-            for (var i = 0; i < slotLayout.elements.Length; i++) {
-                if (!slotLayout.elements[i].id.IsRealElement())
-                    continue;
+        var rawLayout = ReadLayout(slot);
+        for (var i = 0; i < rawLayout.elements.Length; i++) {
+            ref var rawElement = ref rawLayout.elements[i];
+            if (!rawElement.id.IsRealElement())
+                continue;
 
-                if (!dict.TryGetValue(slotLayout.elements[i].id, out var element))
-                    continue;
+            if (!dict.TryGetValue(rawElement.id, out var element))
+                continue;
 
-                if (reloadIfNecessary) {
-                    if (element.Id is ElementKind.Minimap) {
-                        // Minimap: Don't load zoom/rotation from HUD settings but use current UI state instead
-                        element = element.Clone();
-                        element.Options = slotLayout.elements[i].options;
-                    } else if (element.Id is ElementKind.Hotbar1
-                               && (element.LayoutFlags & ElementLayoutFlags.ClobberTransientOptions) == 0) { // Clobber flag is unset (default)
-                        // Hotbar1: Keep cycling state
-                        element = element.Clone();
-                        element.Options![0] = slotLayout.elements[i].options![0];
-                    }
-                }
+            if (element.Id is ElementKind.Minimap) {
+                // Minimap: Don't load zoom/rotation from HUD settings but use current UI state instead
+                element = element.Clone();
+                element.Options = rawElement.options;
+            } else if (element.Id is ElementKind.Hotbar1
+                       && (element.LayoutFlags & ElementLayoutFlags.ClobberTransientOptions) == 0) { // Clobber flag is unset (default)
+                // Hotbar1: Keep cycling state
+                element = element.Clone();
+                element.Options![0] = rawElement.options![0];
+            }
 
+            if (element.Enabled == Element.AllEnabled) {
                 // just replace the struct if all options are enabled
-                if (element.Enabled == Element.AllEnabled) {
-                    slotLayout.elements[i] = new RawElement(element);
-                    continue;
-                }
-
+                rawElement = new RawElement(element);
+            } else {
                 // otherwise only replace the enabled options
-                slotLayout.elements[i].UpdateEnabled(element);
+                rawElement.UpdateEnabled(element);
             }
+        }
 
-            Marshal.StructureToPtr(slotLayout, slotPtr, false);
-
-            // copy directly over
-            // Marshal.StructureToPtr(layout, slotPtr, false);
-
-            if (!reloadIfNecessary) {
-                return;
-            }
-
-            var currentSlot = GetActiveHudSlot();
-            if (currentSlot == slot) {
-                SelectSlot(currentSlot, true);
-            }
-#endif
+        Marshal.StructureToPtr(rawLayout, slotPtr, false);
     }
 
-    private SavedLayout? GetEffectiveLayout(Guid id, List<Guid>? layers = null)
-    {
+    public SavedLayout? GetEffectiveLayout(Guid id, List<Guid>? layers = null) {
         // find the node for this id
         var nodes = Node<SavedLayout>.BuildTree(Plugin.Config.Layouts);
-        var node = nodes.Find(id);
-        if (node == null) {
+        if (nodes.Find(id) is not { } node) {
             return null;
         }
 
@@ -181,8 +130,7 @@ public sealed class Hud : IDisposable
         CrossUpConfig? crossUpConfig;
 
         // Apply each element of a layout on top of the virtual layout we are constructing.
-        void ApplyLayout(Node<SavedLayout> node)
-        {
+        void ApplyLayout(Node<SavedLayout> node) {
             foreach (var element in node.Value.Elements) {
                 if (element.Value.Enabled == Element.AllEnabled || !elements.ContainsKey(element.Key)) {
                     elements[element.Key] = element.Value.Clone();
@@ -216,95 +164,68 @@ public sealed class Hud : IDisposable
             }
 
             crossUpConfig = node.Value.CrossUpConfig?.Clone();
-
         }
 
-        // get the ancestors and their elements for this node
+        // Apply ancestors
         foreach (var ancestor in node.Ancestors().Reverse()) {
             ApplyLayout(ancestor);
         }
 
         ApplyLayout(node);
 
-        // If there's layers, apply them.
-        if (Plugin.Config.AdvancedSwapMode && layers != null) {
+        // Apply layers
+        if (Plugin.Config.AdvancedSwapMode && layers is { Count: > 0 }) {
             foreach (var layerId in layers.Reverse<Guid>()) {
-                var layer = nodes.Find(layerId);
-                if (layer == null) {
-                    Plugin.Log.Error("unable to find layered condition by ID");
-                    break;
+                if (nodes.Find(layerId) is { } layer) {
+                    ApplyLayout(layer);
+                } else {
+                    Plugin.Log.Error($"Unable to find layer {layerId}");
                 }
-
-                ApplyLayout(layer);
             }
         }
 
         return new SavedLayout($"Effective {id}", elements, windows, bwOverlays, crossUpConfig, Guid.Empty);
     }
 
-    private string GetDebugName(Guid id, List<Guid>? layers) =>
-        $"{Plugin.Config.Layouts[id].Name} [{(layers == null ? "" : string.Join(", ", layers.ConvertAll(layer => Plugin.Config.Layouts[layer].Name)))}]";
+    public void WriteAll(HudSlot slot, Guid id, List<Guid> layers) {
+        if (GetEffectiveLayout(id, layers) is { } layout)
+            WriteAll(slot, layout);
+    }
 
-    public void WriteEffectiveLayoutIfChanged(HudSlot slot, Guid id, List<Guid> layers)
-    {
-        if (_stagingState != null && _stagingState.SameLayers(id, layers)) {
-            if (_stagingState.SameJob(Util.GetPlayerJobId(Plugin))) {
-                Plugin.Log.Debug($"Skipped layout {GetDebugName(id, layers)} (state unchanged)");
-            } else {
-                Plugin.Log.Debug($"Skipped layout {GetDebugName(id, layers)} (gauge changes only)");
-                WriteEffectiveLayoutGaugesOnly(id, layers);
+    public void WriteAll(HudSlot slot, SavedLayout layout) {
+        if (!Plugin.HudLock.CanWrite()) {
+            var notification = new Notification {
+                Type = NotificationType.Error,
+                Title = "Failed to write HUD layout",
+                Content = $"Failed to write HUD layout to slot {(int)HudSlot.One + 1} ({Plugin.HudLock.WriteBlockReason})"
+            };
+            Plugin.NotificationManager.AddNotification(notification);
+        }
+
+        WriteLayout(Plugin.Config.StagingSlot, layout.Elements);
+
+        if (slot == GetActiveHudSlot()) {
+            ApplyHudLayout();
+
+            // ApplyAllJobGaugeVisibility(layout);
+
+            foreach (var window in layout.Windows) {
+                Plugin.GameFunctions.SetAddonPosition(window.Key, window.Value.Position.X, window.Value.Position.Y);
             }
-            return;
-        }
 
-        WriteEffectiveLayout(slot, id, layers);
+            foreach (var overlay in layout.BrowsingwayOverlays) {
+                overlay.ApplyOverlay(Plugin);
+            }
+
+            layout.CrossUpConfig?.ApplyConfig(Plugin);
+        }
     }
 
-    private void WriteEffectiveLayoutGaugesOnly(Guid id, List<Guid>? layers = null)
-    {
-        var effective = GetEffectiveLayout(id, layers);
-        if (effective == null) {
-            return;
-        }
-
-        ApplyAllJobGaugeVisibility(effective);
-
-        _stagingState = new StagingState(Util.GetPlayerJobId(Plugin), id, layers ?? []);
-    }
-
-    public void WriteEffectiveLayout(HudSlot slot, Guid id, List<Guid>? layers = null)
-    {
-        var effective = GetEffectiveLayout(id, layers);
-        if (effective == null) {
-            return;
-        }
-
-        Plugin.Log.Debug($"Writing layout {GetDebugName(id, layers)}");
-
-        WriteLayout(slot, effective.Elements);
-
-        ApplyAllJobGaugeVisibility(effective);
-
-        foreach (var window in effective.Windows) {
-            Plugin.GameFunctions.SetAddonPosition(window.Key, window.Value.Position.X, window.Value.Position.Y);
-        }
-
-        foreach (var overlay in effective.BrowsingwayOverlays) {
-            overlay.ApplyOverlay(Plugin);
-        }
-
-        effective.CrossUpConfig?.ApplyConfig(Plugin);
-
-        _stagingState = new StagingState(Util.GetPlayerJobId(Plugin), id, layers ?? []);
-    }
-
-    internal void ImportSlot(string name, HudSlot slot, bool save = true)
-    {
+    internal void ImportSlot(string name, HudSlot slot, bool save = true) {
         Import(name, ReadLayout(slot), save);
     }
 
-    private void Import(string name, Layout layout, bool save = true)
-    {
+    private void Import(string name, Layout layout, bool save = true) {
         var guid = Plugin.Config.Layouts.FirstOrDefault(kv => kv.Value.Name == name).Key;
         guid = guid != default ? guid : Guid.NewGuid();
 
@@ -314,21 +235,19 @@ public sealed class Hud : IDisposable
         }
     }
 
-    private void ApplyAllJobGaugeVisibility(SavedLayout effectiveLayout)
-    {
-        if (!Plugin.PlayerState.IsLoaded)
+    public void ApplyAllJobGaugeVisibility(SavedLayout effectiveLayout) {
+        if (Plugin.PlayerState is not { IsLoaded: true } playerState)
             return;
 
-        var jobIndex = Plugin.PlayerState.ClassJob.ValueNullable?.JobIndex ?? 0;
+        var jobIndex = playerState.ClassJob.RowId;
         foreach (var (kind, element) in effectiveLayout.Elements) {
-            if (kind.ClassJob() is { } classJob && classJob.JobIndex == jobIndex && element[ElementComponent.Visibility]) {
+            if (kind.ClassJob() is { } classJob && classJob.RowId == jobIndex && element[ElementComponent.Visibility]) {
                 ApplyJobGaugeVisibility(kind, element);
             }
         }
     }
 
-    private unsafe void ApplyJobGaugeVisibility(ElementKind kind, Element element)
-    {
+    private unsafe void ApplyJobGaugeVisibility(ElementKind kind, Element element) {
         var unitName = kind.GetJobGaugeAtkName();
         if (unitName is null)
             return;
@@ -353,21 +272,18 @@ public sealed class Hud : IDisposable
         }
     }
 
-    public void Dispose()
-    {
+    public void Dispose() {
     }
 }
 
-public enum HudSlot
-{
+public enum HudSlot {
     One = 0,
     Two = 1,
     Three = 2,
     Four = 3,
 }
 
-public class Vector2<T>(T x, T y)
-{
+public class Vector2<T>(T x, T y) {
     public T X { get; set; } = x;
     public T Y { get; set; } = y;
 }

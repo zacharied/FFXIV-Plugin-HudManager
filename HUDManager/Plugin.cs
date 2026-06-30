@@ -31,11 +31,13 @@ public sealed class Plugin : IDalamudPlugin
     public IChatGui ChatGui { get; }
     public IKeyState KeyState { get; }
     public IGameConfig GameConfig { get; }
+    public INotificationManager NotificationManager { get; }
 
     public Swapper Swapper { get; }
     private Commands Commands { get; }
 
-    public WindowManager WindowManager { get; }
+    public HudLock HudLock { get; }
+    public HudStage HudStage { get; }
     public Hud Hud { get; }
     public Statuses Statuses { get; }
     public Config Config { get; }
@@ -43,6 +45,7 @@ public sealed class Plugin : IDalamudPlugin
     public GameFunctions GameFunctions { get; }
     public Keybinder Keybinder { get; }
     public QoLBarIpc QoLBarIpc { get; }
+    public WindowManager WindowManager { get; }
 
     public readonly bool Ready;
 
@@ -61,7 +64,8 @@ public sealed class Plugin : IDalamudPlugin
         IGameGui gameGui,
         IChatGui chatGui,
         IKeyState keyState,
-        IGameConfig gameConfig)
+        IGameConfig gameConfig,
+        INotificationManager notificationManager)
     {
         Interface = pluginInterface;
         Log = pluginLog;
@@ -78,6 +82,7 @@ public sealed class Plugin : IDalamudPlugin
         ChatGui = chatGui;
         KeyState = keyState;
         GameConfig = gameConfig;
+        NotificationManager = notificationManager;
 
         ClassJobCategoryIdExtensions.Initialize(this);
         ElementKindExt.Initialize(DataManager);
@@ -105,6 +110,8 @@ public sealed class Plugin : IDalamudPlugin
             Log.Warning("Unable to read help file");
         }
 
+        HudLock = new HudLock(this);
+        HudStage = new HudStage(this);
         Hud = new Hud(this);
         Statuses = new Statuses(this);
         GameFunctions = new GameFunctions(this);

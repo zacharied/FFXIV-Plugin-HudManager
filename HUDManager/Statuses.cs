@@ -11,37 +11,24 @@ using Newtonsoft.Json.Converters;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace HUDManager;
 
-public class Statuses
-{
+public class Statuses {
     private Plugin Plugin { get; }
 
     public readonly Dictionary<Status, bool> Condition = new();
     private readonly Status[] _statusTypes = Enum.GetValues<Status>();
     private uint _lastJobId = uint.MaxValue;
 
-    public (HudConditionMatch? activeLayout, List<HudConditionMatch> layeredLayouts) ResultantLayout = (null, []);
     private readonly Dictionary<HudConditionMatch, float> _conditionHoldTimers = new();
+    private long _lastUpdateTime;
 
     public CustomConditionStatusContainer CustomConditionStatus { get; } = new();
 
-    public ForceState NeedsForceUpdate { get; internal set; }
-
-    private long _lastUpdateTime;
-
-    public enum ForceState
-    {
-        None,
-        NoActiveLayout,
-        SwapSettingChanged,
-        EditLockRemoved,
-    }
-
-    public Statuses(Plugin plugin)
-    {
+    public Statuses(Plugin plugin) {
         Plugin = plugin;
 
         foreach (var cond in Plugin.Config.CustomConditions) {
@@ -49,10 +36,7 @@ public class Statuses
         }
     }
 
-    public bool Update()
-    {
-        UpdateConditionHoldTimers();
-
+    public bool Update() {
         var player = Plugin.ObjectTable.LocalPlayer; // TODO: Was ClientState.LocalPlayer, consider alternatives
         if (player is null) {
             return false;
@@ -74,8 +58,7 @@ public class Statuses
                     anyChanged = true;
                     Condition[status] = newVal;
                 }
-            }
-            else {
+            } else {
                 var newVal = status.Active(Plugin, player);
                 anyChanged |= newVal != oldVal;
                 Condition[status] = newVal;
@@ -85,16 +68,10 @@ public class Statuses
         return anyChanged;
     }
 
-    /// <summary>
-    /// Get the current layout data according to the conditions that match the game state.
-    /// </summary>
-    private (HudConditionMatch? layoutId, List<HudConditionMatch> layers) CalculateResultantLayout()
-    {
+    public HudDescriptor? CalculateLayout() {
         List<HudConditionMatch> layers = [];
-        var player = Plugin.ObjectTable.LocalPlayer; // TODO: Was ClientState.LocalPlayer, consider alternatives
-        if (player == null) {
-            return (null, layers);
-        }
+        if (Plugin.ObjectTable.LocalPlayer is not { } player)
+            return null;
 
         foreach (var match in Plugin.Config.HudConditionMatches) {
             var isActivated = match.IsActivated(Plugin, out var transitioned);
@@ -111,67 +88,37 @@ public class Statuses
                 }
 
                 // The first non-layer condition is the base
-                return (match, layers);
+                return new HudDescriptor(player.ClassJob.RowId, match.LayoutId, layers.Select(layer => layer.LayoutId).ToList());
             }
         }
 
-        return (null, layers);
-    }
-
-    public void SetHudLayout()
-    {
-        var forceState = NeedsForceUpdate;
-        NeedsForceUpdate = ForceState.None;
-
-        ResultantLayout = CalculateResultantLayout();
-        if (ResultantLayout.activeLayout is null) {
-            NeedsForceUpdate = ForceState.NoActiveLayout;
-            return;
-        }
-
-        if (!Plugin.Config.Layouts.ContainsKey(ResultantLayout.activeLayout.LayoutId)) {
-            Plugin.Log.Error($"Attempt to set nonexistent layout \"{ResultantLayout.activeLayout.LayoutId}\".");
-            return;
-        }
-
-        if (forceState != ForceState.None) {
-            Plugin.Log.Debug($"Forcing full layout write (reason={forceState})");
-            Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
-        } else {
-            Plugin.Hud.WriteEffectiveLayoutIfChanged(Plugin.Config.StagingSlot, ResultantLayout.activeLayout.LayoutId, ResultantLayout.layeredLayouts.ConvertAll(match => match.LayoutId));
-        }
-        //this.Plugin.Hud.SelectSlot(this.Plugin.Config.StagingSlot, true);
+        return null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool IsInFate()
-    {
+    public static unsafe bool IsInFate() {
         return FateManager.Instance()->CurrentFate != null;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool IsLevelSynced()
-    {
+    public static unsafe bool IsLevelSynced() {
         var uiPlayerState = UIState.Instance()->PlayerState;
         return uiPlayerState.IsLevelSynced;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool IsInSanctuary()
-    {
+    public static unsafe bool IsInSanctuary() {
         var ti = TerritoryInfo.Instance();
         return ti != null && ti->InSanctuary;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool IsChatFocused()
-    {
+    public static unsafe bool IsChatFocused() {
         return RaptureAtkModule.Instance()->AtkModule.IsTextInputActive();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe bool IsRoleplaying(Plugin plugin, IPlayerCharacter? player)
-    {
+    public static unsafe bool IsRoleplaying(Plugin plugin, IPlayerCharacter? player) {
         player ??= plugin.ObjectTable.LocalPlayer;
         if (player == null)
             return false;
@@ -179,16 +126,15 @@ public class Statuses
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsWeaponOut(Plugin plugin, IPlayerCharacter? player)
-    {
+    public static bool IsWeaponOut(Plugin plugin, IPlayerCharacter? player) {
         player ??= plugin.ObjectTable.LocalPlayer;
         if (player == null)
             return false;
         return (player.StatusFlags & StatusFlags.WeaponOut) != 0;
     }
 
-    private void UpdateConditionHoldTimers()
-    {
+    public bool UpdateConditionHoldTimers() {
+        var changed = false;
         // Update the timers on all ticking conditions.
         var newTimestamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
         var removeKeys = new List<HudConditionMatch>();
@@ -197,8 +143,7 @@ public class Statuses
             if (newVal < 0) {
                 Plugin.Log.Debug($"Condition timer for \"{k.CustomCondition?.Name}\" finished");
                 removeKeys.Add(k);
-            }
-            else {
+            } else {
                 _conditionHoldTimers[k] = newVal;
             }
         }
@@ -208,33 +153,32 @@ public class Statuses
             foreach (var k in removeKeys) {
                 _conditionHoldTimers.Remove(k);
             }
-            SetHudLayout();
+            changed = true;
+            // SetHudLayout();
         }
 
         _lastUpdateTime = newTimestamp;
+        return changed;
     }
+
 
     public bool ConditionHoldTimerIsTicking(HudConditionMatch cond)
         => _conditionHoldTimers.ContainsKey(cond);
 
-    public class CustomConditionStatusContainer
-    {
+    public class CustomConditionStatusContainer {
         private Dictionary<CustomCondition, bool> Status { get; } = new();
         private bool Updated { get; set; }
 
-        public bool this[CustomCondition c]
-        {
+        public bool this[CustomCondition c] {
             get => Status[c];
 
-            set
-            {
+            set {
                 Status[c] = value;
                 Updated = true;
             }
         }
 
-        public bool IsUpdated()
-        {
+        public bool IsUpdated() {
             var v = Updated;
             Updated = false;
             return v;
@@ -248,8 +192,7 @@ public class Statuses
     }
 }
 
-public class HudConditionMatch
-{
+public class HudConditionMatch {
     public ClassJobCategoryId? ClassJobCategory { get; set; }
 
     [JsonConverter(typeof(StringEnumConverter))]
@@ -262,8 +205,7 @@ public class HudConditionMatch
 
     private bool LastValue { get; set; }
 
-    public bool IsActivated(Plugin plugin, out bool transitioned)
-    {
+    public bool IsActivated(Plugin plugin, out bool transitioned) {
         transitioned = false;
 
 
@@ -275,7 +217,7 @@ public class HudConditionMatch
         var statusMet = !Status.HasValue || plugin.Statuses.Condition[Status.Value];
         var customConditionMet = CustomCondition?.IsMet(plugin) ?? true;
         var jobMet = ClassJobCategory is null
-            || ClassJobCategory.Value.IsActivated(classJob);
+                     || ClassJobCategory.Value.IsActivated(classJob);
 
         var newValue = statusMet && customConditionMet && jobMet;
         if (LastValue != newValue) {
@@ -286,10 +228,8 @@ public class HudConditionMatch
         return newValue;
     }
 
-    public HudConditionMatch Clone()
-    {
-        var clone = new HudConditionMatch
-        {
+    public HudConditionMatch Clone() {
+        var clone = new HudConditionMatch {
             ClassJobCategory = ClassJobCategory,
             Status = Status,
             CustomCondition = CustomCondition,
@@ -302,8 +242,7 @@ public class HudConditionMatch
 }
 
 // Note: Changing the names of these is a breaking change
-public enum Status
-{
+public enum Status {
     [Display(Name = "In combat")]
     InCombat = ConditionFlag.InCombat,
     [Display(Name = "In instance")]
@@ -344,10 +283,8 @@ public enum Status
     FullScreen = -13,
 }
 
-public static class StatusExtensions
-{
-    public static bool Active(this Status status, Plugin plugin, IPlayerCharacter? player = null)
-    {
+public static class StatusExtensions {
+    public static bool Active(this Status status, Plugin plugin, IPlayerCharacter? player = null) {
         if (status > 0) {
             return plugin.Condition[(ConditionFlag)status];
         }
@@ -363,8 +300,8 @@ public static class StatusExtensions
                 return plugin.ClientState.IsPvP;
             case Status.InDialogue:
                 return plugin.Condition[ConditionFlag.OccupiedInEvent]
-                    | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
-                    | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
+                       | plugin.Condition[ConditionFlag.OccupiedInQuestEvent]
+                       | plugin.Condition[ConditionFlag.OccupiedSummoningBell];
             case Status.InFate:
                 return Statuses.IsInFate();
             case Status.InFateLevelSynced:

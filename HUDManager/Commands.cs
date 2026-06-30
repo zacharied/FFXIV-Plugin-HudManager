@@ -57,8 +57,11 @@ public sealed class Commands : IDisposable
             }
 
             Plugin.WindowManager.Settings.SelectedLayout = entry.Key;
-            Plugin.Hud.WriteEffectiveLayout(Plugin.Config.StagingSlot, entry.Key);
-            Plugin.Hud.SelectSlot(Plugin.Config.StagingSlot, true);
+            if (Plugin.PlayerState is { IsLoaded : true } playerState) {
+                Plugin.HudStage.Apply(new HudDescriptor(playerState.ClassJob.RowId, entry.Key, []), StageReason.Command, StageFlags.ChangeSlot);
+            } else {
+                Plugin.ChatGui.PrintError("Player is not loaded.");
+            }
         } else if (argsList[0] == "condition") {
             var quotedArgs = GetArgsWithQuotes(args);
             if (quotedArgs is null) {
