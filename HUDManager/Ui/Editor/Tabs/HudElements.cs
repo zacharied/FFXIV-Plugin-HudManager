@@ -126,7 +126,6 @@ public class HudElements {
     }
 
     private void DrawElements(SavedLayout layout, ref bool update) {
-
         var toRemove = new List<ElementKind>();
 
         var sortedElements = layout.Elements
@@ -157,18 +156,23 @@ public class HudElements {
     }
 
     private void DrawElementTable(SavedLayout layout, Element element, ElementKind kind, List<ElementKind> toRemove, ref bool update) {
-        bool HasParent() => layout.Parent != Guid.Empty;
+        var hasParent = layout.Parent != Guid.Empty;
+        var showApply = hasParent || element.Enabled != Element.AllEnabled;
 
         static void DrawSettingName(string name) {
+            ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
             ImGui.Text(name);
+
             ImGui.TableNextColumn();
         }
 
         static void DrawSettingNameWithHelp(string name, string help) {
+            ImGui.TableNextColumn();
             ImGui.AlignTextToFramePadding();
             ImGui.Text(name);
             ImGuiComponents.HelpMarker(help);
+
             ImGui.TableNextColumn();
         }
 
@@ -184,15 +188,38 @@ public class HudElements {
             return;
         }
 
-        var rowCount = 3 - (HasParent() ? 0 : 1); // Disable "enabled" column for layouts with no parent.
-        using var table = ImRaii.Table($"uimanager-element-table-{kind}", rowCount, ImGuiTableFlags.BordersInner | ImGuiTableFlags.PadOuterX | ImGuiTableFlags.SizingFixedFit | ImGuiTableFlags.RowBg);
+        var columnCount = 2 + (showApply ? 1 : 0); // Disable "enabled" column for layouts with no parent.
+        using var table = ImRaii.Table($"uimanager-element-table-{kind}-{columnCount}", columnCount, ImGuiTableFlags.BordersInner | ImGuiTableFlags.PadOuterX | ImGuiTableFlags.RowBg | ImGuiTableFlags.NoSavedSettings);
         if (!table) return;
 
-        if (HasParent())
-            ImGui.TableSetupColumn("Enabled");
-        ImGui.TableSetupColumn("Setting");
+        //
+        // Headers
+        //
+
+        if (showApply)
+            ImGui.TableSetupColumn("Override", ImGuiTableColumnFlags.WidthFixed);
+        ImGui.TableSetupColumn("Setting", ImGuiTableColumnFlags.WidthFixed);
         ImGui.TableSetupColumn("Control", ImGuiTableColumnFlags.WidthStretch);
-        ImGui.TableHeadersRow();
+
+        var headerColumn = -1;
+        void CustomHeader(string text) {
+            ImGui.TableSetColumnIndex(++headerColumn);
+            using (ImCursor.Excursion())
+            using (ImRaii.PushColor(ImGuiCol.Text, Vector4.Zero))
+                ImGui.TableHeader(text);
+            ImGui.AlignTextToFramePadding();
+            ImGui.Text(text);
+        }
+
+        ImGui.TableNextRow(ImGuiTableRowFlags.Headers);
+        if (showApply) {
+            using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.WarningForeground, !hasParent))
+                CustomHeader("Apply");
+            if (!hasParent)
+                ImGuiExt.HoverTooltip("Showing apply settings for layout with no parent due to some rows being disabled.");
+        }
+        CustomHeader("Setting");
+        CustomHeader("Control");
 
         ImGui.SameLine(ImGui.GetContentRegionAvail().X - ImGui.GetFrameHeight() * 2 - ImGui.GetStyle().ItemSpacing.X);
 
@@ -216,44 +243,42 @@ public class HudElements {
         }
         ImGuiExt.HoverTooltip("Remove this element from this layout (hold Control to allow)");
 
-        ImGui.TableNextRow();
+        void DrawOverride(ElementComponent component, ref bool update) {
+            ImGui.TableNextRow();
 
-        void DrawEnabledCheckboxIfParent(ElementKind kind, ElementComponent component, ref bool update, bool nextCol = true) {
-            if (nextCol) {
-                ImGui.TableNextColumn();
-            }
-
-            if (!HasParent())
+            if (!showApply)
                 return;
+
+            ImGui.TableNextColumn();
 
             var enabled = element[component];
             ImCursor.ToNestedRect(new Vector2(ImGui.GetFrameHeight(), 0), new Vector2(ImGui.GetColumnWidth(), 0), ImAlign.Top);
-            if (ImGui.Checkbox($"###{component}-enabled-{kind}", ref enabled)) {
+            if (ImGui.Checkbox($"###{component}-enabled-{element.Id}", ref enabled)) {
                 element[component] = enabled;
-                Plugin.Config.Save();
-
                 update = true;
             }
+        }
+
+        void SkipOverride() {
+            ImGui.TableNextRow();
+
+            if (!showApply)
+                return;
 
             ImGui.TableNextColumn();
         }
 
-        void NextColumnIfParent() {
-            if (HasParent())
-                ImGui.TableNextColumn();
-        }
+        //
+        // Visibility
+        //
 
-        ImGui.TableSetColumnIndex(0);
-
-        DrawEnabledCheckboxIfParent(element.Id, ElementComponent.Visibility, ref update, false);
+        DrawOverride(ElementComponent.Visibility, ref update);
         DrawSettingName("Visibility");
 
-        bool visibilityUpdate = false;
         var keyboard = element[VisibilityFlags.Keyboard];
         if (ImGuiExt.IconCheckbox(FontAwesomeIcon.Keyboard, ref keyboard, $"{kind}")) {
             element[VisibilityFlags.Keyboard] = keyboard;
             update = true;
-            visibilityUpdate = true;
         }
 
         ImGui.SameLine();
@@ -261,17 +286,13 @@ public class HudElements {
         if (ImGuiExt.IconCheckbox(FontAwesomeIcon.Gamepad, ref gamepad, $"{kind}")) {
             element[VisibilityFlags.Gamepad] = gamepad;
             update = true;
-            visibilityUpdate = true;
         }
 
-        if (visibilityUpdate && !HasParent())
-            element[ElementComponent.Visibility] = true;
+        //
+        // MeasuredFrom
+        //
 
-        ImGui.TableNextRow();
-        ImGui.TableSetColumnIndex(0);
-
-        NextColumnIfParent();
-
+        SkipOverride();
         DrawSettingName("Measured from");
 
         var measuredFrom = element.MeasuredFrom;
@@ -282,29 +303,27 @@ public class HudElements {
             }
         }
 
-        ImGui.TableNextRow();
+        //
+        // X & Y
+        //
 
-        DrawEnabledCheckboxIfParent(element.Id, ElementComponent.X, ref update);
-        DrawSettingName("X");
-
-        bool xUpdate = false, yUpdate = false;
         if (Plugin.Config.PositioningMode == PositioningMode.Percentage) {
+            DrawOverride(ElementComponent.X, ref update);
+            DrawSettingName("X");
+
             using (ImRaii.ItemWidth(-1)) {
                 var x = element.X;
                 if (ImGui.DragFloat($"##x-{kind}", ref x, Plugin.Config.DragSpeed)) {
                     element.X = x;
                     update = true;
 
-                    xUpdate = true;
-
                     if (Editor.Previews.Elements.Contains(kind)) {
                         Editor.Previews.Update.Add(kind);
                     }
                 }
             }
-            ImGui.TableNextRow();
 
-            DrawEnabledCheckboxIfParent(element.Id, ElementComponent.Y, ref update);
+            DrawOverride(ElementComponent.Y, ref update);
             DrawSettingName("Y");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -312,8 +331,6 @@ public class HudElements {
                 if (ImGui.DragFloat($"##y-{kind}", ref y, Plugin.Config.DragSpeed)) {
                     element.Y = y;
                     update = true;
-
-                    yUpdate = true;
 
                     if (Editor.Previews.Elements.Contains(kind)) {
                         Editor.Previews.Update.Add(kind);
@@ -323,22 +340,22 @@ public class HudElements {
         } else {
             var screen = ImGui.GetIO().DisplaySize;
 
+            DrawOverride(ElementComponent.X, ref update);
+            DrawSettingName("X");
+
             using (ImRaii.ItemWidth(-1)) {
                 var x = (int)Math.Round(element.X * screen.X / 100);
                 if (ImGui.InputInt($"##x-{kind}", ref x)) {
                     element.X = x / screen.X * 100;
                     update = true;
 
-                    xUpdate = true;
-
                     if (Editor.Previews.Elements.Contains(kind)) {
                         Editor.Previews.Update.Add(kind);
                     }
                 }
             }
-            ImGui.TableNextRow();
 
-            DrawEnabledCheckboxIfParent(element.Id, ElementComponent.Y, ref update);
+            DrawOverride(ElementComponent.Y, ref update);
             DrawSettingName("Y");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -347,8 +364,6 @@ public class HudElements {
                     element.Y = y / screen.Y * 100;
                     update = true;
 
-                    yUpdate = true;
-
                     if (Editor.Previews.Elements.Contains(kind)) {
                         Editor.Previews.Update.Add(kind);
                     }
@@ -356,14 +371,11 @@ public class HudElements {
             }
         }
 
-        if (xUpdate && !HasParent())
-            element[ElementComponent.X] = true;
-        if (yUpdate && !HasParent())
-            element[ElementComponent.Y] = true;
+        //
+        // Scale
+        //
 
-        ImGui.TableNextRow();
-
-        DrawEnabledCheckboxIfParent(element.Id, ElementComponent.Scale, ref update);
+        DrawOverride(ElementComponent.Scale, ref update);
         DrawSettingName("Scale");
 
         var currentScale = $"{Math.Floor(element.Scale * 100)}%";
@@ -371,23 +383,20 @@ public class HudElements {
         using (var combo = ImRaii.Combo($"##scale-{kind}", currentScale)) {
             if (combo) {
                 foreach (var scale in ScaleOptions) {
-                    if (!ImGui.Selectable($"{Math.Floor(scale * 100)}%", Math.Abs(scale - element.Scale) < float.Epsilon)) {
-                        continue;
+                    if (ImGui.Selectable($"{Math.Floor(scale * 100)}%", Math.Abs(scale - element.Scale) < float.Epsilon)) {
+                        element.Scale = scale;
+                        update = true;
                     }
-
-                    element.Scale = scale;
-                    update = true;
-
-                    if (!HasParent())
-                        element[ElementComponent.Scale] = true;
                 }
             }
         }
 
-        ImGui.TableNextRow();
+        //
+        // Opacity
+        //
 
         if (kind.ClassJob() == null) {
-            DrawEnabledCheckboxIfParent(element.Id, ElementComponent.Opacity, ref update);
+            DrawOverride(ElementComponent.Opacity, ref update);
             DrawSettingName("Opacity");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -395,20 +404,18 @@ public class HudElements {
                 if (ImGui.DragInt($"##opacity-{kind}", ref opacity, 1, 1, 255)) {
                     element.Opacity = (byte)opacity;
                     update = true;
-
-                    if (!HasParent())
-                        element[ElementComponent.Opacity] = true;
                 }
             }
-
-            ImGui.TableNextRow();
         }
+
+        //
+        // Kind: TargetBar
+        //
 
         if (kind == ElementKind.TargetBar && element.Options is not null) {
             var targetBarOpts = new TargetBarOptions(element.Options);
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Display target information independently");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -418,15 +425,16 @@ public class HudElements {
                     update = true;
                 }
             }
-
-            ImGui.TableNextRow();
         }
+
+        //
+        // Kind: StatusEffects
+        //
 
         if (kind == ElementKind.StatusEffects && element.Options is not null) {
             var statusOpts = new StatusEffectsOptions(element.Options);
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingNameWithHelp("Alignment", "Only applies if grouping (set below) is set to single element.");
 
             using (ImRaii.ItemWidth((-1))) {
@@ -437,8 +445,7 @@ public class HudElements {
                 }
             }
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Grouping");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -448,15 +455,16 @@ public class HudElements {
                     update = true;
                 }
             }
-
-            ImGui.TableNextRow();
         }
+
+        //
+        // Kind: StatusInfoEnhancements
+        //
 
         if (kind is ElementKind.StatusInfoEnhancements && element.Options is not null) {
             var statusOpts = new StatusInfoEnhancementsOptions(element);
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Layout");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -471,10 +479,7 @@ public class HudElements {
                 }
             }
 
-            ImGui.TableNextRow();
-
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Display settings");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -485,10 +490,7 @@ public class HudElements {
                 }
             }
 
-            ImGui.TableNextRow();
-
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Focusable by gamepad");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -498,15 +500,16 @@ public class HudElements {
                     update = true;
                 }
             }
-
-            ImGui.TableNextRow();
         }
+
+        //
+        // Kind: StatusInfoConditionalEnhancements
+        //
 
         if (kind is ElementKind.StatusInfoConditionalEnhancements && element.Options is not null) {
             var statusOpts = new StatusInfoConditionalOptions(element);
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Layout");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -521,10 +524,7 @@ public class HudElements {
                 }
             }
 
-            ImGui.TableNextRow();
-
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Focusable by gamepad");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -534,15 +534,16 @@ public class HudElements {
                     update = true;
                 }
             }
-
-            ImGui.TableNextRow();
         }
+
+        //
+        // Kind: StatusInfoEnfeeblements
+        //
 
         if (kind is ElementKind.StatusInfoEnfeeblements && element.Options is not null) {
             var statusOpts = new StatusInfoEnfeeblementsOptions(element);
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Layout");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -557,10 +558,7 @@ public class HudElements {
                 }
             }
 
-            ImGui.TableNextRow();
-
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Focusable by gamepad");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -570,15 +568,16 @@ public class HudElements {
                     update = true;
                 }
             }
-
-            ImGui.TableNextRow();
         }
+
+        //
+        // Kind: StatusInfoOther
+        //
 
         if (kind is ElementKind.StatusInfoOther && element.Options is not null) {
             var statusOpts = new StatusInfoOtherOptions(element);
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Layout");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -593,10 +592,7 @@ public class HudElements {
                 }
             }
 
-            ImGui.TableNextRow();
-
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Focusable by gamepad");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -606,16 +602,17 @@ public class HudElements {
                     update = true;
                 }
             }
-
-            ImGui.TableNextRow();
         }
+
+        //
+        // Kind: Hotbar1-10
+        //
 
         if (kind.IsHotbar()) {
             var hotbarOpts = new HotbarOptions(element);
 
             if (kind == ElementKind.Hotbar1) {
-                NextColumnIfParent();
-                ImGui.TableNextColumn();
+                SkipOverride();
                 DrawSettingName("Hotbar number");
 
                 var overwriteCycling = (element.LayoutFlags & ElementLayoutFlags.ClobberTransientOptions) != 0;
@@ -639,12 +636,9 @@ public class HudElements {
                         }
                     }
                 }
-
-                ImGui.TableNextRow();
             }
 
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Hotbar layout");
 
             using (ImRaii.ItemWidth(-1)) {
@@ -658,13 +652,32 @@ public class HudElements {
                     }
                 }
             }
-
-            ImGui.TableNextRow();
         }
 
+        //
+        // Kind: PartyList
+        //
+
+        if (kind is ElementKind.PartyList && element.Options is not null) {
+            SkipOverride();
+            DrawSettingName("Alignment");
+
+            var partyListOpts = new PartyListOptions(element.Options);
+            using (ImRaii.ItemWidth(-1)) {
+                var partyListAlignment = partyListOpts.Alignment;
+                if (ImGuiExt.EnumCombo($"##partylist-alignment:{kind}", ref partyListAlignment)) {
+                    partyListOpts.Alignment = partyListAlignment;
+                    update = true;
+                }
+            }
+        }
+
+        //
+        // Job gauges
+        //
+
         if (kind.ClassJob() != null && element.Options is not null) {
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
+            SkipOverride();
             DrawSettingName("Simple");
 
             var gaugeOpts = new GaugeOptions(element.Options);
@@ -675,26 +688,6 @@ public class HudElements {
                     update = true;
                 }
             }
-
-            ImGui.TableNextRow();
-        }
-
-        if (kind is ElementKind.PartyList && element.Options is not null) {
-            NextColumnIfParent();
-            ImGui.TableNextColumn();
-            DrawSettingName("Alignment");
-
-            var partyListOpts = new PartyListOptions(element.Options);
-
-            using (ImRaii.ItemWidth(-1)) {
-                var partyListAlignment = partyListOpts.Alignment;
-                if (ImGuiExt.EnumCombo($"##partylist-alignment:{kind}", ref partyListAlignment)) {
-                    partyListOpts.Alignment = partyListAlignment;
-                    update = true;
-                }
-            }
-
-            ImGui.TableNextRow();
         }
     }
 }
