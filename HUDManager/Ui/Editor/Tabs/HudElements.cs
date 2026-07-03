@@ -79,7 +79,7 @@ public class HudElements {
 
         var kinds = ElementKindExt.All()
             .Where(el => el.IsRealElement())
-            .OrderBy(el => el.LocalisedName(Plugin.DataManager));
+            .OrderBy(el => Util.ZeroPadNumbers(el.LocalisedName(Plugin.DataManager)));
         foreach (var kind in kinds) {
             var elementClassJob = kind.ClassJob();
             var isForbiddenElement = elementClassJob != null && !Util.HasUnlockedClass(elementClassJob.Value);
