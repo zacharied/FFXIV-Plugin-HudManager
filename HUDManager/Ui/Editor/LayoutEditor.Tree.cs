@@ -52,7 +52,7 @@ public partial class LayoutEditor {
 
         // ImGui.Text(layout.Name);
 
-        DrawLayoutText(layout, false);
+        ImGuiExt.DrawLayoutText(layout.Name, false);
 
         ImGui.SameLine();
         ImCursor.X = buttonStart;

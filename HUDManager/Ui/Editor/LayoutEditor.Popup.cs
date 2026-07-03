@@ -129,7 +129,7 @@ public partial class LayoutEditor {
         ImGui.SameLine(0, 0);
         var color = ImportLayoutName == null ? ImGuiColors.ErrorForeground : ImGuiColors.ParsedGold;
         using (ImRaii.PushColor(ImGuiCol.Text, color)) {
-            DrawLayoutTextPlain(ImportLayoutName ?? "<unnamed>");
+            ImGuiExt.DrawLayoutTextPlain(ImportLayoutName ?? "<unnamed>");
         }
         ImGui.SameLine(0, 0);
         ImGui.Text("  from:");
@@ -210,7 +210,7 @@ public partial class LayoutEditor {
         ImGui.Text("Write   ");
         ImGui.SameLine(0, 0);
         using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.ParsedGold)) {
-            DrawLayoutTextPlain(layout.Name);
+            ImGuiExt.DrawLayoutTextPlain(layout.Name);
         }
         ImGui.SameLine(0, 0);
         ImGui.Text("  to:");

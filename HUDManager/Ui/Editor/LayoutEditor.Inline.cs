@@ -13,9 +13,6 @@ using System.Numerics;
 namespace HUDManager.Ui.Editor;
 
 public partial class LayoutEditor {
-
-    private const ImGuiComboFlags ImGuiComboFlagsCustomPreview = (ImGuiComboFlags)(1 << 20);
-
     private void DrawLayoutManagerInlineView(List<Node<SavedLayout>> nodes, ref bool layoutChanged, ref bool update) {
         DrawLayoutManagerSmall(nodes, ref layoutChanged, ref update);
 
@@ -50,14 +47,14 @@ public partial class LayoutEditor {
         var comboWidth = ImGui.GetContentRegionAvail().X - iconButtonWidths - ImGui.GetStyle().ItemSpacing.X * 5;
 
         ImGui.SetNextItemWidth(comboWidth);
-        using (var combo = ImRaii.Combo("##edit-layout", "" /*selectedName*/, ImGuiComboFlagsCustomPreview)) {
+        using (var combo = ImRaii.Combo("##edit-layout", "", ImGuiExt.ImGuiComboFlagsCustomPreview)) {
             if (combo) {
                 if (ImGui.Selectable("###layoutEditInline:<none>")) {
                     Ui.SelectedLayout = Guid.Empty;
                     layoutChanged = true;
                 }
                 ImGui.SameLine();
-                DrawLayoutText(null, Guid.Empty == Ui.SelectedLayout);
+                ImGuiExt.DrawLayoutText(null, Guid.Empty == Ui.SelectedLayout);
 
                 foreach (var node in nodes) {
                     foreach (var (child, depth) in node.TraverseWithDepth()) {
@@ -68,14 +65,14 @@ public partial class LayoutEditor {
                             layoutChanged = true;
                         }
                         ImGui.SameLine();
-                        DrawLayoutText(child.Value, child.Id == Ui.SelectedLayout);
+                        ImGuiExt.DrawLayoutText(child.Value.Name, child.Id == Ui.SelectedLayout);
                     }
                 }
             }
         }
 
         if (ImGuiP.BeginComboPreview()) {
-            DrawLayoutText(savedLayout, true);
+            ImGuiExt.DrawLayoutText(savedLayout?.Name, true);
             ImGuiP.EndComboPreview();
         }
 
@@ -154,7 +151,7 @@ public partial class LayoutEditor {
         var ourChildren = nodes.Find(Ui.SelectedLayout)?.Traverse().Select(el => el.Id).ToArray() ?? [];
 
         ImGui.SetNextItemWidth(comboWidth);
-        using (var combo = ImRaii.Combo("###parent", "", ImGuiComboFlagsCustomPreview)) {
+        using (var combo = ImRaii.Combo("###parent", "", ImGuiExt.ImGuiComboFlagsCustomPreview)) {
             if (combo) {
                 if (ImGui.Selectable("###parent:<none>")) {
                     savedLayout.Parent = Guid.Empty;
@@ -162,7 +159,7 @@ public partial class LayoutEditor {
                     update = true;
                 }
                 ImGui.SameLine();
-                DrawLayoutText(null, false);
+                ImGuiExt.DrawLayoutText(null, false);
 
                 foreach (var node in nodes) {
                     foreach (var (child, depth) in node.TraverseWithDepth()) {
@@ -178,14 +175,14 @@ public partial class LayoutEditor {
                         }
                         ImGui.SameLine();
                         using (ImRaii.PushColor(ImGuiCol.Text, ImGui.GetColorU32(ImGuiCol.TextDisabled), disabled)) {
-                            DrawLayoutText(child.Value, selectedParent);
+                            ImGuiExt.DrawLayoutText(child.Value.Name, selectedParent);
                         }
                     }
                 }
             }
         }
         if (ImGuiP.BeginComboPreview()) {
-            DrawLayoutText(parent, false);
+            ImGuiExt.DrawLayoutText(parent?.Name, false);
             ImGuiP.EndComboPreview();
         }
 
@@ -193,33 +190,5 @@ public partial class LayoutEditor {
         ImGuiExt.HelpMarker("A layout will inherit its parameters from its parent if it has one."
                             + "\n\nWhen a parent layout is set, the \"Enabled\" column will be visible for each parameter of an element."
                             + "\n\nA parameter must be enabled for it to have any effect. If it is not enabled, the value from the parent layout will be used instead.");
-    }
-
-    private static void DrawLayoutText(SavedLayout? node, bool isSelected) {
-        if (node == null) {
-            var iconColor = isSelected ? ImGuiColors.InfoForeground : ImGuiColors.DalamudGrey3;
-            using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth))
-            using (ImRaii.PushColor(ImGuiCol.Text, iconColor)) {
-                ImGui.Text(FontAwesomeIcon.BorderNone.ToIconString());
-            }
-            ImGui.SameLine(0, 0);
-            ImGui.Text($" <none>");
-        } else {
-            var iconColor = isSelected ? ImGuiColors.InfoForeground : ImGuiColors.DalamudGrey3;
-            using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth))
-            using (ImRaii.PushColor(ImGuiCol.Text, iconColor)) {
-                ImGui.Text(FontAwesomeIcon.LayerGroup.ToIconString());
-            }
-            ImGui.SameLine(0, 0);
-            ImGui.Text($" {node.Name}");
-        }
-    }
-
-    private static void DrawLayoutTextPlain(string name) {
-        using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth)) {
-            ImGui.Text(FontAwesomeIcon.LayerGroup.ToIconString());
-        }
-        ImGui.SameLine(0, 0);
-        ImGui.Text($" {name}");
     }
 }

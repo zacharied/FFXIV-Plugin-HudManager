@@ -1,9 +1,11 @@
 ﻿using Dalamud.Interface;
 using HUDManager.Structs;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
+using HUDManager.Configuration;
 using System;
 using System.Linq;
 using System.Numerics;
@@ -11,6 +13,8 @@ using System.Numerics;
 namespace HUDManager.Ui;
 
 public static class ImGuiExt {
+    public const ImGuiComboFlags ImGuiComboFlagsCustomPreview = (ImGuiComboFlags)(1 << 20);
+
     public static void HoverTooltip(string text) {
         if (text == "") return;
         using (ImRaii.DefaultStyle()) {
@@ -247,5 +251,41 @@ public static class ImGuiExt {
         var mousePos = ImGui.GetMousePos();
         var relativePos = new Vector2(mousePos.X - min.X, mousePos.Y - min.Y);
         return new Vector2(relativePos.X / (max.X - min.X), relativePos.Y / (max.Y - min.Y));
+    }
+
+    public static void DrawLayoutText(string? name, bool isSelected) {
+        if (name == null) {
+            var iconColor = isSelected ? ImGuiColors.InfoForeground : ImGuiColors.DalamudGrey3;
+            using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth))
+            using (ImRaii.PushColor(ImGuiCol.Text, iconColor)) {
+                ImGui.Text(FontAwesomeIcon.BorderNone.ToIconString());
+            }
+            ImGui.SameLine(0, 0);
+            ImGui.Text($" <none>");
+        } else {
+            var iconColor = isSelected ? ImGuiColors.InfoForeground : ImGuiColors.DalamudGrey3;
+            using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth))
+            using (ImRaii.PushColor(ImGuiCol.Text, iconColor)) {
+                ImGui.Text(FontAwesomeIcon.LayerGroup.ToIconString());
+            }
+            ImGui.SameLine(0, 0);
+            ImGui.Text($" {name}");
+        }
+    }
+
+    public static void DrawLayoutTextPlain(string? name) {
+        if (name == null) {
+            using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth)) {
+                ImGui.Text(FontAwesomeIcon.BorderNone.ToIconString());
+            }
+            ImGui.SameLine(0, 0);
+            ImGui.Text($" <none>");
+        } else {
+            using (ImRaii.PushFont(UiBuilder.IconFontFixedWidth)) {
+                ImGui.Text(FontAwesomeIcon.LayerGroup.ToIconString());
+            }
+            ImGui.SameLine(0, 0);
+            ImGui.Text($" {name}");
+        }
     }
 }

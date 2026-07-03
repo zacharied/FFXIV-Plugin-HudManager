@@ -2,6 +2,8 @@
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
+using HUDManager.Configuration;
+using HUDManager.Tree;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -211,16 +213,29 @@ public class Swaps {
 
                 ImGui.TableNextColumn();
 
-                var comboPreview = _editingCondition.LayoutId == Guid.Empty ? string.Empty : Plugin.Config.Layouts[_editingCondition.LayoutId].Name;
+                // Column: Layout
+
+                var selectedLayoutId = _editingCondition.LayoutId;
+                var selectedLayoutName = _editingCondition.LayoutId == Guid.Empty ? null : Plugin.Config.Layouts[_editingCondition.LayoutId].Name;
                 using (ImRaii.ItemWidth(-1))
-                using (var combo = ImRaii.Combo("##condition-edit-layout", comboPreview)) {
+                using (var combo = ImRaii.Combo("##edit-layout", "", ImGuiExt.ImGuiComboFlagsCustomPreview)) {
                     if (combo) {
-                        foreach (var layout in Plugin.Config.Layouts) {
-                            if (ImGui.Selectable($"{layout.Value.Name}##condition-edit-layout-{layout.Key}")) {
-                                _editingCondition.LayoutId = layout.Key;
+                        var nodes = Node<SavedLayout>.BuildTree(Plugin.Config.Layouts);
+                        foreach (var node in nodes) {
+                            foreach (var (child, depth) in node.TraverseWithDepth()) {
+                                var indent = new string(' ', (int)depth * 4);
+                                if (ImGui.Selectable($"{indent}###layoutEditInline:{child.Id}", child.Id == selectedLayoutId)) {
+                                    _editingCondition.LayoutId = child.Id;
+                                }
+                                ImGui.SameLine();
+                                ImGuiExt.DrawLayoutText(child.Value.Name, child.Id == selectedLayoutId);
                             }
                         }
                     }
+                }
+                if (ImGuiP.BeginComboPreview()) {
+                    ImGuiExt.DrawLayoutText(selectedLayoutName, true);
+                    ImGuiP.EndComboPreview();
                 }
 
                 ImGui.TableNextColumn();
@@ -280,7 +295,7 @@ public class Swaps {
 
                 Plugin.Config.Layouts.TryGetValue(item.cond.LayoutId, out var condLayout);
                 ImGui.AlignTextToFramePadding();
-                ImGui.Text(condLayout?.Name ?? string.Empty);
+                ImGuiExt.DrawLayoutTextPlain(condLayout?.Name);
                 ImGui.TableNextColumn();
 
                 // Column: Actions
