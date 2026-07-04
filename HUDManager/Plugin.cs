@@ -41,7 +41,6 @@ public sealed class Plugin : IDalamudPlugin
     public Config Config { get; }
     public HelpFile Help { get; } = null!;
     public GameFunctions GameFunctions { get; }
-    private PetHotbar PetHotbar { get; }
     public Keybinder Keybinder { get; }
     public QoLBarIpc QoLBarIpc { get; }
 
@@ -111,7 +110,6 @@ public sealed class Plugin : IDalamudPlugin
         GameFunctions = new GameFunctions(this);
         Swapper = new Swapper(this);
         Commands = new Commands(this);
-        PetHotbar = new PetHotbar(this);
         Keybinder = new Keybinder(this);
         QoLBarIpc = new QoLBarIpc(this);
         WindowManager = new WindowManager(this);
@@ -136,7 +134,6 @@ public sealed class Plugin : IDalamudPlugin
         WindowManager.Dispose();
         Commands.Dispose();
         Swapper.Dispose();
-        PetHotbar.Dispose();
         Hud.Dispose();
 
         QoLBarIpc.Dispose();
