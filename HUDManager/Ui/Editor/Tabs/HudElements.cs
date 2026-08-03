@@ -7,6 +7,9 @@ using HUDManager.Structs;
 using HUDManager.Structs.Options;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using FFXIVClientStructs.Interop;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -689,5 +692,61 @@ public class HudElements {
                 }
             }
         }
+
+        //
+        // Incorrect size
+        //
+
+        if (GetAddonRealSize(element) is { Width: var realWidth, Height: var realHeight }) {
+            if (realWidth != element.Width || realHeight != element.Height) {
+                using (new ImRaii.ColorDisposable()
+                           .Push(ImGuiCol.Text, ImGuiColors.ErrorForeground)
+                           .Push(ImGuiCol.Button, ImGuiColors.ErrorBackground)) {
+                    SkipOverride();
+                    DrawSettingName("Repair");
+                    if (ImGui.Button("Fix size")) {
+                        element.Width = realWidth;
+                        element.Height = realHeight;
+                        update = true;
+
+                        if (Editor.Previews.Elements.Contains(kind)) {
+                            Editor.Previews.Update.Add(kind);
+                        }
+                    }
+                }
+                ImGuiComponents.HelpMarker("This element's current size is not consistent with its default size. When this happens, the element's set position and actual position may not match. Use the 'Fix size' button to correct it.");
+            }
+        }
+    }
+
+    private unsafe (ushort Width, ushort Height)? GetAddonRealSize(Element element) {
+        var layoutAddon = GetHudLayoutAddon(element);
+        if (layoutAddon is null)
+            return null;
+
+        var addon = Plugin.GameGui.GetAddonByName<AtkUnitBase>(layoutAddon->AddonName.ToString());
+        if (addon is null)
+            return null;
+
+        var rootNode = addon->RootNode;
+        if (rootNode is null)
+            return null;
+
+        return (rootNode->Width, rootNode->Height);
+    }
+
+    private static unsafe HudLayoutAddon* GetHudLayoutAddon(Element element) {
+        var rowId = element.Id.ElementKindRowId();
+        if (rowId < 0)
+            return null;
+
+        var span = HudLayoutAddon.GetSpan();
+        foreach (var entry in span.PointerEnumerator()) {
+            if (entry->HudRowId == rowId) {
+                return entry;
+            }
+        }
+
+        return null;
     }
 }

@@ -146,7 +146,7 @@ public static class ElementKindExt
     public static IEnumerable<ElementKind> All() => Enum.GetValues<ElementKind>()
         .Where(kind => !Immutable.Contains(kind));
 
-    private static int ElementKindRowId(this ElementKind kind)
+    public static int ElementKindRowId(this ElementKind kind)
     {
         return kind switch
         {
