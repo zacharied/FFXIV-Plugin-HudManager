@@ -689,6 +689,10 @@ public class HudElements {
                 if (ImGui.Checkbox($"##simple-{kind}", ref simple)) {
                     gaugeOpts.Style = simple ? GaugeStyle.Simple : GaugeStyle.Normal;
                     update = true;
+
+                    if (Editor.Previews.Elements.Contains(kind)) {
+                        Editor.Previews.Update.Add(kind);
+                    }
                 }
             }
         }

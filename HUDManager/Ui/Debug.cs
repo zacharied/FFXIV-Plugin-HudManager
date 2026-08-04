@@ -3,6 +3,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using HUDManager.Structs;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
 using System;
 using System.Collections.Generic;
@@ -198,14 +199,10 @@ public class Debug
 
         foreach (var raw in GetUnknownElements()) {
             var element = new Element(raw);
-            var pos = ImGuiExt.ConvertGameToImGui(element);
+            var preview = PreviewUtils.CreatePreviewData(Plugin.DataManager, element);
 
-            var min = pos.Item1;
-            var size = pos.Item2;
-            var max = min + size;
-
-            drawList.AddRectFilled( min, max, ImGui.GetColorU32(new Vector4(0f, 0f, 0f, 0.7f)) );
-            drawList.AddText( min, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 1f)), element.Id.LocalisedName(Plugin.DataManager) );
+            preview.DebugDrawAll();
+            drawList.AddText(preview.ActiveRect.Position, ImGui.GetColorU32(new Vector4(1f, 1f, 1f, 1f)), element.Id.LocalisedName(Plugin.DataManager) );
         }
     }
 }
