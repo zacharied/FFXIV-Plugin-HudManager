@@ -19,8 +19,7 @@ public abstract class PreviewUtils {
         if (hudRowId < 0)
             return new Preview(realRect, null, null, Preview.Mode.Real);
 
-        var transient = dataManager.Excel.GetSheet<HudTransient>().GetRow((uint)hudRowId);
-        if (transient.RowId == 0)
+        if (!dataManager.Excel.GetSheet<HudTransient>().TryGetRow((uint)hudRowId, out var transient))
             return new Preview(realRect, null, null, Preview.Mode.Real);
 
         var displayRect = GetTransientRect(transient.Unknown2);
