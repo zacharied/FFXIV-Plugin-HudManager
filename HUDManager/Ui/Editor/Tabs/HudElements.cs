@@ -416,7 +416,7 @@ public class HudElements {
             var targetBarOpts = new TargetBarOptions(element.Options);
 
             SkipOverride();
-            DrawSettingName("Display target information independently");
+            DrawSettingName("Display target info\nindependently");
 
             using (ImRaii.ItemWidth(-1)) {
                 var independent = targetBarOpts.ShowIndependently;
