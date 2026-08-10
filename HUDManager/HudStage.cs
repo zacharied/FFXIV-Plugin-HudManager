@@ -13,7 +13,7 @@ public sealed class HudStage : IDisposable {
     public HudDescriptor? Applied { get; private set; }
 
     private ApplyTask? pendingTask;
-    // private bool reapplyAfterFade;
+    private bool reapplyAfterFade;
 
     private readonly record struct ApplyTask(ApplyAction Action, HudDescriptor HudDescriptor, StageFlags Flags);
 
@@ -79,6 +79,10 @@ public sealed class HudStage : IDisposable {
             var task = new ApplyTask(ApplyAction.All, desc, flags);
             if (Write(task)) {
                 writeChar = 'W';
+                if (IsUiFading()) {
+                    writeChar = 'w';
+                    reapplyAfterFade = true;
+                }
             } else {
                 writeChar = '>';
                 pendingTask = task;
@@ -93,24 +97,27 @@ public sealed class HudStage : IDisposable {
     }
 
     private void WritePending() {
-        // if (reapplyAfterFade && Plugin.HudLock.CanApply() && !IsUiFading()) {
-        //     if (Applied is { } applied) {
-        //         Plugin.Log.Debug($"-A {GetDebugName(applied)}");
-        //         Hud.ApplyHudLayout();
-        //     }
-        //     reapplyAfterFade = false;
-        //     return;
-        // }
+        if (reapplyAfterFade && Plugin.HudLock.CanApply() && !IsUiFading()) {
+            if (Applied is { } applied) {
+                Plugin.Log.Debug($"Stage -A {GetDebugName(applied)}");
+                Hud.ApplyHudLayout();
+            }
+            reapplyAfterFade = false;
+            return;
+        }
 
         if (pendingTask is not { } task)
             return;
 
         if (Write(task)) {
-            Plugin.Log.Debug($"Stage -W {GetDebugName(task.HudDescriptor)}");
-            pendingTask = null;
+            var writeChar = 'W';
+            if (IsUiFading()) {
+                writeChar = 'w';
+                reapplyAfterFade = true;
+            }
 
-            // if (IsUiFading())
-            //     reapplyAfterFade = true;
+            Plugin.Log.Debug($"Stage -{writeChar} {GetDebugName(task.HudDescriptor)}");
+            pendingTask = null;
         }
     }
 
@@ -154,8 +161,9 @@ public sealed class HudStage : IDisposable {
 
     private string GetLayoutName(Guid id) => Plugin.Config.Layouts.GetValueOrDefault(id)?.Name ?? id.ToString();
 
-    // private static unsafe bool IsUiFading()
-    //     => RaptureAtkUnitManager.Instance()->IsUiFading;
+    private static unsafe bool IsUiFading()
+        => RaptureAtkUnitManager.Instance()->IsUiFading;
+        // => false;
 }
 
 [Flags]
