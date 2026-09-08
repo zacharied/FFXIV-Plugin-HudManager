@@ -110,5 +110,6 @@ public static partial class Util
         [40] = "SGE",
         [41] = "VIP",
         [42] = "PCT",
+        [43] = "BST",
     };
 }

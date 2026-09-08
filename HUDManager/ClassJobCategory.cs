@@ -232,6 +232,7 @@ public static class ClassJobCategoryIdExtensions
             ClassJobCategoryId.RDM,
             ClassJobCategoryId.PCT,
             ClassJobCategoryId.BLU,
+            ClassJobCategoryId.BST,
         ],
         [
             ClassJobCategoryId.MIN_BTN,
@@ -279,6 +280,7 @@ public enum ClassJobCategoryId
     VPR = 196,
     PCT = 197,
     BLU = 129,
+    BST = 203,
 
     MIN_BTN = 154,
     FSH = 155,

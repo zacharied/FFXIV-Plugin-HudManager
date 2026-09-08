@@ -89,6 +89,8 @@ public enum ElementKind : uint
     SerpentOfferingsGauge             = 0xB6AB2161, // JobHudRDB1_a (VIP)
     Canvases                          = 0x7A6A6A42, // JobHudRPM0_a (PCT)
     PaletteGauge                      = 0x7BA80075, // JobHudRPM1_a (PCT)
+    TpGauge                           = 0xC1D18DC6, // JobHudXBM0_a (BST)
+    InnerCompass                      = 0xC013E7F1, // JobHudXBM1_a (BST)
     TheFeastScore                     = 0xD7F058DF, // PvPColosseumHeader_a
     TheFeastAllyInfo                  = 0x37A8273C, // PvPColosseumPartyList0_a
     TheFeastEnemyInfo                 = 0x366A4D0B, // PvPColosseumPartyList1_a
