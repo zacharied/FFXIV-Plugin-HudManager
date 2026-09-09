@@ -158,6 +158,9 @@ public class Debug
                 s += $"[{row.RowId}] = \"{row.Abbreviation}\",\n";
             Plugin.ChatGui.Print(s);
         }
+
+        ImGui.Text($"Active Hud Slot (CS): {Hud.GetActiveHudSlot()}");
+        ImGui.Text($"Active Hud Slot (Manual): {Hud.GetActiveHudSlotInternal()}");
     }
 
     private static List<RawElement> GetUnknownElements()

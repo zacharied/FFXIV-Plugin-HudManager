@@ -17,7 +17,7 @@ namespace HUDManager;
 public sealed class Hud : IDisposable {
     public const int InMemoryLayoutElements = 112;              // Updated 7.5
     private const int LayoutSize = InMemoryLayoutElements * 36; // Updated 7.5 (same since 5.45). Each element is 32 bytes in ADDON.DAT, but 36 bytes in memory.
-    private const int DataSlotOffset = 0xDC20;                  // Updated 7.5
+    private const int DataSlotOffset = 0xDC48;                  // Updated 7.56
     private const int DataBaseLayoutOffset = 0x9D20;            // Updated 7.5
 
     private Plugin Plugin { get; }
@@ -33,6 +33,10 @@ public sealed class Hud : IDisposable {
     internal static unsafe nint GetLayoutPointer(HudSlot slot) {
         // return (nint)AddonConfig.Instance()->ActiveDataSet + DataBaseLayoutOffset + (int)slot * LayoutSize;
         return (nint)AddonConfig.Instance()->ActiveDataSet->HudLayoutConfigEntries.GetPointer((int)slot * InMemoryLayoutElements);
+    }
+
+    public static HudSlot GetActiveHudSlotInternal() {
+        return (HudSlot)Marshal.ReadInt32(GetDataPointer() + DataSlotOffset);
     }
 
     public static unsafe HudSlot GetActiveHudSlot() {
