@@ -35,11 +35,15 @@ public sealed class Hud : IDisposable {
         return (nint)AddonConfig.Instance()->ActiveDataSet->HudLayoutConfigEntries.GetPointer((int)slot * InMemoryLayoutElements);
     }
 
-    public static HudSlot GetActiveHudSlotInternal() {
+    public static HudSlot GetActiveHudSlot() {
+        return GetActiveHudSlotManual(); // FIXME: use CS after Dalamud updates
+    }
+
+    public static HudSlot GetActiveHudSlotManual() {
         return (HudSlot)Marshal.ReadInt32(GetDataPointer() + DataSlotOffset);
     }
 
-    public static unsafe HudSlot GetActiveHudSlot() {
+    public static unsafe HudSlot GetActiveHudSlotCs() {
         // var slotVal = Marshal.ReadInt32(GetDataPointer() + DataSlotOffset);
         // if (!Enum.IsDefined(typeof(HudSlot), slotVal))
         //     throw new System.IO.IOException($"invalid hud slot in FFXIV memory of ${slotVal}");
@@ -285,6 +289,11 @@ public enum HudSlot {
     Two = 1,
     Three = 2,
     Four = 3,
+}
+
+public enum StructSource {
+    Override,
+    ClientStructs
 }
 
 public class Vector2<T>(T x, T y) {

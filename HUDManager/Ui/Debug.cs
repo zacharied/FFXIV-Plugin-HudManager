@@ -159,8 +159,9 @@ public class Debug
             Plugin.ChatGui.Print(s);
         }
 
-        ImGui.Text($"Active Hud Slot (CS): {Hud.GetActiveHudSlot()}");
-        ImGui.Text($"Active Hud Slot (Manual): {Hud.GetActiveHudSlotInternal()}");
+        ImGui.Text($"Active Hud Slot: {Hud.GetActiveHudSlot()}");
+        ImGui.Text($"Active Hud Slot (CS): {Hud.GetActiveHudSlotCs()}");
+        ImGui.Text($"Active Hud Slot (Manual): {Hud.GetActiveHudSlotManual()}");
     }
 
     private static List<RawElement> GetUnknownElements()
