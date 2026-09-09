@@ -259,6 +259,8 @@ public static class ElementKindExt
             ElementKind.PaletteGauge => 107,
             ElementKind.FrontlineCampaignInfo => 108,
             ElementKind.CosmicExplorationInfo => 109,
+            ElementKind.TpGauge => 110,
+            ElementKind.InnerCompass => 111,
             _ => -1,
         };
     }
@@ -317,6 +319,7 @@ public static class ElementKindExt
             ElementKind.AddersgallGauge or ElementKind.EukrasiaGauge => FindClassJob(20),
             ElementKind.Vipersight or ElementKind.SerpentOfferingsGauge => FindClassJob(21),
             ElementKind.Canvases or ElementKind.PaletteGauge => FindClassJob(22),
+            ElementKind.TpGauge or ElementKind.InnerCompass => FindClassJob(23),
             _ => null,
         };
 
@@ -365,6 +368,8 @@ public static class ElementKindExt
             ElementKind.SerpentOfferingsGauge => "JobHudRDB1",
             ElementKind.Canvases              => "JobHudRPM0",
             ElementKind.PaletteGauge          => "JobHudRPM1",
+            ElementKind.TpGauge               => "JobHudXBM0",
+            ElementKind.InnerCompass          => "JobHudXBM1",
             _ => null,
             // @formatter:on
         };
