@@ -1,6 +1,8 @@
 ﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
+using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Style;
 using Dalamud.Interface.Utility.Raii;
 using HUDManager.Configuration;
 using HUDManager.Tree;
@@ -96,6 +98,19 @@ public class Swaps {
             Plugin.Config.AdvancedSwapMode = advancedMode;
             update = true;
         }
+
+        var blockReason = Plugin.HudLock.SwapBlockReason;
+        var blockReasonText = blockReason switch {
+            BlockReason.NotUsingStagingSlot => $"{blockReason}[{(int)Hud.GetActiveHudSlot() + 1}]",
+            _ => blockReason.ToString()
+        };
+
+        var isBlocked = blockReason != BlockReason.None;
+        var blockText = isBlocked ? $"Swaps paused ({blockReasonText})" : "Swaps running";
+        var blockTextSize = ImGui.CalcTextSize(blockText);
+        ImGui.SameLine(0);
+        ImCursor.X += ImGui.GetContentRegionAvail().X - blockTextSize.X;
+        ImGui.TextColored(isBlocked ? ImGuiColors.WarningForeground : ImGuiColors.SuccessForeground, blockText);
 
         if (update) {
             Plugin.Config.Save();
