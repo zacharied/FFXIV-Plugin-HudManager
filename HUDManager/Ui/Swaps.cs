@@ -124,7 +124,10 @@ public class Swaps {
     }
 
     private void DrawNoMatchingConditionsAlert() {
-        if (Plugin.Config.HudConditionMatches.Count == 0 || Plugin.HudLock.SwapBlockReason != BlockReason.None || Plugin.Swapper.SwapApplied)
+        if (Plugin.Swapper.ConditionMatched)
+            return;
+
+        if (!Plugin.Config.SwapsEnabled || !Plugin.HudLock.CanSwap() || Plugin.Config.HudConditionMatches.Count == 0)
             return;
 
         var drawList = ImGui.GetWindowDrawList();
