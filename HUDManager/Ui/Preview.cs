@@ -37,6 +37,10 @@ public abstract class PreviewUtils {
         Preview.Rect? GetTransientRect(sbyte transientIndex) {
             if (transientIndex == 0)
                 return null;
+
+            if (transientIndex <= 6)
+                transientIndex = (sbyte)new HotbarOptions(element).Layout;
+
             var scale = element.Scale * AtkUnitBase.GetGlobalUIScale();
             var hudSize = dataManager.Excel.GetSheet<AddonHudSize>().GetRow((uint)transientIndex);
             var displaySize = new Vector2(hudSize.Unknown0, hudSize.Unknown1) * scale;
