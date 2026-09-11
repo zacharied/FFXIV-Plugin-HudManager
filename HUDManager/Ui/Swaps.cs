@@ -1,8 +1,9 @@
-﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Style;
+using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using HUDManager.Configuration;
 using HUDManager.Tree;
@@ -75,6 +76,8 @@ public class Swaps {
             if (child) {
                 DrawConditionTable(ref update);
 
+                DrawNoMatchingConditionsAlert();
+
                 if (ImGuiComponents.IconButtonWithText(FontAwesomeIcon.Plus, "Add swap condition")) {
                     _editingConditionIndex = Plugin.Config.HudConditionMatches.Count;
                     _editingCondition = new HudConditionMatch();
@@ -118,6 +121,44 @@ public class Swaps {
             if (Plugin.Config.SwapsEnabled)
                 Plugin.Swapper.PendingForceUpdate |= ForceStageReason.SwapConfigurationChanged;
         }
+    }
+
+    private void DrawNoMatchingConditionsAlert() {
+        if (Plugin.Config.HudConditionMatches.Count == 0 || Plugin.Swapper.SwapApplied)
+            return;
+
+        var drawList = ImGui.GetWindowDrawList();
+        drawList.ChannelsSplit(2);
+        drawList.ChannelsSetCurrent(1);
+
+        var maxWidth = ImCursor.ScreenPosition.X + ImGui.GetContentRegionAvail().X;
+
+        using (ImRaii.Group()) {
+            var indent = ImGuiHelpers.ScaledVector2(6, 2);
+            ImCursor.Y += indent.Y;
+            using (ImRaii.PushIndent(indent.X)) {
+                using (ImRaii.PushColor(ImGuiCol.Text, ImGuiColors.WarningForeground)) {
+                    using (ImRaii.PushFont(UiBuilder.IconFont)) {
+                        ImGui.Text(FontAwesomeIcon.ExclamationTriangle.ToIconString());
+                    }
+                    ImGui.SameLine();
+                    ImGui.TextColored(ImGuiColors.WarningForeground, "Warning");
+                }
+                using (ImRaii.TextWrapPos(ImCursor.X + ImGui.GetContentRegionAvail().X - indent.X)) {
+                    ImGui.TextWrapped("No swap condition currently matches, so the most recently matched swap (if any) is still being used. To make sure a certain layout is always used when no other conditions match, add a fallback condition with \"Any\" Class/Job and \"Any\" State to the end of the above list.");
+                }
+            }
+            ImCursor.Y += indent.Y;
+        }
+
+        drawList.ChannelsSetCurrent(0);
+        drawList.AddRectFilled(
+            ImGui.GetItemRectMin(),
+            ImGui.GetItemRectMax() with { X = maxWidth },
+            ImGui.GetColorU32(ImGuiColors.WarningBackground * new Vector4(1, 1, 1, 0.5f)),
+            3f
+        );
+        drawList.ChannelsMerge();
     }
 
     private void DrawConditionTable(ref bool update) {

@@ -9,6 +9,7 @@ public sealed class Swapper : IDisposable {
 
     public ForceStageReason PendingForceUpdate { get; set; } = ForceStageReason.None;
     public StageReason PendingUpdate { get; set; } = StageReason.None;
+    public bool SwapApplied { get; private set; }
 
     private bool editLockRemoved;
 
@@ -89,6 +90,9 @@ public sealed class Swapper : IDisposable {
         if (update != StageReason.None || forceUpdate != ForceStageReason.None) {
             if (Plugin.Statuses.CalculateLayout() is { } desc) {
                 Plugin.HudStage.Apply(desc, update, forceUpdate);
+                SwapApplied = true;
+            } else {
+                SwapApplied = false;
             }
         }
     }
